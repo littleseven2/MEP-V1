@@ -1,117 +1,249 @@
-import React, { useState } from 'react';
-import { Check } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Check, Plus, MoreVertical, Pencil, Trash2, Copy } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { defaultThemes } from '../../data/defaults';
 import type { ThemeConfig } from '../../types/message';
 import { Select, Input } from '../../ui';
 
+type ThemeView = 'list' | 'editor';
+
+let themeIdCounter = 100;
+
 export function ThemePanel() {
   const message = useMessageStore((s) => s.message);
   const setTheme = useMessageStore((s) => s.setTheme);
 
+  const [themes, setThemes] = useState<ThemeConfig[]>(() => [...defaultThemes]);
+  const [activeThemeId, setActiveThemeId] = useState<string>(() => message?.theme.id ?? 'default-dark');
+  const [editingThemeId, setEditingThemeId] = useState<string | null>(null);
+  const [view, setView] = useState<ThemeView>('list');
+
   if (!message) return null;
 
-  const theme = message.theme;
-  const isCustom = theme.id === 'custom' || !defaultThemes.some((t) => t.id === theme.id);
-
-  const handlePresetSelect = (t: ThemeConfig) => setTheme({ ...t });
-
-  const handleCustomize = (updates: Partial<ThemeConfig>) => {
-    setTheme({ ...theme, id: 'custom', name: 'Custom', ...updates });
+  const applyTheme = (theme: ThemeConfig) => {
+    setActiveThemeId(theme.id);
+    setTheme({ ...theme });
   };
 
+  const selectTheme = (themeId: string) => {
+    const theme = themes.find((t) => t.id === themeId);
+    if (theme) applyTheme(theme);
+  };
+
+  const editTheme = (themeId: string) => {
+    setEditingThemeId(themeId);
+    setView('editor');
+  };
+
+  const showList = () => {
+    setEditingThemeId(null);
+    setView('list');
+  };
+
+  const createNewTheme = () => {
+    const newTheme: ThemeConfig = {
+      id: `custom-${themeIdCounter++}`,
+      name: 'New Theme',
+      radius: '8px',
+      colors: {
+        primary: '#E54D4D',
+        secondary: '#A0A0AB',
+        background: '#0D0D0F',
+        text: '#FFFFFF',
+      },
+      typography: {
+        headlineFont: 'Inter',
+        bodyFont: 'Inter',
+      },
+      spacing: 'normal',
+      background: {
+        type: 'solid',
+        value: '#0D0D0F',
+        opacity: 1,
+      },
+    };
+    setThemes((prev) => [...prev, newTheme]);
+    setEditingThemeId(newTheme.id);
+    setView('editor');
+  };
+
+  const deleteTheme = (themeId: string) => {
+    if (themes.length <= 1) return;
+    setThemes((prev) => prev.filter((t) => t.id !== themeId));
+    if (activeThemeId === themeId) {
+      const remaining = themes.filter((t) => t.id !== themeId);
+      if (remaining.length > 0) applyTheme(remaining[0]);
+    }
+  };
+
+  const duplicateTheme = (themeId: string) => {
+    const theme = themes.find((t) => t.id === themeId);
+    if (!theme) return;
+    const dup: ThemeConfig = {
+      ...JSON.parse(JSON.stringify(theme)),
+      id: `custom-${themeIdCounter++}`,
+      name: `${theme.name} Copy`,
+    };
+    setThemes((prev) => [...prev, dup]);
+    setEditingThemeId(dup.id);
+    setView('editor');
+  };
+
+  const updateEditingTheme = (updates: Partial<ThemeConfig>) => {
+    if (!editingThemeId) return;
+    setThemes((prev) =>
+      prev.map((t) => (t.id === editingThemeId ? { ...t, ...updates } : t))
+    );
+    if (editingThemeId === activeThemeId) {
+      const current = themes.find((t) => t.id === editingThemeId);
+      if (current) setTheme({ ...current, ...updates });
+    }
+  };
+
+  const editingTheme = themes.find((t) => t.id === editingThemeId);
+
+  if (view === 'editor' && editingTheme) {
+    return (
+      <ThemeEditorView
+        theme={editingTheme}
+        onBack={showList}
+        onUpdate={updateEditingTheme}
+      />
+    );
+  }
+
+  return (
+    <ThemeListView
+      themes={themes}
+      activeThemeId={activeThemeId}
+      onSelect={selectTheme}
+      onEdit={editTheme}
+      onDelete={deleteTheme}
+      onDuplicate={duplicateTheme}
+      onCreate={createNewTheme}
+    />
+  );
+}
+
+function ThemeListView({
+  themes,
+  activeThemeId,
+  onSelect,
+  onEdit,
+  onDelete,
+  onDuplicate,
+  onCreate,
+}: {
+  themes: ThemeConfig[];
+  activeThemeId: string;
+  onSelect: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onDuplicate: (id: string) => void;
+  onCreate: () => void;
+}) {
   return (
     <div style={{ padding: 20 }}>
-      <div style={{
-        marginBottom: 20, paddingBottom: 16,
-        borderBottom: '1px solid var(--color-border-default)',
-      }}>
-        <h3 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 11, fontWeight: 600,
-          color: 'var(--color-text-tertiary)',
-          textTransform: 'none',
-          letterSpacing: 'var(--letter-spacing-wide)',
-          marginBottom: 12,
-        }}>
-          Presets
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {defaultThemes.map((t) => (
-            <ThemeCard
-              key={t.id}
-              theme={t}
-              selected={theme.id === t.id && !isCustom}
-              onClick={() => handlePresetSelect(t)}
-            />
-          ))}
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {themes.map((theme) => (
+          <ThemeCard
+            key={theme.id}
+            theme={theme}
+            isActive={theme.id === activeThemeId}
+            onSelect={() => onSelect(theme.id)}
+            onEdit={() => onEdit(theme.id)}
+            onDelete={themes.length > 1 ? () => onDelete(theme.id) : undefined}
+            onDuplicate={() => onDuplicate(theme.id)}
+          />
+        ))}
       </div>
 
-      <div>
-        <h3 style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: 11, fontWeight: 600,
-          color: 'var(--color-text-tertiary)',
-          textTransform: 'none',
-          letterSpacing: 'var(--letter-spacing-wide)',
-          marginBottom: 12,
-        }}>
-          Customize
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Select
-            label="Background type"
-            options={[
-              { value: 'solid', label: 'Solid' },
-              { value: 'gradient', label: 'Gradient' },
-              { value: 'blur', label: 'Blur' },
-              { value: 'image', label: 'Image' },
-            ]}
-            value={theme.background.type}
-            onChange={(v) => handleCustomize({ background: { ...theme.background, type: v as ThemeConfig['background']['type'] } })}
-          />
-          <ColorRow label="Primary color" value={theme.colors.primary} onChange={(v) => handleCustomize({ colors: { ...theme.colors, primary: v } })} />
-          <ColorRow label="Text color" value={theme.colors.text} onChange={(v) => handleCustomize({ colors: { ...theme.colors, text: v } })} />
-          <Select
-            label="Spacing"
-            options={[
-              { value: 'compact', label: 'Compact' },
-              { value: 'normal', label: 'Normal' },
-              { value: 'relaxed', label: 'Relaxed' },
-            ]}
-            value={theme.spacing}
-            onChange={(v) => handleCustomize({ spacing: v as ThemeConfig['spacing'] })}
-          />
-          <Input
-            label="Border radius"
-            value={theme.radius}
-            onChange={(e) => handleCustomize({ radius: e.target.value })}
-            placeholder="e.g. 8px"
-          />
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={onCreate}
+        style={{
+          width: '100%',
+          padding: '10px 16px',
+          border: '2px dashed var(--color-border-default)',
+          borderRadius: 10,
+          background: 'transparent',
+          color: 'var(--color-text-secondary)',
+          fontFamily: 'var(--font-family)',
+          fontSize: 13,
+          fontWeight: 500,
+          cursor: 'pointer',
+          transition: 'var(--transition-fast)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
+          marginTop: 8,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-brand)';
+          e.currentTarget.style.color = 'var(--color-brand)';
+          e.currentTarget.style.background = 'var(--color-brand-subtle)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = 'var(--color-border-default)';
+          e.currentTarget.style.color = 'var(--color-text-secondary)';
+          e.currentTarget.style.background = 'transparent';
+        }}
+      >
+        <Plus size={14} />
+        Create New Theme
+      </button>
     </div>
   );
 }
 
-const ThemeCard: React.FC<{
-  theme: ThemeConfig; selected: boolean; onClick: () => void;
-}> = ({ theme, selected, onClick }) => {
+function ThemeCard({
+  theme,
+  isActive,
+  onSelect,
+  onEdit,
+  onDelete,
+  onDuplicate,
+}: {
+  theme: ThemeConfig;
+  isActive: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onDelete?: () => void;
+  onDuplicate: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [menuOpen]);
+
   return (
     <div
-      onClick={onClick}
+      onClick={onSelect}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex', alignItems: 'center', gap: 12, padding: 12,
-        background: selected ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-        border: `1px solid ${selected ? 'var(--color-brand)' : 'var(--color-border-default)'}`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: 12,
+        background: isActive ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+        border: `1px solid ${isActive ? 'var(--color-brand)' : 'var(--color-border-default)'}`,
         borderRadius: 'var(--radius-lg)',
-        cursor: 'pointer', transition: 'all var(--transition-fast)',
+        cursor: 'pointer',
+        transition: 'all var(--transition-fast)',
         transform: hovered ? 'translateX(4px)' : 'none',
-        boxShadow: selected ? '0 0 0 1px var(--color-brand)' : 'none',
+        boxShadow: isActive ? '0 0 0 1px var(--color-brand)' : 'none',
       }}
     >
       <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
@@ -123,48 +255,310 @@ const ThemeCard: React.FC<{
         <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {theme.name}
         </div>
-        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-          {theme.spacing} · {theme.radius}
-        </div>
+        {isActive && (
+          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Active</div>
+        )}
       </div>
-      {selected && <Check size={16} color="var(--color-brand)" />}
+      {isActive && <Check size={16} color="var(--color-brand)" style={{ flexShrink: 0 }} />}
+
+      <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
+        <MenuBtn onClick={() => setMenuOpen(!menuOpen)} />
+        {menuOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            right: 0,
+            marginTop: 4,
+            background: 'var(--color-bg-secondary)',
+            border: '1px solid var(--color-border-default)',
+            borderRadius: 8,
+            padding: 4,
+            minWidth: 130,
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            zIndex: 100,
+          }}>
+            <DropdownItem icon={<Pencil size={14} />} label="Edit" onClick={() => { setMenuOpen(false); onEdit(); }} />
+            <DropdownItem icon={<Copy size={14} />} label="Duplicate" onClick={() => { setMenuOpen(false); onDuplicate(); }} />
+            {onDelete && (
+              <DropdownItem icon={<Trash2 size={14} />} label="Delete" variant="danger" onClick={() => { setMenuOpen(false); onDelete(); }} />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
-};
+}
 
-const ColorRow: React.FC<{
-  label: string; value: string; onChange: (v: string) => void;
-}> = ({ label, value, onChange }) => (
-  <div>
-    <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+function MenuBtn({ onClick }: { onClick: () => void }) {
+  const [h, setH] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        width: 28,
+        height: 28,
+        background: h ? 'var(--color-bg-hover)' : 'transparent',
+        border: 'none',
+        borderRadius: 6,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        color: h ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+        transition: 'var(--transition-fast)',
+      }}
+    >
+      <MoreVertical size={16} />
+    </button>
+  );
+}
+
+function DropdownItem({ icon, label, onClick, variant }: { icon: React.ReactNode; label: string; onClick: () => void; variant?: 'danger' }) {
+  const [h, setH] = useState(false);
+  const isDanger = variant === 'danger';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '8px 12px',
+        borderRadius: 6,
+        cursor: 'pointer',
+        color: isDanger
+          ? h ? 'var(--color-error)' : 'var(--color-error)'
+          : h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        fontSize: 13,
+        transition: 'var(--transition-fast)',
+        border: 'none',
+        background: h
+          ? isDanger ? 'rgba(239, 68, 68, 0.1)' : 'var(--color-bg-tertiary)'
+          : 'transparent',
+        width: '100%',
+        textAlign: 'left',
+        fontFamily: 'var(--font-family)',
+      }}
+    >
+      {icon}
       {label}
-    </label>
-    <div style={{ display: 'flex', gap: 8 }}>
-      <input
-        type="color"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        style={{
-          width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-          border: '1px solid var(--color-border-default)', cursor: 'pointer',
-          padding: 2, background: 'var(--color-bg-tertiary)',
-        }}
-      />
+    </button>
+  );
+}
+
+function ThemeEditorView({
+  theme,
+  onBack,
+  onUpdate,
+}: {
+  theme: ThemeConfig;
+  onBack: () => void;
+  onUpdate: (updates: Partial<ThemeConfig>) => void;
+}) {
+  const updateColor = (key: keyof ThemeConfig['colors'], value: string) => {
+    onUpdate({ colors: { ...theme.colors, [key]: value } });
+  };
+
+  const updateTypography = (key: keyof ThemeConfig['typography'], value: string) => {
+    onUpdate({ typography: { ...theme.typography, [key]: value } });
+  };
+
+  return (
+    <div style={{ padding: 20 }}>
+      {/* Header with back button */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 16,
+        paddingBottom: 12,
+        borderBottom: '1px solid var(--color-border-default)',
+      }}>
+        <BackBtn onClick={onBack} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            Edit Theme
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
+            Customize colors & typography
+          </div>
+        </div>
+      </div>
+
+      {/* Theme name input */}
       <input
         type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
         className="mep-input"
+        value={theme.name}
+        onChange={(e) => onUpdate({ name: e.target.value })}
+        placeholder="Theme name"
         style={{
-          flex: 1, height: 36, padding: '0 12px',
+          width: '100%',
+          height: 40,
+          padding: '0 12px',
           background: 'var(--color-bg-tertiary)',
           border: '1px solid var(--color-border-default)',
           borderRadius: 'var(--radius-md)',
           color: 'var(--color-text-primary)',
-          fontSize: '0.875rem', fontFamily: 'var(--font-mono)',
-          outline: 'none', transition: 'all var(--transition-fast)',
+          fontSize: 14,
+          fontWeight: 500,
+          fontFamily: 'var(--font-family)',
+          outline: 'none',
+          marginBottom: 16,
+          transition: 'var(--transition-fast)',
         }}
       />
+
+      {/* Colors */}
+      <EditorSection title="Colors">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <ColorRow label="Primary" value={theme.colors.primary} onChange={(v) => updateColor('primary', v)} />
+          <ColorRow label="Background" value={theme.colors.background} onChange={(v) => updateColor('background', v)} />
+          <ColorRow label="Text" value={theme.colors.text} onChange={(v) => updateColor('text', v)} />
+          <ColorRow label="Secondary text" value={theme.colors.secondary} onChange={(v) => updateColor('secondary', v)} />
+        </div>
+      </EditorSection>
+
+      {/* Typography */}
+      <EditorSection title="Typography">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Select
+            label="Heading font"
+            options={[
+              { value: 'Inter', label: 'Inter' },
+              { value: 'Netflix Sans', label: 'Netflix Sans' },
+              { value: 'Roboto', label: 'Roboto' },
+              { value: 'Arial', label: 'Arial' },
+            ]}
+            value={theme.typography.headlineFont}
+            onChange={(v) => updateTypography('headlineFont', v)}
+          />
+          <Select
+            label="Body font"
+            options={[
+              { value: 'Inter', label: 'Inter' },
+              { value: 'Netflix Sans', label: 'Netflix Sans' },
+              { value: 'Roboto', label: 'Roboto' },
+              { value: 'Arial', label: 'Arial' },
+            ]}
+            value={theme.typography.bodyFont}
+            onChange={(v) => updateTypography('bodyFont', v)}
+          />
+        </div>
+      </EditorSection>
+
+      {/* Spacing */}
+      <EditorSection title="Spacing" last>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Select
+            label="Content spacing"
+            options={[
+              { value: 'compact', label: 'Compact' },
+              { value: 'normal', label: 'Normal' },
+              { value: 'relaxed', label: 'Relaxed' },
+            ]}
+            value={theme.spacing}
+            onChange={(v) => onUpdate({ spacing: v as ThemeConfig['spacing'] })}
+          />
+          <Input
+            label="Border radius"
+            fullWidth
+            value={theme.radius}
+            onChange={(e) => onUpdate({ radius: e.target.value })}
+            placeholder="e.g. 8px"
+          />
+        </div>
+      </EditorSection>
     </div>
-  </div>
-);
+  );
+}
+
+function BackBtn({ onClick }: { onClick: () => void }) {
+  const [h, setH] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        width: 32,
+        height: 32,
+        background: h ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        border: '1px solid var(--color-border-default)',
+        borderRadius: 8,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        color: h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        transition: 'var(--transition-fast)',
+        flexShrink: 0,
+      }}
+    >
+      <ArrowLeft size={16} />
+    </button>
+  );
+}
+
+function EditorSection({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
+  return (
+    <div style={{
+      marginBottom: last ? 0 : 20,
+      paddingBottom: last ? 0 : 16,
+      borderBottom: last ? 'none' : '1px solid var(--color-border-default)',
+    }}>
+      <h3 style={{
+        fontFamily: 'var(--font-display)',
+        fontSize: 11,
+        fontWeight: 600,
+        color: 'var(--color-text-tertiary)',
+        textTransform: 'none',
+        letterSpacing: 'var(--letter-spacing-wide)',
+        marginBottom: 12,
+      }}>
+        {title}
+      </h3>
+      {children}
+    </div>
+  );
+}
+
+function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+        {label}
+      </label>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="color"
+          className="mep-color-picker"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="mep-input"
+          style={{
+            flex: 1, minWidth: 0, height: 36, padding: '0 12px',
+            background: 'var(--color-bg-tertiary)',
+            border: '1px solid var(--color-border-default)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-text-primary)',
+            fontSize: '0.875rem', fontFamily: 'var(--font-mono)',
+            outline: 'none', transition: 'all var(--transition-fast)',
+          }}
+        />
+      </div>
+    </div>
+  );
+}

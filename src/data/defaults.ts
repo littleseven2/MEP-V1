@@ -164,6 +164,11 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         body: { enabled: true, text: 'Body text goes here.' },
         link: { enabled: true, text: 'Learn more', url: '#' },
         order: ['eyebrow', 'headline', 'body', 'link'],
+        padding: 0,
+        backgroundColor: 'transparent',
+        backgroundRadius: [0, 0, 0, 0],
+        strokeColor: 'transparent',
+        strokeWidth: 0,
       };
       return { type: 'text-block', settings: textBlockSettings };
     }
@@ -175,6 +180,10 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         lineHeight: 1.6,
         color: '#ffffff',
         padding: 0,
+        backgroundColor: 'transparent',
+        backgroundRadius: [0, 0, 0, 0],
+        strokeColor: 'transparent',
+        strokeWidth: 0,
       };
       return { type: 'rich-text', settings: richTextSettings };
     }
@@ -184,6 +193,11 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         url: '',
         alignment: 'center',
         isInteractive: false,
+        padding: 0,
+        backgroundColor: 'transparent',
+        backgroundRadius: [0, 0, 0, 0],
+        strokeColor: 'transparent',
+        strokeWidth: 0,
       };
       return { type: 'media', settings: mediaSettings };
     }
@@ -200,6 +214,11 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
             textColor: '#ffffff',
           },
         ],
+        padding: 0,
+        backgroundColor: 'transparent',
+        backgroundRadius: [0, 0, 0, 0],
+        strokeColor: 'transparent',
+        strokeWidth: 0,
       };
       return { type: 'cta', settings: ctaSettings };
     }
@@ -208,6 +227,14 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         layout: '2-up',
         spacing: true,
         items: [],
+        rows: [3, 3],
+        gap: 8,
+        itemRadius: 8,
+        padding: 0,
+        backgroundColor: 'transparent',
+        backgroundRadius: [0, 0, 0, 0],
+        strokeColor: 'transparent',
+        strokeWidth: 0,
       };
       return { type: 'grid', settings: gridSettings };
     }
@@ -223,9 +250,13 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
           { title: 'Episode 2', subtitle: 'The Discovery', metadata: 'CTA' },
           { title: 'Episode 3', subtitle: 'Breaking Point', metadata: 'CTA' },
         ],
+        itemStyleMode: 'whole',
+        itemStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 },
         padding: 0,
         backgroundColor: 'transparent',
         backgroundRadius: [0, 0, 0, 0],
+        strokeColor: 'transparent',
+        strokeWidth: 0,
       };
       return { type: 'list', settings: listSettings };
     }

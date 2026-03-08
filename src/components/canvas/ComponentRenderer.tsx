@@ -7,26 +7,42 @@ interface ComponentRendererProps {
   sectionId: string;
 }
 
-function MediaPreview({ settings }: { settings: { alignment: string } }) {
+function strokeStyle(color?: string, width?: number): React.CSSProperties {
+  const w = width ?? 0;
+  const c = color ?? 'transparent';
+  if (!w || c === 'transparent') return {};
+  return { border: `${w}px solid ${c}` };
+}
+
+function MediaPreview({ settings }: { settings: { alignment: string; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
+  const hasBgRadius = r.some((v) => v > 0);
   return (
-    <div
-      style={{
-        width: '100%',
-        aspectRatio: '16/9',
-        background: 'linear-gradient(135deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 100%)',
-        borderRadius: 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: settings.alignment === 'center' ? 'center' : settings.alignment === 'left' ? 'flex-start' : 'flex-end',
-        padding: 16,
-      }}
-    >
-      <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>Media</span>
+    <div style={{
+      padding: settings.padding ?? 0,
+      background: settings.backgroundColor || 'transparent',
+      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
+      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
+    }}>
+      <div
+        style={{
+          width: '100%',
+          aspectRatio: '16/9',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+          borderRadius: hasBgRadius ? 0 : 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: settings.alignment === 'center' ? 'center' : settings.alignment === 'left' ? 'flex-start' : 'flex-end',
+          padding: 16,
+        }}
+      >
+        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>Media</span>
+      </div>
     </div>
   );
 }
 
-function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; order: ('eyebrow' | 'headline' | 'body' | 'link')[] } }) {
+function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; order: ('eyebrow' | 'headline' | 'body' | 'link')[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const items = settings.order
     .filter((k) => (settings[k] as { enabled?: boolean })?.enabled)
     .map((k) => {
@@ -39,29 +55,42 @@ function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolea
     })
     .filter(Boolean) as { type: string; text: string }[];
 
+  const eyebrowColor = 'rgba(255,255,255,0.9)';
+  const headlineColor = '#fff';
+  const bodyColor = 'rgba(255,255,255,0.65)';
+  const linkColor = 'rgba(255,255,255,0.65)';
+
+  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 4,
+      padding: settings.padding ?? 0,
+      background: settings.backgroundColor || 'transparent',
+      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
+      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
+    }}>
       {items?.map((item, i) => (
         <div key={i}>
           {item?.type === 'eyebrow' && (
-            <p style={{ fontSize: 14, fontWeight: 500, lineHeight: '22px', color: 'white' }}>
+            <p style={{ fontSize: 14, fontWeight: 500, lineHeight: '22px', color: eyebrowColor }}>
               {item.text}
             </p>
           )}
           {item?.type === 'headline' && (
-            <p style={{ fontSize: 28, fontWeight: 700, lineHeight: '36px', color: 'white' }}>
+            <p style={{ fontSize: 28, fontWeight: 700, lineHeight: '36px', color: headlineColor }}>
               {item.text}
             </p>
           )}
           {item?.type === 'body' && (
-            <p style={{ fontSize: 16, fontWeight: 400, lineHeight: '24px', color: 'rgba(255,255,255,0.7)' }}>
+            <p style={{ fontSize: 16, fontWeight: 400, lineHeight: '24px', color: bodyColor }}>
               {item.text}
             </p>
           )}
           {item?.type === 'link' && (
             <a href="#" onClick={(e) => e.preventDefault()} style={{
               fontSize: 16, fontWeight: 400, lineHeight: '24px',
-              color: 'rgba(255,255,255,0.7)', textDecoration: 'underline',
+              color: linkColor, textDecoration: 'underline',
             }}>
               {item.text}
             </a>
@@ -72,9 +101,16 @@ function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolea
   );
 }
 
-function CTAPreview({ settings }: { settings: { buttons: { text: string; fillColor: string; borderColor: string; textColor: string }[] } }) {
+function CTAPreview({ settings }: { settings: { buttons: { text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: 8,
+      padding: settings.padding ?? 0,
+      background: settings.backgroundColor || 'transparent',
+      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
+      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
+    }}>
       {settings.buttons.map((btn, i) => (
         <button
           key={i}
@@ -96,49 +132,61 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
   );
 }
 
-function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[] } }) {
-  const count = settings.items.length || 4;
-  const cols = settings.layout.includes('2') ? 2 : settings.layout.includes('3') ? 3 : settings.layout.includes('4') ? 4 : 6;
+function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; rows?: number[]; gap?: number; itemRadius?: number; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
+  const rows = settings.rows ?? [3, 3];
+  const gapPx = settings.gap ?? 8;
+  const radius = settings.itemRadius ?? 8;
+  let cellIdx = 0;
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
-        gap: 8,
-      }}
-    >
-      {Array.from({ length: Math.max(count, 2) }).map((_, i) => (
-        <div
-          key={i}
-          style={{
-            aspectRatio: '1',
-            background: 'var(--color-bg-tertiary)',
-            borderRadius: 8,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            color: 'var(--color-text-muted)',
-          }}
-        >
-          {i + 1}
-        </div>
-      ))}
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: gapPx,
+      padding: settings.padding ?? 0,
+      background: settings.backgroundColor || 'transparent',
+      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
+      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
+    }}>
+      {rows.map((cols, rowIdx) => {
+        const cells = Array.from({ length: cols }, () => ++cellIdx);
+        return (
+          <div key={rowIdx} style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+            gap: gapPx,
+          }}>
+            {cells.map((n) => (
+              <div key={n} style={{
+                aspectRatio: '1',
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: radius,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 12,
+                color: 'rgba(255,255,255,0.4)',
+              }}>
+                {n}
+              </div>
+            ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function ListItemText({ item, hasBackground }: { item: { title: string; subtitle?: string; metadata?: string }; hasBackground?: boolean }) {
+function ListItemText({ item }: { item: { title: string; subtitle?: string; metadata?: string } }) {
   return (
     <div>
-      <div style={{ fontWeight: 500, fontSize: 14, color: hasBackground ? 'rgba(255,255,255,1)' : undefined }}>{item.title}</div>
+      <div style={{ fontWeight: 500, fontSize: 14, color: '#fff' }}>{item.title}</div>
       {item.subtitle && (
-        <div style={{ fontSize: 12, color: hasBackground ? 'rgba(255,255,255,0.6)' : 'var(--color-text-secondary)' }}>{item.subtitle}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{item.subtitle}</div>
       )}
       {item.metadata && (
         <a href="#" onClick={(e) => e.preventDefault()} style={{
           display: 'inline-block', marginTop: 4, fontSize: 12, fontWeight: 500,
-          color: hasBackground ? 'rgba(255,255,255,0.8)' : 'var(--color-brand)', textDecoration: 'none',
+          color: 'rgba(255,255,255,0.8)', textDecoration: 'none',
         }}>{item.metadata}</a>
       )}
     </div>
@@ -149,19 +197,26 @@ function ListThumbnail({ size = 60 }: { size?: number }) {
   return (
     <div style={{
       width: size, height: size,
-      background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0,
+      background: 'rgba(255,255,255,0.08)', borderRadius: 8, flexShrink: 0,
     }} />
   );
 }
 
-function ListPreview({ settings }: { settings: { layout: string; columns: number; showThumbnail: boolean; showDivider: boolean; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number] } }) {
+function ListPreview({ settings }: { settings: { layout: string; columns: number; showThumbnail: boolean; showDivider: boolean; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; style?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const limit = settings.itemCount === 'all' ? settings.items.length : settings.itemCount;
   const items = settings.items.slice(0, limit);
   const isStacked = settings.layout === 'schedules';
   const bg = settings.backgroundColor ?? 'transparent';
-  const hasBg = bg !== 'transparent' && bg !== '';
-  const dividerColor = hasBg ? 'rgba(255,255,255,0.15)' : 'var(--color-border-default)';
+  const dividerColor = 'rgba(255,255,255,0.15)';
   const radii = settings.backgroundRadius ?? [0, 0, 0, 0];
+  const styleMode = settings.itemStyleMode ?? 'whole';
+  const wholeStyle = settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0] as [number, number, number, number], strokeColor: 'transparent', strokeWidth: 0 };
+  const noStyle = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0] as [number, number, number, number], strokeColor: 'transparent', strokeWidth: 0 };
+
+  const getItemStyle = (item: typeof items[0]) => {
+    if (styleMode === 'individual') return item.style ?? noStyle;
+    return wholeStyle;
+  };
 
   return (
     <div style={{
@@ -171,24 +226,34 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
       padding: settings.padding ?? 0,
       background: bg,
       borderRadius: `${radii[0]}px ${radii[1]}px ${radii[2]}px ${radii[3]}px`,
+      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
     }}>
       {items.map((item, i) => {
         const divider = settings.showDivider;
+        const iStyle = getItemStyle(item);
+        const ir = iStyle.backgroundRadius;
+        const itemWrap: React.CSSProperties = {
+          padding: iStyle.padding || undefined,
+          background: iStyle.backgroundColor || undefined,
+          borderRadius: (ir[0] || ir[1] || ir[2] || ir[3]) ? `${ir[0]}px ${ir[1]}px ${ir[2]}px ${ir[3]}px` : undefined,
+          ...strokeStyle(iStyle.strokeColor, iStyle.strokeWidth),
+        };
 
         if (isStacked) {
           return (
             <div key={i} style={{
+              ...itemWrap,
               display: 'flex', flexDirection: 'column', gap: 8,
-              paddingBottom: divider ? 12 : 0,
+              paddingBottom: iStyle.padding || (divider ? 12 : 0),
               borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
             }}>
               {settings.showThumbnail && (
                 <div style={{
                   width: '100%', aspectRatio: '16/9',
-                  background: 'var(--color-bg-tertiary)', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.08)', borderRadius: 8,
                 }} />
               )}
-              <ListItemText item={item} hasBackground={hasBg} />
+              <ListItemText item={item} />
             </div>
           );
         }
@@ -197,21 +262,22 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
 
         return (
           <div key={i} style={{
+            ...itemWrap,
             display: 'flex', gap: 12,
             justifyContent: isRightAligned ? 'space-between' : 'flex-start',
             alignItems: 'flex-start',
-            paddingBottom: divider ? 16 : 0,
+            paddingBottom: iStyle.padding || (divider ? 16 : 0),
             borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
           }}>
             {isRightAligned ? (
               <>
-                <ListItemText item={item} hasBackground={hasBg} />
+                <ListItemText item={item} />
                 {settings.showThumbnail && <ListThumbnail />}
               </>
             ) : (
               <>
                 {settings.showThumbnail && <ListThumbnail />}
-                <ListItemText item={item} hasBackground={hasBg} />
+                <ListItemText item={item} />
               </>
             )}
           </div>
@@ -288,6 +354,11 @@ function RichTextPreview({ settings, componentId, sectionId }: { settings: RichT
         lineHeight: settings.lineHeight,
         color: settings.color,
         textAlign: settings.alignment,
+        background: settings.backgroundColor || 'transparent',
+        borderRadius: settings.backgroundRadius
+          ? `${settings.backgroundRadius[0]}px ${settings.backgroundRadius[1]}px ${settings.backgroundRadius[2]}px ${settings.backgroundRadius[3]}px`
+          : 0,
+        ...strokeStyle(settings.strokeColor, settings.strokeWidth),
         outline: 'none',
         cursor: isSelected ? 'text' : 'pointer',
         wordBreak: 'break-word',

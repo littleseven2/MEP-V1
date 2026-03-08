@@ -25,6 +25,13 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       style={{
         borderLeft: isSelected ? '2px solid var(--color-brand)' : '2px solid transparent',
         background: section.background.value,
+        padding: section.padding ?? 0,
+        borderRadius: section.backgroundRadius
+          ? `${section.backgroundRadius[0]}px ${section.backgroundRadius[1]}px ${section.backgroundRadius[2]}px ${section.backgroundRadius[3]}px`
+          : 0,
+        ...(section.strokeWidth && section.strokeColor && section.strokeColor !== 'transparent'
+          ? { boxShadow: `inset 0 0 0 ${section.strokeWidth}px ${section.strokeColor}` }
+          : {}),
         transition: 'border-color var(--transition-fast)',
         fontFamily: 'var(--font-family)',
       }}
@@ -53,13 +60,13 @@ export function SectionRenderer({ section }: SectionRendererProps) {
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '12px 0',
-              borderBottom: '1px solid var(--color-border-default)',
+              borderBottom: '1px solid rgba(255,255,255,0.15)',
             }}
           >
-            <span style={{ fontSize: 18, fontWeight: 700 }}>
+            <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>
               Netflix
             </span>
-            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
               View in Browser
             </span>
           </div>
@@ -70,7 +77,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
             style={{
               padding: '12px 0',
               fontSize: 11,
-              color: 'var(--color-text-muted)',
+              color: 'rgba(255,255,255,0.4)',
             }}
           >
             Unsubscribe · Privacy · Help Center
@@ -84,7 +91,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
                 style={{
                   padding: 32,
                   textAlign: 'center',
-                  color: 'var(--color-text-muted)',
+                  color: 'rgba(255,255,255,0.3)',
                   fontSize: 14,
                 }}
               >

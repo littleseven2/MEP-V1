@@ -31,7 +31,7 @@ export type CTALayout =
   | '2-side-by-side'
   | '3-stacked-link';
 
-// Grid layout options
+// Grid layout options (legacy, kept for compatibility)
 export type GridLayout =
   | '2-up'
   | '3-up'
@@ -108,6 +108,10 @@ export interface Section {
   isPrimary: boolean;
   hydration: SectionHydration;
   background: BackgroundConfig;
+  padding: number;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
   conditions: unknown[];
   components: MessageComponent[];
   order: number;
@@ -120,6 +124,11 @@ export interface TextBlockSettings {
   body: { enabled: boolean; text: string };
   link: { enabled: boolean; text: string; url: string };
   order: ('eyebrow' | 'headline' | 'body' | 'link')[];
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
 }
 
 // Media settings
@@ -129,6 +138,11 @@ export interface MediaSettings {
   customUrl?: string;
   alignment: 'left' | 'center' | 'right';
   isInteractive: boolean;
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
 }
 
 // CTA button config
@@ -145,6 +159,11 @@ export interface CTAButton {
 export interface CTASettings {
   layout: CTALayout;
   buttons: CTAButton[];
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
 }
 
 // Grid item
@@ -159,16 +178,33 @@ export interface GridSettings {
   layout: GridLayout;
   spacing: boolean;
   items: GridItem[];
+  rows: number[];
+  gap: number;
+  itemRadius: number;
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
 }
 
 // List columns
 export type ListColumns = 1 | 2 | 3;
 
 // List item
+export interface ListItemStyle {
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
+}
+
 export interface ListItem {
   title: string;
   subtitle?: string;
   metadata?: string;
+  style?: ListItemStyle;
 }
 
 // List settings
@@ -179,9 +215,13 @@ export interface ListSettings {
   showThumbnail: boolean;
   itemCount: 'all' | number;
   items: ListItem[];
+  itemStyleMode: 'whole' | 'individual';
+  itemStyle: ListItemStyle;
   padding: number;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
 }
 
 // Rich text settings
@@ -192,6 +232,10 @@ export interface RichTextSettings {
   lineHeight: number;
   color: string;
   padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
 }
 
 // Component settings discriminated union

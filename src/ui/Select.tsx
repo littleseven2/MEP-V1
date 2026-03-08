@@ -80,6 +80,7 @@ export function Select({
       <button
         id={selectId}
         type="button"
+        className="mep-select"
         disabled={disabled}
         onClick={() => setOpen(!open)}
         onMouseEnter={() => setHovered(true)}
@@ -122,21 +123,22 @@ export function Select({
           left: 0,
           right: 0,
           marginTop: 4,
-          background: 'var(--color-bg-secondary)',
+          background: 'var(--color-bg-tertiary)',
           border: '1px solid var(--color-border-default)',
           borderRadius: 'var(--radius-md)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-          zIndex: 100,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          zIndex: 1000,
           overflow: 'hidden',
           maxHeight: 200,
           overflowY: 'auto',
+          scrollbarWidth: 'none',
         }}>
           {options.map((opt) => (
             <div
               key={opt.value}
               onClick={() => { onChange(opt.value); setOpen(false); }}
               style={{
-                padding: '8px 12px',
+                padding: '10px 12px',
                 fontSize: dims.fontSize,
                 fontFamily: 'var(--font-family)',
                 color: opt.value === value ? 'var(--color-brand)' : 'var(--color-text-primary)',
@@ -145,7 +147,7 @@ export function Select({
                 transition: 'background 100ms ease',
               }}
               onMouseEnter={(e) => {
-                if (opt.value !== value) e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                if (opt.value !== value) e.currentTarget.style.background = 'var(--color-bg-hover)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = opt.value === value ? 'var(--color-brand-subtle)' : 'transparent';

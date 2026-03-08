@@ -51,11 +51,19 @@ function PreviewComponent({ component }: { component: MessageComponent }) {
     );
   }
   if (component.settings.type === 'grid') {
-    const cols = component.settings.settings.layout.includes('2') ? 2 : component.settings.settings.layout.includes('3') ? 3 : 4;
+    const rows = component.settings.settings.rows ?? [3, 3];
+    const gapPx = component.settings.settings.gap ?? 8;
+    const radius = component.settings.settings.itemRadius ?? 8;
+    let n = 0;
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 8 }}>
-        {Array.from({ length: Math.max(component.settings.settings.items.length, 4) }).map((_, i) => (
-          <div key={i} style={{ aspectRatio: '1', background: 'var(--color-bg-tertiary)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--color-text-tertiary)' }}>{i + 1}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: gapPx }}>
+        {rows.map((cols, ri) => (
+          <div key={ri} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: gapPx }}>
+            {Array.from({ length: cols }).map(() => {
+              n++;
+              return <div key={n} style={{ aspectRatio: '1', background: 'var(--color-bg-tertiary)', borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--color-text-tertiary)' }}>{n}</div>;
+            })}
+          </div>
         ))}
       </div>
     );
