@@ -1,5 +1,6 @@
+import { useRef, useEffect } from 'react';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent } from '../../types/message';
+import type { MessageComponent, RichTextSettings } from '../../types/message';
 
 interface ComponentRendererProps {
   component: MessageComponent;
@@ -184,7 +185,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
               {settings.showThumbnail && (
                 <div style={{
                   width: '100%', aspectRatio: '16/9',
-                  background: hasBg ? 'rgba(255,255,255,0.1)' : 'var(--color-bg-tertiary)', borderRadius: 8,
+                  background: 'var(--color-bg-tertiary)', borderRadius: 8,
                 }} />
               )}
               <ListItemText item={item} hasBackground={hasBg} />
@@ -198,7 +199,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
           <div key={i} style={{
             display: 'flex', gap: 12,
             justifyContent: isRightAligned ? 'space-between' : 'flex-start',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             paddingBottom: divider ? 16 : 0,
             borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
           }}>
@@ -220,6 +221,81 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
   );
 }
 
+function RichTextPreview({ settings, componentId, sectionId }: { settings: RichTextSettings; componentId: string; sectionId: string }) {
+  const editorRef = useRef<HTMLDivElement>(null);
+  const internalContent = useRef(settings.content);
+  const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
+  const isSelected = selectedComponentId === componentId;
+  const wasSelected = useRef(false);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (!isSelected && internalContent.current !== settings.content) {
+      editorRef.current.innerHTML = settings.content;
+      internalContent.current = settings.content;
+    }
+  }, [settings.content, isSelected]);
+
+  useEffect(() => {
+    if (isSelected && !wasSelected.current && editorRef.current) {
+      editorRef.current.focus();
+    }
+    wasSelected.current = isSelected;
+  }, [isSelected]);
+
+  const handleInput = () => {
+    if (!editorRef.current) return;
+    const html = editorRef.current.innerHTML;
+    internalContent.current = html;
+    if (html !== settings.content) {
+      updateComponentSettings(sectionId, componentId, {
+        type: 'rich-text',
+        settings: { ...settings, content: html },
+      });
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'b' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      document.execCommand('bold');
+    } else if (e.key === 'i' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      document.execCommand('italic');
+    } else if (e.key === 'u' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      document.execCommand('underline');
+    }
+  };
+
+  return (
+    <div
+      ref={(el) => {
+        (editorRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+        if (el && !el.innerHTML) {
+          el.innerHTML = settings.content;
+        }
+      }}
+      contentEditable={isSelected}
+      suppressContentEditableWarning
+      onInput={handleInput}
+      onKeyDown={handleKeyDown}
+      style={{
+        minHeight: 40,
+        padding: settings.padding,
+        fontSize: settings.fontSize,
+        lineHeight: settings.lineHeight,
+        color: settings.color,
+        textAlign: settings.alignment,
+        outline: 'none',
+        cursor: isSelected ? 'text' : 'pointer',
+        wordBreak: 'break-word',
+      }}
+    />
+  );
+}
+
 export function ComponentRenderer({ component, sectionId }: ComponentRendererProps) {
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const selectComponent = useMessageStore((s) => s.selectComponent);
@@ -236,6 +312,8 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
     content = <MediaPreview settings={component.settings.settings} />;
   } else if (component.settings.type === 'text-block') {
     content = <TextBlockPreview settings={component.settings.settings} />;
+  } else if (component.settings.type === 'rich-text') {
+    content = <RichTextPreview settings={component.settings.settings} componentId={component.id} sectionId={sectionId} />;
   } else if (component.settings.type === 'cta') {
     content = <CTAPreview settings={component.settings.settings} />;
   } else if (component.settings.type === 'grid') {

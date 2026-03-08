@@ -1,22 +1,21 @@
 import React, { useState } from 'react';
 import {
-  ArrowLeft, Eye, Save, Settings, Layers, Palette,
-  LayoutGrid, Sparkles, Send, Undo2, Redo2,
+  ArrowLeft, Eye, Settings, Layers, Palette,
+  Sparkles, Send, Undo2, Redo2, Component,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { Canvas } from '../canvas/Canvas';
 import { ComponentPalette } from '../sidebar/ComponentPalette';
 import { PropertiesPanel } from '../sidebar/PropertiesPanel';
 import { ThemePanel } from '../sidebar/ThemePanel';
+import { SectionPanel } from '../sidebar/SectionPanel';
 import { EmailPreview } from '../preview/EmailPreview';
 
-type LeftNav = 'components' | 'layers';
-type RightNav = 'properties' | 'theme';
+type LeftNav = 'theme' | 'section' | 'component';
 
 export const BuilderLayout: React.FC = () => {
   const { message, setView } = useMessageStore();
-  const [leftNav, setLeftNav] = useState<LeftNav>('components');
-  const [rightTab, setRightTab] = useState<RightNav>('properties');
+  const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
 
   if (!message) return null;
@@ -76,7 +75,6 @@ export const BuilderLayout: React.FC = () => {
 
         <div style={{ display: 'flex', gap: 8, justifySelf: 'end' }}>
           <HeaderBtn icon={<Eye size={14} />} label="Preview" onClick={() => setShowPreview(true)} />
-          <HeaderBtn icon={<Settings size={14} />} label="Settings" onClick={() => setView('setup')} />
           <HeaderBtn icon={<Send size={14} />} label="Save" primary onClick={() => {}} />
         </div>
       </div>
@@ -100,11 +98,11 @@ export const BuilderLayout: React.FC = () => {
           gap: 4,
           boxShadow: 'var(--shadow-md)',
         }}>
-          <VerticalNavItem icon={<LayoutGrid size={18} />} label="Components" active={leftNav === 'components'} onClick={() => setLeftNav('components')} />
-          <VerticalNavItem icon={<Layers size={18} />} label="Layers" active={leftNav === 'layers'} onClick={() => setLeftNav('layers')} />
-          <div style={{ width: 28, height: 1, background: 'var(--color-border-default)', margin: '8px 0' }} />
-          <VerticalNavItem icon={<ArrowLeft size={18} />} label="Back" active={false} onClick={() => setView('home')} />
+          <VerticalNavItem icon={<Palette size={18} />} label="Theme" active={leftNav === 'theme'} onClick={() => setLeftNav('theme')} />
+          <VerticalNavItem icon={<Layers size={18} />} label="Section" active={leftNav === 'section'} onClick={() => setLeftNav('section')} />
+          <VerticalNavItem icon={<Component size={18} />} label="Component" active={leftNav === 'component'} onClick={() => setLeftNav('component')} />
           <div style={{ flex: 1 }} />
+          <VerticalNavItem icon={<Settings size={18} />} label="Setup" active={false} onClick={() => setView('setup')} />
         </div>
 
         {/* Left Panel */}
@@ -127,10 +125,12 @@ export const BuilderLayout: React.FC = () => {
             color: 'var(--color-text-tertiary)',
             fontFamily: 'var(--font-display)',
           }}>
-            {leftNav === 'components' ? 'Components' : 'Layers'}
+            {leftNav === 'theme' ? 'Theme' : leftNav === 'section' ? 'Section' : 'Component'}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
-            <ComponentPalette />
+            {leftNav === 'theme' && <ThemePanel />}
+            {leftNav === 'section' && <SectionPanel />}
+            {leftNav === 'component' && <ComponentPalette />}
           </div>
         </div>
 
@@ -161,15 +161,30 @@ export const BuilderLayout: React.FC = () => {
           display: 'flex',
           flexDirection: 'column',
         }}>
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border-default)' }}>
-            <PanelTab active={rightTab === 'properties'} icon={<Layers size={13} />} label="Properties" onClick={() => setRightTab('properties')} />
-            <PanelTab active={rightTab === 'theme'} icon={<Palette size={13} />} label="Theme" onClick={() => setRightTab('theme')} />
+          <div style={{
+            padding: '16px 20px 12px',
+            borderBottom: '1px solid var(--color-border-default)',
+            fontSize: 'var(--font-size-xs)',
+            fontWeight: 600,
+            textTransform: 'none',
+            letterSpacing: 'var(--letter-spacing-wide)',
+            color: 'var(--color-text-tertiary)',
+            fontFamily: 'var(--font-display)',
+          }}>
+            {leftNav === 'section' ? 'Section Properties' : leftNav === 'component' ? 'Component Properties' : 'Properties'}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
-            {rightTab === 'properties' ? <PropertiesPanel /> : <ThemePanel />}
+            {leftNav === 'section' && <PropertiesPanel mode="section" />}
+            {leftNav === 'component' && <PropertiesPanel mode="component" />}
+            {leftNav === 'theme' && (
+              <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
+                Theme settings are on the left panel.
+              </div>
+            )}
           </div>
         </div>
       </div>
+
     </div>
   );
 };
@@ -243,22 +258,6 @@ const HeaderBtn: React.FC<{
         color: h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
         borderColor: h ? 'var(--color-border-strong)' : 'var(--color-border-default)',
       }),
-    }}>{icon}{label}</button>
-  );
-};
-
-const PanelTab: React.FC<{
-  active: boolean; icon: React.ReactNode; label: string; onClick: () => void;
-}> = ({ active, icon, label, onClick }) => {
-  const [h, setH] = React.useState(false);
-  return (
-    <button onClick={onClick} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)} style={{
-      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-      padding: '12px 16px', background: 'none', border: 'none',
-      borderBottom: `2px solid ${active ? 'var(--color-brand)' : 'transparent'}`,
-      color: active ? 'var(--color-text-primary)' : h ? 'var(--color-text-secondary)' : 'var(--color-text-tertiary)',
-      fontSize: 'var(--font-size-sm)', fontWeight: 500, fontFamily: 'var(--font-display)',
-      cursor: 'pointer', transition: 'all var(--transition-fast)',
     }}>{icon}{label}</button>
   );
 };

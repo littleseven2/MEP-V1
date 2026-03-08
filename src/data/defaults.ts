@@ -4,6 +4,7 @@ import type {
   ComponentType,
   ComponentSettings,
   TextBlockSettings,
+  RichTextSettings,
   MediaSettings,
   CTASettings,
   GridSettings,
@@ -165,6 +166,17 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         order: ['eyebrow', 'headline', 'body', 'link'],
       };
       return { type: 'text-block', settings: textBlockSettings };
+    }
+    case 'rich-text': {
+      const richTextSettings: RichTextSettings = {
+        content: '<p>Start typing your content here...</p>',
+        alignment: 'left',
+        fontSize: 16,
+        lineHeight: 1.6,
+        color: '#ffffff',
+        padding: 0,
+      };
+      return { type: 'rich-text', settings: richTextSettings };
     }
     case 'media': {
       const mediaSettings: MediaSettings = {

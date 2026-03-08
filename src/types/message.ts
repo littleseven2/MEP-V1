@@ -11,7 +11,7 @@ export type Cadence = 'temporal' | 'evergreen';
 export type SectionType = 'header' | 'content' | 'footer';
 
 // Component types
-export type ComponentType = 'media' | 'text-block' | 'cta' | 'grid' | 'list';
+export type ComponentType = 'media' | 'text-block' | 'rich-text' | 'cta' | 'grid' | 'list';
 
 // Netflix artwork formats + video
 export type MediaFormat =
@@ -184,9 +184,20 @@ export interface ListSettings {
   backgroundRadius: [number, number, number, number];
 }
 
+// Rich text settings
+export interface RichTextSettings {
+  content: string;
+  alignment: 'left' | 'center' | 'right';
+  fontSize: number;
+  lineHeight: number;
+  color: string;
+  padding: number;
+}
+
 // Component settings discriminated union
 export type ComponentSettings =
   | { type: 'text-block'; settings: TextBlockSettings }
+  | { type: 'rich-text'; settings: RichTextSettings }
   | { type: 'media'; settings: MediaSettings }
   | { type: 'cta'; settings: CTASettings }
   | { type: 'grid'; settings: GridSettings }
