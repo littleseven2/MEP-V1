@@ -284,6 +284,7 @@ export const useMessageStore = create<MessageStore>((set) =>
               id: uuid(),
               type,
               settings,
+              linkedValues: {},
               attachments: [],
               order: s.components.length,
             };

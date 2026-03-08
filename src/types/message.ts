@@ -265,11 +265,22 @@ export type ComponentSettings =
   | { type: 'grid'; settings: GridSettings }
   | { type: 'list'; settings: ListSettings };
 
+// Linked value for variable binding
+export interface LinkedValue<T = string> {
+  mode: 'linked' | 'custom';
+  variableKey?: string;
+  customValue?: T;
+}
+
+// Map of field paths to their linked state
+export type LinkedValues = Record<string, LinkedValue>;
+
 // Message component
 export interface MessageComponent {
   id: string;
   type: ComponentType;
   settings: ComponentSettings;
+  linkedValues: LinkedValues;
   attachments: unknown[];
   order: number;
 }

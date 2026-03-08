@@ -22,13 +22,16 @@ import type {
   ListItemStyle,
   ListColumns,
   GridCellStyle,
+  LinkedValues,
+  LinkedValue,
 } from '../../types/message';
 import {
   contentTypes,
   intentOptions,
   packageTypes,
 } from '../../data/defaults';
-import { Select, Toggle, Input } from '../../ui';
+import { entityVariables, themeVariables, allVariables } from '../../data/variables';
+import { Select, Toggle, Input, LinkedField, LinkedWrapper } from '../../ui';
 
 function PanelSection({
   title,
@@ -102,7 +105,7 @@ function StepperInput({ value, onChange, style }: { value: number; onChange: (v:
   );
 }
 
-function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style' }: {
+function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style', linked, onLink }: {
   padding: number;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
@@ -110,69 +113,66 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
   strokeWidth: number;
   onUpdate: (vals: { padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }) => void;
   title?: string;
+  linked?: LinkedValues;
+  onLink?: (fieldKey: string, lv: LinkedValue) => void;
 }) {
-  const labelStyle: CSSProperties = { display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 };
+  const colorVars = themeVariables.filter((v) => v.valueType === 'color');
+  const numberVars = [...themeVariables.filter((v) => v.valueType === 'text')];
   return (
     <PanelSection title={title}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div>
-          <label style={labelStyle}>Padding</label>
+        <LinkedWrapper
+          label="Padding"
+          linked={linked?.['padding']}
+          onLink={(lv) => onLink?.('padding', lv)}
+          variables={numberVars}
+          currentValue={String(padding)}
+          onValueFromVariable={(v) => onUpdate({ padding: parseInt(v) || 0 })}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <StepperBtn onClick={() => onUpdate({ padding: Math.max(0, padding - 1) })} disabled={padding <= 0}>‹</StepperBtn>
             <StepperInput value={padding} onChange={(v) => onUpdate({ padding: Math.max(0, v || 0) })} />
             <StepperBtn onClick={() => onUpdate({ padding: padding + 1 })}>›</StepperBtn>
           </div>
-        </div>
-        <div>
-          <label style={labelStyle}>Background color</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              type="color"
-              className="mep-color-picker"
-              value={backgroundColor === 'transparent' ? '#000000' : backgroundColor}
-              onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Input
-                fullWidth
-                value={backgroundColor}
-                onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
-                placeholder="transparent"
-              />
-            </div>
-          </div>
-        </div>
+        </LinkedWrapper>
+        <LinkedField
+          label="Background color"
+          value={backgroundColor}
+          linked={linked?.['backgroundColor']}
+          onChange={(v) => onUpdate({ backgroundColor: v })}
+          onLink={(lv) => onLink?.('backgroundColor', lv)}
+          variables={colorVars}
+          type="color"
+          placeholder="transparent"
+        />
         <RadiusControl
           radii={backgroundRadius}
           onChange={(r) => onUpdate({ backgroundRadius: r })}
         />
-        <div>
-          <label style={labelStyle}>Stroke color</label>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              type="color"
-              className="mep-color-picker"
-              value={strokeColor === 'transparent' ? '#000000' : strokeColor}
-              onChange={(e) => onUpdate({ strokeColor: e.target.value })}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <Input
-                fullWidth
-                value={strokeColor}
-                onChange={(e) => onUpdate({ strokeColor: e.target.value })}
-                placeholder="transparent"
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <label style={labelStyle}>Stroke weight</label>
+        <LinkedField
+          label="Stroke color"
+          value={strokeColor}
+          linked={linked?.['strokeColor']}
+          onChange={(v) => onUpdate({ strokeColor: v })}
+          onLink={(lv) => onLink?.('strokeColor', lv)}
+          variables={colorVars}
+          type="color"
+          placeholder="transparent"
+        />
+        <LinkedWrapper
+          label="Stroke weight"
+          linked={linked?.['strokeWidth']}
+          onLink={(lv) => onLink?.('strokeWidth', lv)}
+          variables={numberVars}
+          currentValue={String(strokeWidth)}
+          onValueFromVariable={(v) => onUpdate({ strokeWidth: parseInt(v) || 0 })}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <StepperBtn onClick={() => onUpdate({ strokeWidth: Math.max(0, strokeWidth - 1) })} disabled={strokeWidth <= 0}>‹</StepperBtn>
             <StepperInput value={strokeWidth} onChange={(v) => onUpdate({ strokeWidth: Math.max(0, v || 0) })} />
             <StepperBtn onClick={() => onUpdate({ strokeWidth: strokeWidth + 1 })}>›</StepperBtn>
           </div>
-        </div>
+        </LinkedWrapper>
       </div>
     </PanelSection>
   );
@@ -266,76 +266,61 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
     );
   }
 
+  const colorVars = themeVariables.filter((v) => v.valueType === 'color');
+  const numberVars = themeVariables.filter((v) => v.valueType === 'number');
+
   return (
     <>
       <PanelSection title="Visual">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Background color
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="mep-color-picker"
-                value={section.background.value === 'transparent' ? '#000000' : section.background.value}
-                onChange={(e) => updateBackground({ value: e.target.value })}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Input
-                  fullWidth
-                  value={section.background.value}
-                  onChange={(e) => updateBackground({ value: e.target.value })}
-                  placeholder="transparent"
-                />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Padding
-            </label>
+          <LinkedField
+            label="Background color"
+            value={section.background.value}
+            onChange={(v) => updateBackground({ value: v })}
+            onLink={() => {}}
+            variables={colorVars}
+            type="color"
+            placeholder="transparent"
+          />
+          <LinkedWrapper
+            label="Padding"
+            variables={numberVars}
+            onLink={() => {}}
+            currentValue={String(section.padding ?? 0)}
+            onValueFromVariable={(v) => updateSection(section.id, { padding: parseInt(v) || 0 })}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <StepperBtn onClick={() => updateSection(section.id, { padding: Math.max(0, (section.padding ?? 0) - 1) })} disabled={(section.padding ?? 0) <= 0}>‹</StepperBtn>
               <StepperInput value={section.padding ?? 0} onChange={(v) => updateSection(section.id, { padding: Math.max(0, v || 0) })} />
               <StepperBtn onClick={() => updateSection(section.id, { padding: (section.padding ?? 0) + 1 })}>›</StepperBtn>
             </div>
-          </div>
+          </LinkedWrapper>
           <RadiusControl
             radii={section.backgroundRadius ?? [0, 0, 0, 0]}
             onChange={(r) => updateSection(section.id, { backgroundRadius: r })}
           />
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Stroke color
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="mep-color-picker"
-                value={(section.strokeColor ?? 'transparent') === 'transparent' ? '#000000' : section.strokeColor}
-                onChange={(e) => updateSection(section.id, { strokeColor: e.target.value })}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Input
-                  fullWidth
-                  value={section.strokeColor ?? 'transparent'}
-                  onChange={(e) => updateSection(section.id, { strokeColor: e.target.value })}
-                  placeholder="transparent"
-                />
-              </div>
-            </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Stroke weight
-            </label>
+          <LinkedField
+            label="Stroke color"
+            value={section.strokeColor ?? 'transparent'}
+            onChange={(v) => updateSection(section.id, { strokeColor: v })}
+            onLink={() => {}}
+            variables={colorVars}
+            type="color"
+            placeholder="transparent"
+          />
+          <LinkedWrapper
+            label="Stroke weight"
+            variables={numberVars}
+            onLink={() => {}}
+            currentValue={String(section.strokeWidth ?? 0)}
+            onValueFromVariable={(v) => updateSection(section.id, { strokeWidth: parseInt(v) || 0 })}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <StepperBtn onClick={() => updateSection(section.id, { strokeWidth: Math.max(0, (section.strokeWidth ?? 0) - 1) })} disabled={(section.strokeWidth ?? 0) <= 0}>‹</StepperBtn>
               <StepperInput value={section.strokeWidth ?? 0} onChange={(v) => updateSection(section.id, { strokeWidth: Math.max(0, v || 0) })} />
               <StepperBtn onClick={() => updateSection(section.id, { strokeWidth: (section.strokeWidth ?? 0) + 1 })}>›</StepperBtn>
             </div>
-          </div>
+          </LinkedWrapper>
         </div>
       </PanelSection>
     </>
@@ -344,8 +329,14 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
 
 function TextBlockProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'text-block' ? component.settings.settings : null;
   if (!settings) return null;
+
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
 
   const update = (s: TextBlockSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'text-block', settings: s });
@@ -368,6 +359,9 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
 
   const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link' };
 
+  const fieldVarMap: Record<string, string> = { eyebrow: 'eyebrow', headline: 'headline', body: 'body' };
+  const textVars = entityVariables.filter((v) => v.valueType === 'text');
+
   const arrowBtnStyle = (disabled: boolean): React.CSSProperties => ({
     width: 22, height: 22, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
     background: 'transparent', border: '1px solid var(--color-border-default)',
@@ -383,6 +377,7 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
           {settings.order.map((key, idx) => {
             const isFirst = idx === 0;
             const isLast = idx === settings.order.length - 1;
+            const fieldKey = fieldVarMap[key] ?? key;
 
             return (
               <div key={key}>
@@ -403,25 +398,33 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                   </div>
                 </div>
                 {(settings[key] as { enabled: boolean }).enabled && key !== 'link' && (
-                  <Input
-                    fullWidth
+                  <LinkedField
                     value={(settings[key] as { text: string }).text}
-                    onChange={(e) => update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), text: e.target.value } })}
+                    linked={linked[fieldKey]}
+                    onChange={(v) => update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), text: v } })}
+                    onLink={(lv) => setLinked(fieldKey, lv)}
+                    variables={textVars}
                     placeholder={labels[key]}
                   />
                 )}
                 {key === 'link' && settings.link.enabled && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <Input
-                      fullWidth
+                    <LinkedField
+                      label="Link text"
                       value={settings.link.text}
-                      onChange={(e) => update({ ...settings, link: { ...settings.link, text: e.target.value } })}
+                      linked={linked['link.text']}
+                      onChange={(v) => update({ ...settings, link: { ...settings.link, text: v } })}
+                      onLink={(lv) => setLinked('link.text', lv)}
+                      variables={entityVariables.filter((v) => v.valueType === 'text')}
                       placeholder="Link text"
                     />
-                    <Input
-                      fullWidth
+                    <LinkedField
+                      label="URL"
                       value={settings.link.url}
-                      onChange={(e) => update({ ...settings, link: { ...settings.link, url: e.target.value } })}
+                      linked={linked['link.url']}
+                      onChange={(v) => update({ ...settings, link: { ...settings.link, url: v } })}
+                      onLink={(lv) => setLinked('link.url', lv)}
+                      variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
                       placeholder="URL"
                     />
                   </div>
@@ -467,6 +470,8 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
         strokeColor={settings.strokeColor ?? 'transparent'}
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
+        linked={linked}
+        onLink={setLinked}
       />
     </>
   );
@@ -474,11 +479,17 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
 
 function RichTextProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'rich-text' ? component.settings.settings : null;
   const [headingOpen, setHeadingOpen] = useState(false);
   const [textColorOpen, setTextColorOpen] = useState(false);
   const [highlightOpen, setHighlightOpen] = useState(false);
   if (!settings) return null;
+
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
 
   const update = (s: RichTextSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'rich-text', settings: s });
@@ -694,47 +705,44 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
     <>
       <PanelSection title="Typography">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Font size
-            </label>
+          <LinkedWrapper
+            label="Font size"
+            linked={linked['fontSize']}
+            onLink={(lv) => setLinked('fontSize', lv)}
+            variables={themeVariables}
+            currentValue={String(settings.fontSize)}
+            onValueFromVariable={(v) => update({ ...settings, fontSize: parseInt(v) || 16 })}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <StepperBtn onClick={() => update({ ...settings, fontSize: Math.max(10, settings.fontSize - 1) })} disabled={settings.fontSize <= 10}>‹</StepperBtn>
               <StepperInput value={settings.fontSize} onChange={(v) => update({ ...settings, fontSize: Math.max(10, v || 16) })} />
               <StepperBtn onClick={() => update({ ...settings, fontSize: settings.fontSize + 1 })}>›</StepperBtn>
             </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Line height
-            </label>
+          </LinkedWrapper>
+          <LinkedWrapper
+            label="Line height"
+            linked={linked['lineHeight']}
+            onLink={(lv) => setLinked('lineHeight', lv)}
+            variables={themeVariables}
+            currentValue={String(settings.lineHeight)}
+            onValueFromVariable={(v) => update({ ...settings, lineHeight: parseFloat(v) || 1.6 })}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <StepperBtn onClick={() => update({ ...settings, lineHeight: Math.max(1, +(settings.lineHeight - 0.1).toFixed(1)) })} disabled={settings.lineHeight <= 1}>‹</StepperBtn>
               <StepperInput value={settings.lineHeight} onChange={(v) => update({ ...settings, lineHeight: Math.max(1, v || 1.6) })} style={{ width: 48 }} />
               <StepperBtn onClick={() => update({ ...settings, lineHeight: +(settings.lineHeight + 0.1).toFixed(1) })}>›</StepperBtn>
             </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Text color
-            </label>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="color"
-                className="mep-color-picker"
-                value={settings.color}
-                onChange={(e) => update({ ...settings, color: e.target.value })}
-              />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Input
-                  fullWidth
-                  value={settings.color}
-                  onChange={(e) => update({ ...settings, color: e.target.value })}
-                  placeholder="#ffffff"
-                />
-              </div>
-            </div>
-          </div>
+          </LinkedWrapper>
+          <LinkedField
+            label="Text color"
+            value={settings.color}
+            linked={linked['color']}
+            onChange={(v) => update({ ...settings, color: v })}
+            onLink={(lv) => setLinked('color', lv)}
+            variables={themeVariables.filter((v) => v.valueType === 'color')}
+            type="color"
+            placeholder="#ffffff"
+          />
         </div>
       </PanelSection>
       <ComponentStyleControls
@@ -744,6 +752,8 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
         strokeColor={settings.strokeColor ?? 'transparent'}
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
+        linked={linked}
+        onLink={setLinked}
       />
     </>
   );
@@ -751,8 +761,14 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
 
 function MediaProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'media' ? component.settings.settings : null;
   if (!settings) return null;
+
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
 
   const update = (s: MediaSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'media', settings: s });
@@ -761,36 +777,58 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
     return (
       <PanelSection title="Media">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Select
-            label="Format"
-            options={[
-              { value: 'poster', label: 'Poster' },
-              { value: 'poster-art', label: 'Poster Art' },
-              { value: 'banner', label: 'Banner' },
-              { value: 'banner-art', label: 'Banner Art' },
-              { value: 'hero', label: 'Hero' },
-              { value: 'hero-art', label: 'Hero Art' },
-              { value: 'thumbnail', label: 'Thumbnail' },
-              { value: 'video', label: 'Video' },
-            ]}
-            value={settings.format}
-            onChange={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
-          />
-          <Select
-            label="Alignment"
-            options={[
-              { value: 'left', label: 'Left' },
-              { value: 'center', label: 'Center' },
-              { value: 'right', label: 'Right' },
-            ]}
-            value={settings.alignment}
-            onChange={(v) => update({ ...settings, alignment: v as MediaSettings['alignment'] })}
-          />
-          <Toggle
-            label="Interactive"
-            checked={settings.isInteractive}
-            onChange={(v) => update({ ...settings, isInteractive: v })}
-          />
+          <LinkedWrapper
+            linked={linked['format']}
+            onLink={(lv) => setLinked('format', lv)}
+            variables={entityVariables}
+            currentValue={settings.format}
+            onValueFromVariable={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
+          >
+            <Select
+              label="Format"
+              options={[
+                { value: 'poster', label: 'Poster' },
+                { value: 'poster-art', label: 'Poster Art' },
+                { value: 'banner', label: 'Banner' },
+                { value: 'banner-art', label: 'Banner Art' },
+                { value: 'hero', label: 'Hero' },
+                { value: 'hero-art', label: 'Hero Art' },
+                { value: 'thumbnail', label: 'Thumbnail' },
+                { value: 'video', label: 'Video' },
+              ]}
+              value={settings.format}
+              onChange={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
+            />
+          </LinkedWrapper>
+          <LinkedWrapper
+            linked={linked['alignment']}
+            onLink={(lv) => setLinked('alignment', lv)}
+            variables={themeVariables}
+            currentValue={settings.alignment}
+          >
+            <Select
+              label="Alignment"
+              options={[
+                { value: 'left', label: 'Left' },
+                { value: 'center', label: 'Center' },
+                { value: 'right', label: 'Right' },
+              ]}
+              value={settings.alignment}
+              onChange={(v) => update({ ...settings, alignment: v as MediaSettings['alignment'] })}
+            />
+          </LinkedWrapper>
+          <LinkedWrapper
+            linked={linked['isInteractive']}
+            onLink={(lv) => setLinked('isInteractive', lv)}
+            variables={entityVariables}
+            currentValue={String(settings.isInteractive)}
+          >
+            <Toggle
+              label="Interactive"
+              checked={settings.isInteractive}
+              onChange={(v) => update({ ...settings, isInteractive: v })}
+            />
+          </LinkedWrapper>
         </div>
       </PanelSection>
     );
@@ -799,16 +837,20 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
   return (
     <>
       <PanelSection title="Image">
-        <div>
-          <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-            Image radius
-          </label>
+        <LinkedWrapper
+          label="Image radius"
+          linked={linked['mediaRadius']}
+          onLink={(lv) => setLinked('mediaRadius', lv)}
+          variables={themeVariables.filter((v) => v.valueType === 'text')}
+          currentValue={String(settings.mediaRadius ?? 8)}
+          onValueFromVariable={(v) => update({ ...settings, mediaRadius: parseInt(v) || 8 })}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
             <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
             <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
           </div>
-        </div>
+        </LinkedWrapper>
       </PanelSection>
       <ComponentStyleControls
         padding={settings.padding ?? 0}
@@ -817,6 +859,8 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
         strokeColor={settings.strokeColor ?? 'transparent'}
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
+        linked={linked}
+        onLink={setLinked}
       />
     </>
   );
@@ -824,8 +868,14 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
 
 function CTAProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'cta' ? component.settings.settings : null;
   if (!settings) return null;
+
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
 
   const update = (s: CTASettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'cta', settings: s });
@@ -842,39 +892,37 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {settings.buttons.map((btn, i) => (
             <div key={i} style={{ padding: 12, background: 'var(--color-bg-tertiary)', borderRadius: 8 }}>
-              <Input
+              <LinkedField
                 label="Text"
-                fullWidth
                 value={btn.text}
-                onChange={(e) => updateButton(i, { text: e.target.value })}
-              />
-              <Input
-                label="URL"
-                fullWidth
-                value={btn.url}
-                onChange={(e) => updateButton(i, { url: e.target.value })}
-                style={{ marginTop: 8 }}
+                linked={linked[`btn.${i}.text`]}
+                onChange={(v) => updateButton(i, { text: v })}
+                onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
+                variables={entityVariables.filter((v) => v.valueType === 'text')}
+                placeholder="Button text"
               />
               <div style={{ marginTop: 8 }}>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                  Fill
-                </label>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input
-                    type="color"
-                    className="mep-color-picker"
-                    value={btn.fillColor}
-                    onChange={(e) => updateButton(i, { fillColor: e.target.value })}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <Input
-                      fullWidth
-                      value={btn.fillColor}
-                      onChange={(e) => updateButton(i, { fillColor: e.target.value })}
-                      placeholder="#E50914"
-                    />
-                  </div>
-                </div>
+                <LinkedField
+                  label="URL"
+                  value={btn.url}
+                  linked={linked[`btn.${i}.url`]}
+                  onChange={(v) => updateButton(i, { url: v })}
+                  onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
+                  variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
+                  placeholder="URL"
+                />
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <LinkedField
+                  label="Fill"
+                  value={btn.fillColor}
+                  linked={linked[`btn.${i}.fillColor`]}
+                  onChange={(v) => updateButton(i, { fillColor: v })}
+                  onLink={(lv) => setLinked(`btn.${i}.fillColor`, lv)}
+                  variables={themeVariables.filter((v) => v.valueType === 'color')}
+                  type="color"
+                  placeholder="#E50914"
+                />
               </div>
             </div>
           ))}
@@ -891,14 +939,22 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
       strokeColor={settings.strokeColor ?? 'transparent'}
       strokeWidth={settings.strokeWidth ?? 0}
       onUpdate={(v) => update({ ...settings, ...v })}
+      linked={linked}
+      onLink={setLinked}
     />
   );
 }
 
 function GridProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'grid' ? component.settings.settings : null;
   if (!settings) return null;
+
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
 
   const update = (s: GridSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'grid', settings: s });
@@ -1042,6 +1098,8 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
         strokeColor={settings.strokeColor ?? 'transparent'}
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
+        linked={linked}
+        onLink={setLinked}
       />
       <GridCellStyleSection settings={settings} update={update} />
     </>
@@ -1179,34 +1237,49 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
 
 function ListProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'list' ? component.settings.settings : null;
   if (!settings) return null;
 
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
+
   const update = (s: ListSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'list', settings: s });
-
 
   if (tab === 'content') {
     return (
       <PanelSection title="List">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Select
-            label="Format"
-            options={settings.columns === 3
-              ? [{ value: 'schedules', label: 'Top' }]
-              : [
-                  { value: 'episodes', label: 'Left' },
-                  { value: 'chapters', label: 'Right' },
-                  { value: 'schedules', label: 'Top' },
-                ]
-            }
-            value={settings.layout}
-            onChange={(v) => update({ ...settings, layout: v as ListSettings['layout'] })}
-          />
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Columns
-            </label>
+          <LinkedWrapper
+            linked={linked['layout']}
+            onLink={(lv) => setLinked('layout', lv)}
+            variables={entityVariables}
+            currentValue={settings.layout}
+          >
+            <Select
+              label="Format"
+              options={settings.columns === 3
+                ? [{ value: 'schedules', label: 'Top' }]
+                : [
+                    { value: 'episodes', label: 'Left' },
+                    { value: 'chapters', label: 'Right' },
+                    { value: 'schedules', label: 'Top' },
+                  ]
+              }
+              value={settings.layout}
+              onChange={(v) => update({ ...settings, layout: v as ListSettings['layout'] })}
+            />
+          </LinkedWrapper>
+          <LinkedWrapper
+            label="Columns"
+            linked={linked['columns']}
+            onLink={(lv) => setLinked('columns', lv)}
+            variables={entityVariables}
+            currentValue={String(settings.columns)}
+          >
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               {([1, 2, 3] as ListColumns[]).map((c) => (
                 <StepperBtn
@@ -1223,11 +1296,14 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
                 </StepperBtn>
               ))}
             </div>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Items
-            </label>
+          </LinkedWrapper>
+          <LinkedWrapper
+            label="Items"
+            linked={linked['itemCount']}
+            onLink={(lv) => setLinked('itemCount', lv)}
+            variables={entityVariables}
+            currentValue={String(settings.items.length)}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
               <StepperBtn
                 onClick={() => {
@@ -1277,17 +1353,31 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
                 }}
               >›</StepperBtn>
             </div>
-          </div>
-          <Toggle
-            label="Show divider"
-            checked={settings.showDivider}
-            onChange={(v) => update({ ...settings, showDivider: v })}
-          />
-          <Toggle
-            label="Show thumbnail"
-            checked={settings.showThumbnail}
-            onChange={(v) => update({ ...settings, showThumbnail: v })}
-          />
+          </LinkedWrapper>
+          <LinkedWrapper
+            linked={linked['showDivider']}
+            onLink={(lv) => setLinked('showDivider', lv)}
+            variables={themeVariables}
+            currentValue={String(settings.showDivider)}
+          >
+            <Toggle
+              label="Show divider"
+              checked={settings.showDivider}
+              onChange={(v) => update({ ...settings, showDivider: v })}
+            />
+          </LinkedWrapper>
+          <LinkedWrapper
+            linked={linked['showThumbnail']}
+            onLink={(lv) => setLinked('showThumbnail', lv)}
+            variables={entityVariables}
+            currentValue={String(settings.showThumbnail)}
+          >
+            <Toggle
+              label="Show thumbnail"
+              checked={settings.showThumbnail}
+              onChange={(v) => update({ ...settings, showThumbnail: v })}
+            />
+          </LinkedWrapper>
         </div>
       </PanelSection>
     );
@@ -1297,16 +1387,20 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
     <>
       {settings.showThumbnail && (
         <PanelSection title="Thumbnail">
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Thumbnail radius
-            </label>
+          <LinkedWrapper
+            label="Thumbnail radius"
+            linked={linked['thumbnailRadius']}
+            onLink={(lv) => setLinked('thumbnailRadius', lv)}
+            variables={themeVariables.filter((v) => v.valueType === 'text')}
+            currentValue={String(settings.thumbnailRadius ?? 8)}
+            onValueFromVariable={(v) => update({ ...settings, thumbnailRadius: parseInt(v) || 8 })}
+          >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: Math.max(0, (settings.thumbnailRadius ?? 8) - 1) })} disabled={(settings.thumbnailRadius ?? 8) <= 0}>‹</StepperBtn>
               <StepperInput value={settings.thumbnailRadius ?? 8} onChange={(v) => update({ ...settings, thumbnailRadius: Math.max(0, v || 0) })} />
               <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
             </div>
-          </div>
+          </LinkedWrapper>
         </PanelSection>
       )}
       <ComponentStyleControls
@@ -1317,6 +1411,8 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
         strokeColor={settings.strokeColor ?? 'transparent'}
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
+        linked={linked}
+        onLink={setLinked}
       />
       <ListItemStyleSection settings={settings} update={update} />
     </>

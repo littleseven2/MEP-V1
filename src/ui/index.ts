@@ -5,3 +5,4 @@ export { Toggle } from './Toggle';
 export { Card } from './Card';
 export { Tabs } from './Tabs';
 export { IconButton } from './IconButton';
+export { LinkedField, LinkedWrapper } from './LinkedField';
