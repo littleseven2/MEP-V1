@@ -178,7 +178,9 @@ export interface GridSettings {
   layout: GridLayout;
   spacing: boolean;
   items: GridItem[];
+  splitMode: 'row' | 'column';
   rows: number[];
+  cols: number[];
   gap: number;
   itemRadius: number;
   padding: number;

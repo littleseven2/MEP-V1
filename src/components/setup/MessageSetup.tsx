@@ -405,18 +405,32 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
     );
   }
   if (component.settings.type === 'grid') {
-    const rows = component.settings.settings.rows ?? [3, 3];
-    const gapPx = Math.round((component.settings.settings.gap ?? 8) * 0.5);
-    const radius = Math.round((component.settings.settings.itemRadius ?? 8) * 0.5);
+    const s = component.settings.settings;
+    const gapPx = Math.round((s.gap ?? 8) * 0.5);
+    const radius = Math.round((s.itemRadius ?? 8) * 0.5);
+    const mode = s.splitMode ?? 'row';
+    const cellStyle = { aspectRatio: '1', background: 'rgba(255,255,255,0.05)', borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'rgba(255,255,255,0.3)' } as React.CSSProperties;
     let n = 0;
+    if (mode === 'column') {
+      const cols = (s.cols ?? [2, 2, 2]).slice(0, 4);
+      const maxRows = Math.max(...cols.map((r) => Math.min(r, 3)));
+      const colCellStyle = { ...cellStyle, flex: 1, minHeight: 0, aspectRatio: undefined } as React.CSSProperties;
+      return (
+        <div style={{ display: 'flex', gap: gapPx, alignItems: 'stretch', height: maxRows * 30 + (maxRows - 1) * gapPx }}>
+          {cols.map((rowCount, ci) => (
+            <div key={ci} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: gapPx }}>
+              {Array.from({ length: Math.min(rowCount, 3) }).map(() => { n++; return <div key={n} style={colCellStyle}>{n}</div>; })}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    const rows = (s.rows ?? [3, 3]).slice(0, 3);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: gapPx }}>
-        {rows.slice(0, 3).map((cols, ri) => (
-          <div key={ri} style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: gapPx }}>
-            {Array.from({ length: cols }).map(() => {
-              n++;
-              return <div key={n} style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.05)', borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{n}</div>;
-            })}
+        {rows.map((colCount, ri) => (
+          <div key={ri} style={{ display: 'grid', gridTemplateColumns: `repeat(${colCount}, 1fr)`, gap: gapPx }}>
+            {Array.from({ length: colCount }).map(() => { n++; return <div key={n} style={cellStyle}>{n}</div>; })}
           </div>
         ))}
       </div>

@@ -819,14 +819,40 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
   const update = (s: GridSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'grid', settings: s });
 
+  const mode = settings.splitMode ?? 'row';
   const rows = settings.rows ?? [3, 3];
+  const cols = settings.cols ?? [2, 2, 2];
 
-  const addRow = () => update({ ...settings, rows: [...rows, rows[rows.length - 1] ?? 3] });
-  const removeRow = () => { if (rows.length > 1) update({ ...settings, rows: rows.slice(0, -1) }); };
-  const setRowCols = (idx: number, cols: number) => {
+  const setMode = (m: 'row' | 'column') => update({ ...settings, splitMode: m });
+
+  const setRowCount = (n: number) => {
+    const v = Math.max(1, Math.min(10, n));
+    const cur = settings.rows ?? [3, 3];
+    if (v > cur.length) {
+      update({ ...settings, rows: [...cur, ...Array(v - cur.length).fill(cur[cur.length - 1] ?? 3)] });
+    } else {
+      update({ ...settings, rows: cur.slice(0, v) });
+    }
+  };
+  const setRowCols = (idx: number, c: number) => {
     const next = [...rows];
-    next[idx] = Math.max(1, Math.min(6, cols));
+    next[idx] = Math.max(1, Math.min(6, c));
     update({ ...settings, rows: next });
+  };
+
+  const setColCount = (n: number) => {
+    const v = Math.max(1, Math.min(6, n));
+    const cur = settings.cols ?? [2, 2, 2];
+    if (v > cur.length) {
+      update({ ...settings, cols: [...cur, ...Array(v - cur.length).fill(cur[cur.length - 1] ?? 2)] });
+    } else {
+      update({ ...settings, cols: cur.slice(0, v) });
+    }
+  };
+  const setColRows = (idx: number, r: number) => {
+    const next = [...cols];
+    next[idx] = Math.max(1, Math.min(10, r));
+    update({ ...settings, cols: next });
   };
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 };
@@ -836,30 +862,69 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
       <PanelSection title="Grid">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
-            <label style={labelStyle}>Rows</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={removeRow} disabled={rows.length <= 1}>‹</StepperBtn>
-              <StepperInput value={rows.length} onChange={(v) => {
-                const n = Math.max(1, Math.min(10, v || 1));
-                if (n > rows.length) {
-                  update({ ...settings, rows: [...rows, ...Array(n - rows.length).fill(rows[rows.length - 1] ?? 3)] });
-                } else {
-                  update({ ...settings, rows: rows.slice(0, n) });
-                }
-              }} />
-              <StepperBtn onClick={addRow}>›</StepperBtn>
+            <label style={labelStyle}>Define by</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['row', 'column'] as const).map((m) => (
+                <StepperBtn
+                  key={m}
+                  onClick={() => setMode(m)}
+                  style={mode === m ? {
+                    border: '2px solid var(--color-brand)',
+                    background: 'var(--color-brand-subtle)',
+                    color: 'var(--color-brand)',
+                    fontSize: 12,
+                    flex: 1,
+                  } : { fontSize: 12, flex: 1 }}
+                >
+                  {m}
+                </StepperBtn>
+              ))}
             </div>
           </div>
-          {rows.map((cols, idx) => (
-            <div key={idx}>
-              <label style={labelStyle}>Row {idx + 1} columns</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <StepperBtn onClick={() => setRowCols(idx, cols - 1)} disabled={cols <= 1}>‹</StepperBtn>
-                <StepperInput value={cols} onChange={(v) => setRowCols(idx, v)} />
-                <StepperBtn onClick={() => setRowCols(idx, cols + 1)} disabled={cols >= 6}>›</StepperBtn>
+
+          {mode === 'row' ? (
+            <>
+              <div>
+                <label style={labelStyle}>Rows</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <StepperBtn onClick={() => setRowCount(rows.length - 1)} disabled={rows.length <= 1}>‹</StepperBtn>
+                  <StepperInput value={rows.length} onChange={setRowCount} />
+                  <StepperBtn onClick={() => setRowCount(rows.length + 1)}>›</StepperBtn>
+                </div>
               </div>
-            </div>
-          ))}
+              {rows.map((c, idx) => (
+                <div key={idx}>
+                  <label style={labelStyle}>Row {idx + 1} columns</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <StepperBtn onClick={() => setRowCols(idx, c - 1)} disabled={c <= 1}>‹</StepperBtn>
+                    <StepperInput value={c} onChange={(v) => setRowCols(idx, v)} />
+                    <StepperBtn onClick={() => setRowCols(idx, c + 1)} disabled={c >= 6}>›</StepperBtn>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <>
+              <div>
+                <label style={labelStyle}>Columns</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <StepperBtn onClick={() => setColCount(cols.length - 1)} disabled={cols.length <= 1}>‹</StepperBtn>
+                  <StepperInput value={cols.length} onChange={setColCount} />
+                  <StepperBtn onClick={() => setColCount(cols.length + 1)} disabled={cols.length >= 6}>›</StepperBtn>
+                </div>
+              </div>
+              {cols.map((r, idx) => (
+                <div key={idx}>
+                  <label style={labelStyle}>Column {idx + 1} rows</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <StepperBtn onClick={() => setColRows(idx, r - 1)} disabled={r <= 1}>‹</StepperBtn>
+                    <StepperInput value={r} onChange={(v) => setColRows(idx, v)} />
+                    <StepperBtn onClick={() => setColRows(idx, r + 1)}>›</StepperBtn>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
           <div>
             <label style={labelStyle}>Gap</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

@@ -132,32 +132,47 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
   );
 }
 
-function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; rows?: number[]; gap?: number; itemRadius?: number; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
-  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
-  const rows = settings.rows ?? [3, 3];
-  const gapPx = settings.gap ?? 8;
-  const radius = settings.itemRadius ?? 8;
-  let cellIdx = 0;
-
+function GridCell({ n, radius }: { n: number; radius: number }) {
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: gapPx,
-      padding: settings.padding ?? 0,
-      background: settings.backgroundColor || 'transparent',
-      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
-      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
+      aspectRatio: '1',
+      background: 'rgba(255,255,255,0.08)',
+      borderRadius: radius,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 12,
+      color: 'rgba(255,255,255,0.4)',
     }}>
-      {rows.map((cols, rowIdx) => {
-        const cells = Array.from({ length: cols }, () => ++cellIdx);
-        return (
-          <div key={rowIdx} style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${cols}, 1fr)`,
-            gap: gapPx,
-          }}>
-            {cells.map((n) => (
+      {n}
+    </div>
+  );
+}
+
+function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
+  const gapPx = settings.gap ?? 8;
+  const radius = settings.itemRadius ?? 8;
+  const mode = settings.splitMode ?? 'row';
+
+  const containerStyle: React.CSSProperties = {
+    padding: settings.padding ?? 0,
+    background: settings.backgroundColor || 'transparent',
+    borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
+    ...strokeStyle(settings.strokeColor, settings.strokeWidth),
+  };
+
+  if (mode === 'column') {
+    const cols = settings.cols ?? [2, 2, 2];
+    const maxRows = Math.max(...cols);
+    let cellIdx = 0;
+    return (
+      <div style={{ ...containerStyle, display: 'flex', gap: gapPx, alignItems: 'stretch', height: maxRows * 60 + (maxRows - 1) * gapPx }}>
+        {cols.map((rowCount, colIdx) => (
+          <div key={colIdx} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: gapPx }}>
+            {Array.from({ length: rowCount }, () => ++cellIdx).map((n) => (
               <div key={n} style={{
-                aspectRatio: '1',
+                flex: 1,
                 background: 'rgba(255,255,255,0.08)',
                 borderRadius: radius,
                 display: 'flex',
@@ -165,13 +180,32 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
                 justifyContent: 'center',
                 fontSize: 12,
                 color: 'rgba(255,255,255,0.4)',
+                minHeight: 0,
               }}>
                 {n}
               </div>
             ))}
           </div>
-        );
-      })}
+        ))}
+      </div>
+    );
+  }
+
+  const rows = settings.rows ?? [3, 3];
+  let cellIdx = 0;
+  return (
+    <div style={{ ...containerStyle, display: 'flex', flexDirection: 'column', gap: gapPx }}>
+      {rows.map((colCount, rowIdx) => (
+        <div key={rowIdx} style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${colCount}, 1fr)`,
+          gap: gapPx,
+        }}>
+          {Array.from({ length: colCount }, () => ++cellIdx).map((n) => (
+            <GridCell key={n} n={n} radius={radius} />
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
