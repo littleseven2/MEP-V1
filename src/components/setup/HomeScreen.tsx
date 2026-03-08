@@ -78,7 +78,7 @@ export function HomeScreen() {
           style={{
             fontFamily: 'var(--font-display)',
             fontSize: 12,
-            textTransform: 'uppercase',
+            textTransform: 'none',
             letterSpacing: 2,
             color: 'var(--color-text-secondary)',
             marginBottom: 8,

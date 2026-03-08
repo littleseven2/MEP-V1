@@ -179,6 +179,9 @@ export interface ListSettings {
   showThumbnail: boolean;
   itemCount: 'all' | number;
   items: ListItem[];
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
 }
 
 // Component settings discriminated union

@@ -45,7 +45,7 @@ export function ComponentPalette() {
               fontSize: 12,
               fontWeight: 600,
               color: 'var(--color-text-secondary)',
-              textTransform: 'uppercase',
+              textTransform: 'none',
               letterSpacing: 1,
             }}
           >
@@ -90,7 +90,7 @@ export function ComponentPalette() {
             fontSize: 12,
             fontWeight: 600,
             color: 'var(--color-text-secondary)',
-            textTransform: 'uppercase',
+            textTransform: 'none',
             letterSpacing: 1,
             marginBottom: 12,
           }}

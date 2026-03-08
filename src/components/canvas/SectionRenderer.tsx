@@ -26,6 +26,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
         borderLeft: isSelected ? '2px solid var(--color-brand)' : '2px solid transparent',
         background: section.background.value,
         transition: 'border-color var(--transition-fast)',
+        fontFamily: "'Inter', sans-serif",
       }}
     >
       {isSelected && (
@@ -36,7 +37,6 @@ export function SectionRenderer({ section }: SectionRendererProps) {
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            fontFamily: 'var(--font-family)',
             fontSize: 12,
             color: 'var(--color-text-secondary)',
           }}
@@ -56,7 +56,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
               borderBottom: '1px solid var(--color-border-default)',
             }}
           >
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600 }}>
+            <span style={{ fontSize: 18, fontWeight: 700 }}>
               Netflix
             </span>
             <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>

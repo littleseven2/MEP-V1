@@ -122,7 +122,7 @@ export const BuilderLayout: React.FC = () => {
             borderBottom: '1px solid var(--color-border-default)',
             fontSize: 'var(--font-size-xs)',
             fontWeight: 600,
-            textTransform: 'uppercase',
+            textTransform: 'none',
             letterSpacing: 'var(--letter-spacing-wide)',
             color: 'var(--color-text-tertiary)',
             fontFamily: 'var(--font-display)',

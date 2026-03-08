@@ -36,7 +36,7 @@ function PanelSection({
         fontSize: 11,
         fontWeight: 600,
         color: 'var(--color-text-tertiary)',
-        textTransform: 'uppercase',
+        textTransform: 'none',
         letterSpacing: 'var(--letter-spacing-wide)',
         marginBottom: 12,
       }}>
@@ -127,83 +127,81 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
   const update = (s: TextBlockSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'text-block', settings: s });
 
+  const moveUp = (key: string) => {
+    const idx = settings.order.indexOf(key as typeof settings.order[number]);
+    if (idx <= 0) return;
+    const newOrder = [...settings.order];
+    [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
+    update({ ...settings, order: newOrder });
+  };
+
+  const moveDown = (key: string) => {
+    const idx = settings.order.indexOf(key as typeof settings.order[number]);
+    if (idx < 0 || idx >= settings.order.length - 1) return;
+    const newOrder = [...settings.order];
+    [newOrder[idx], newOrder[idx + 1]] = [newOrder[idx + 1], newOrder[idx]];
+    update({ ...settings, order: newOrder });
+  };
+
+  const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link' };
+
+  const arrowBtnStyle = (disabled: boolean): React.CSSProperties => ({
+    width: 22, height: 22, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: 'transparent', border: '1px solid var(--color-border-default)',
+    color: disabled ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+    cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 12, opacity: disabled ? 0.4 : 1, padding: 0,
+  });
+
   return (
     <>
       <PanelSection title="Content">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Toggle
-            label="Eyebrow"
-            checked={settings.eyebrow.enabled}
-            onChange={(v) =>
-              update({ ...settings, eyebrow: { ...settings.eyebrow, enabled: v } })
-            }
-          />
-          {settings.eyebrow.enabled && (
-            <Input
-              value={settings.eyebrow.text}
-              onChange={(e) =>
-                update({ ...settings, eyebrow: { ...settings.eyebrow, text: e.target.value } })
-              }
-              placeholder="Eyebrow text"
-            />
-          )}
-          <Toggle
-            label="Headline"
-            checked={settings.headline.enabled}
-            onChange={(v) =>
-              update({ ...settings, headline: { ...settings.headline, enabled: v } })
-            }
-          />
-          {settings.headline.enabled && (
-            <Input
-              value={settings.headline.text}
-              onChange={(e) =>
-                update({ ...settings, headline: { ...settings.headline, text: e.target.value } })
-              }
-              placeholder="Headline"
-            />
-          )}
-          <Toggle
-            label="Body"
-            checked={settings.body.enabled}
-            onChange={(v) =>
-              update({ ...settings, body: { ...settings.body, enabled: v } })
-            }
-          />
-          {settings.body.enabled && (
-            <Input
-              value={settings.body.text}
-              onChange={(e) =>
-                update({ ...settings, body: { ...settings.body, text: e.target.value } })
-              }
-              placeholder="Body text"
-            />
-          )}
-          <Toggle
-            label="Link"
-            checked={settings.link.enabled}
-            onChange={(v) =>
-              update({ ...settings, link: { ...settings.link, enabled: v } })
-            }
-          />
-          {settings.link.enabled && (
-            <>
-              <Input
-                value={settings.link.text}
-                onChange={(e) =>
-                  update({ ...settings, link: { ...settings.link, text: e.target.value } })
-                }
-                placeholder="Link text"
-              />
-              <Input
-                value={settings.link.url}
-                onChange={(e) =>
-                  update({ ...settings, link: { ...settings.link, url: e.target.value } })
-                }
-                placeholder="URL"
-              />
-            </>
-          )}
+          {settings.order.map((key, idx) => {
+            const isFirst = idx === 0;
+            const isLast = idx === settings.order.length - 1;
+
+            return (
+              <div key={key}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    <button type="button" style={arrowBtnStyle(isFirst)} disabled={isFirst} onClick={() => moveUp(key)}>▲</button>
+                    <button type="button" style={arrowBtnStyle(isLast)} disabled={isLast} onClick={() => moveDown(key)}>▼</button>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <Toggle
+                      label={labels[key]}
+                      checked={(settings[key] as { enabled: boolean }).enabled}
+                      onChange={(v) => {
+                        if (key === 'link') update({ ...settings, link: { ...settings.link, enabled: v } });
+                        else update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), enabled: v } });
+                      }}
+                    />
+                  </div>
+                </div>
+                {(settings[key] as { enabled: boolean }).enabled && key !== 'link' && (
+                  <Input
+                    value={(settings[key] as { text: string }).text}
+                    onChange={(e) => update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), text: e.target.value } })}
+                    placeholder={labels[key]}
+                  />
+                )}
+                {key === 'link' && settings.link.enabled && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <Input
+                      value={settings.link.text}
+                      onChange={(e) => update({ ...settings, link: { ...settings.link, text: e.target.value } })}
+                      placeholder="Link text"
+                    />
+                    <Input
+                      value={settings.link.url}
+                      onChange={(e) => update({ ...settings, link: { ...settings.link, url: e.target.value } })}
+                      placeholder="URL"
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </PanelSection>
     </>
@@ -372,8 +370,21 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
     <>
       <PanelSection title="List">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Select
+            label="Format"
+            options={settings.columns === 3
+              ? [{ value: 'schedules', label: 'Top' }]
+              : [
+                  { value: 'episodes', label: 'Left' },
+                  { value: 'chapters', label: 'Right' },
+                  { value: 'schedules', label: 'Top' },
+                ]
+            }
+            value={settings.layout}
+            onChange={(v) => update({ ...settings, layout: v as ListSettings['layout'] })}
+          />
           <div>
-            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4, display: 'block' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
               Columns
             </label>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
@@ -381,7 +392,7 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
                 <button
                   key={c}
                   type="button"
-                  onClick={() => update({ ...settings, columns: c })}
+                  onClick={() => update({ ...settings, columns: c, layout: c === 3 ? 'schedules' : settings.layout })}
                   style={{
                     width: 36,
                     height: 36,
@@ -399,7 +410,7 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
             </div>
           </div>
           <div>
-            <label style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4, display: 'block' }}>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
               Items
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
@@ -421,9 +432,22 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
               >
                 ‹
               </button>
-              <span style={{ fontSize: 14, color: 'var(--color-text-primary)', minWidth: 24, textAlign: 'center' }}>
-                {settings.items.length}
-              </span>
+              <input type="number" min={1} value={settings.items.length}
+                onChange={(e) => {
+                  const target = Math.max(1, parseInt(e.target.value, 10) || 1);
+                  if (target > settings.items.length) {
+                    const newItems = [...settings.items];
+                    const last = settings.items[settings.items.length - 1];
+                    for (let j = settings.items.length; j < target; j++) {
+                      newItems.push({ title: `Episode ${j + 1}`, subtitle: last?.subtitle || 'Subtitle', metadata: last?.metadata || 'CTA' });
+                    }
+                    update({ ...settings, items: newItems, itemCount: target });
+                  } else if (target < settings.items.length) {
+                    update({ ...settings, items: settings.items.slice(0, target), itemCount: target });
+                  }
+                }}
+                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -459,6 +483,78 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
             checked={settings.showThumbnail}
             onChange={(v) => update({ ...settings, showThumbnail: v })}
           />
+        </div>
+      </PanelSection>
+      <PanelSection title="Style">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={{ display: 'block', textTransform: 'none', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              Padding
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button type="button" onClick={() => update({ ...settings, padding: Math.max(0, (settings.padding ?? 0) - 1) })}
+                disabled={(settings.padding ?? 0) <= 0}
+                style={{
+                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                  color: (settings.padding ?? 0) <= 0 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+                  cursor: (settings.padding ?? 0) <= 0 ? 'not-allowed' : 'pointer', fontSize: 18,
+                  opacity: (settings.padding ?? 0) <= 0 ? 0.4 : 1,
+                }}>‹</button>
+              <input type="number" value={settings.padding ?? 0}
+                onChange={(e) => update({ ...settings, padding: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
+              />
+              <button type="button" onClick={() => update({ ...settings, padding: (settings.padding ?? 0) + 1 })}
+                style={{
+                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                  color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
+                }}>›</button>
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', textTransform: 'none', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              Background Color
+            </label>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="color"
+                value={settings.backgroundColor === 'transparent' ? '#000000' : settings.backgroundColor}
+                onChange={(e) => update({ ...settings, backgroundColor: e.target.value })}
+                style={{ width: 36, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', cursor: 'pointer', padding: 2 }}
+              />
+              <Input
+                value={settings.backgroundColor ?? 'transparent'}
+                onChange={(e) => update({ ...settings, backgroundColor: e.target.value })}
+                placeholder="transparent"
+                style={{ flex: 1 }}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={{ display: 'block', textTransform: 'none', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              Background Radius
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+              {(['TL', 'TR', 'BL', 'BR'] as const).map((corner, idx) => {
+                const radii = Array.isArray(settings.backgroundRadius) ? settings.backgroundRadius : [0, 0, 0, 0];
+                return (
+                  <div key={corner} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 10, color: 'var(--color-text-muted)', width: 18, flexShrink: 0 }}>{corner}</span>
+                    <input type="number" value={radii[idx]}
+                      onChange={(e) => {
+                        const newRadii = [...radii] as [number, number, number, number];
+                        newRadii[idx] = Math.max(0, parseInt(e.target.value, 10) || 0);
+                        update({ ...settings, backgroundRadius: newRadii });
+                      }}
+                      style={{ width: '100%', height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </PanelSection>
     </>

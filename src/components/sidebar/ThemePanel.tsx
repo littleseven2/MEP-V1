@@ -30,7 +30,7 @@ export function ThemePanel() {
           fontFamily: 'var(--font-display)',
           fontSize: 11, fontWeight: 600,
           color: 'var(--color-text-tertiary)',
-          textTransform: 'uppercase',
+          textTransform: 'none',
           letterSpacing: 'var(--letter-spacing-wide)',
           marginBottom: 12,
         }}>
@@ -53,7 +53,7 @@ export function ThemePanel() {
           fontFamily: 'var(--font-display)',
           fontSize: 11, fontWeight: 600,
           color: 'var(--color-text-tertiary)',
-          textTransform: 'uppercase',
+          textTransform: 'none',
           letterSpacing: 'var(--letter-spacing-wide)',
           marginBottom: 12,
         }}>

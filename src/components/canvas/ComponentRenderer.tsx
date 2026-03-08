@@ -39,24 +39,29 @@ function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolea
     .filter(Boolean) as { type: string; text: string }[];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {items?.map((item, i) => (
         <div key={i}>
           {item?.type === 'eyebrow' && (
-            <span style={{ fontSize: 12, textTransform: 'uppercase', color: 'var(--color-brand)' }}>
+            <p style={{ fontSize: 14, fontWeight: 500, lineHeight: '22px', color: 'white' }}>
               {item.text}
-            </span>
+            </p>
           )}
           {item?.type === 'headline' && (
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>
+            <p style={{ fontSize: 28, fontWeight: 700, lineHeight: '36px', color: 'white' }}>
               {item.text}
-            </div>
+            </p>
           )}
           {item?.type === 'body' && (
-            <p style={{ fontSize: 14, color: 'var(--color-text-secondary)' }}>{item.text}</p>
+            <p style={{ fontSize: 16, fontWeight: 400, lineHeight: '24px', color: 'rgba(255,255,255,0.7)' }}>
+              {item.text}
+            </p>
           )}
           {item?.type === 'link' && (
-            <a href="#" style={{ fontSize: 14, color: 'var(--color-brand)' }}>
+            <a href="#" onClick={(e) => e.preventDefault()} style={{
+              fontSize: 16, fontWeight: 400, lineHeight: '24px',
+              color: 'rgba(255,255,255,0.7)', textDecoration: 'underline',
+            }}>
               {item.text}
             </a>
           )}
@@ -79,7 +84,6 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
             border: `1px solid ${btn.borderColor}`,
             color: btn.textColor,
             borderRadius: 24,
-            fontFamily: 'var(--font-family)',
             fontSize: 14,
             fontWeight: 500,
           }}
@@ -123,52 +127,95 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
   );
 }
 
-function ListPreview({ settings }: { settings: { columns: number; showThumbnail: boolean; showDivider: boolean; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string }[] } }) {
+function ListItemText({ item, hasBackground }: { item: { title: string; subtitle?: string; metadata?: string }; hasBackground?: boolean }) {
+  return (
+    <div>
+      <div style={{ fontWeight: 500, fontSize: 14, color: hasBackground ? 'rgba(255,255,255,1)' : undefined }}>{item.title}</div>
+      {item.subtitle && (
+        <div style={{ fontSize: 12, color: hasBackground ? 'rgba(255,255,255,0.6)' : 'var(--color-text-secondary)' }}>{item.subtitle}</div>
+      )}
+      {item.metadata && (
+        <a href="#" onClick={(e) => e.preventDefault()} style={{
+          display: 'inline-block', marginTop: 4, fontSize: 12, fontWeight: 500,
+          color: hasBackground ? 'rgba(255,255,255,0.8)' : 'var(--color-brand)', textDecoration: 'none',
+        }}>{item.metadata}</a>
+      )}
+    </div>
+  );
+}
+
+function ListThumbnail({ size = 60 }: { size?: number }) {
+  return (
+    <div style={{
+      width: size, height: size,
+      background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0,
+    }} />
+  );
+}
+
+function ListPreview({ settings }: { settings: { layout: string; columns: number; showThumbnail: boolean; showDivider: boolean; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number] } }) {
   const limit = settings.itemCount === 'all' ? settings.items.length : settings.itemCount;
   const items = settings.items.slice(0, limit);
+  const isStacked = settings.layout === 'schedules';
+  const bg = settings.backgroundColor ?? 'transparent';
+  const hasBg = bg !== 'transparent' && bg !== '';
+  const dividerColor = hasBg ? 'rgba(255,255,255,0.15)' : 'var(--color-border-default)';
+  const radii = settings.backgroundRadius ?? [0, 0, 0, 0];
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: settings.columns === 1 ? '1fr' : settings.columns === 2 ? '1fr 1fr' : '1fr 1fr 1fr',
-        gap: 16,
-      }}
-    >
-      {items.map((item, i) => (
-        <div
-          key={i}
-          style={{
-            display: 'flex',
-            gap: 12,
-            paddingBottom: settings.showDivider ? 16 : 0,
-            borderBottom: settings.showDivider && i < items.length - 1 ? '1px solid var(--color-border-default)' : 'none',
-          }}
-        >
-          {settings.showThumbnail && (
-            <div
-              style={{
-                width: 60,
-                height: 60,
-                background: 'var(--color-bg-tertiary)',
-                borderRadius: 8,
-                flexShrink: 0,
-              }}
-            />
-          )}
-          <div>
-            <div style={{ fontWeight: 500, fontSize: 14 }}>{item.title}</div>
-            {item.subtitle && (
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{item.subtitle}</div>
-            )}
-            {item.metadata && (
-              <a href="#" onClick={(e) => e.preventDefault()} style={{
-                display: 'inline-block', marginTop: 4, fontSize: 12, fontWeight: 500,
-                color: 'var(--color-brand)', textDecoration: 'none',
-              }}>{item.metadata}</a>
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: settings.columns === 1 ? '1fr' : settings.columns === 2 ? '1fr 1fr' : '1fr 1fr 1fr',
+      gap: isStacked ? 12 : 16,
+      padding: settings.padding ?? 0,
+      background: bg,
+      borderRadius: `${radii[0]}px ${radii[1]}px ${radii[2]}px ${radii[3]}px`,
+    }}>
+      {items.map((item, i) => {
+        const divider = settings.showDivider;
+
+        if (isStacked) {
+          return (
+            <div key={i} style={{
+              display: 'flex', flexDirection: 'column', gap: 8,
+              paddingBottom: divider ? 12 : 0,
+              borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
+            }}>
+              {settings.showThumbnail && (
+                <div style={{
+                  width: '100%', aspectRatio: '16/9',
+                  background: hasBg ? 'rgba(255,255,255,0.1)' : 'var(--color-bg-tertiary)', borderRadius: 8,
+                }} />
+              )}
+              <ListItemText item={item} hasBackground={hasBg} />
+            </div>
+          );
+        }
+
+        const isRightAligned = settings.layout === 'chapters';
+
+        return (
+          <div key={i} style={{
+            display: 'flex', gap: 12,
+            justifyContent: isRightAligned ? 'space-between' : 'flex-start',
+            alignItems: 'center',
+            paddingBottom: divider ? 16 : 0,
+            borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
+          }}>
+            {isRightAligned ? (
+              <>
+                <ListItemText item={item} hasBackground={hasBg} />
+                {settings.showThumbnail && <ListThumbnail />}
+              </>
+            ) : (
+              <>
+                {settings.showThumbnail && <ListThumbnail />}
+                <ListItemText item={item} hasBackground={hasBg} />
+              </>
             )}
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -205,6 +252,7 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         marginBottom: 16,
         padding: 2,
         borderRadius: 8,
+        fontFamily: "'Inter', sans-serif",
         outline: isSelected ? '2px solid rgba(229,77,77,0.4)' : '2px solid transparent',
         boxShadow: isSelected ? '0 0 0 4px rgba(229,77,77,0.2)' : 'none',
         cursor: 'pointer',

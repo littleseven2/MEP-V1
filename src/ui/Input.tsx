@@ -12,8 +12,8 @@ export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 
 
 const sizeMap: Record<InputSize, React.CSSProperties> = {
   sm: { height: 32, padding: '0 8px', fontSize: '0.875rem' },
-  md: { height: 40, padding: '0 12px', fontSize: '0.875rem' },
-  lg: { height: 48, padding: '0 16px', fontSize: '1rem' },
+  md: { height: 36, padding: '0 12px', fontSize: '0.875rem' },
+  lg: { height: 44, padding: '0 16px', fontSize: '1rem' },
 };
 
 export function Input({
@@ -48,7 +48,7 @@ export function Input({
           htmlFor={inputId}
           style={{
             display: 'block',
-            textTransform: 'uppercase',
+            textTransform: 'none',
             fontSize: '0.75rem',
             fontFamily: 'var(--font-display)',
             color: 'var(--color-text-secondary)',

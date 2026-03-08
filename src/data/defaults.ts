@@ -158,10 +158,10 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
   switch (type) {
     case 'text-block': {
       const textBlockSettings: TextBlockSettings = {
-        eyebrow: { enabled: false, text: '' },
+        eyebrow: { enabled: true, text: 'Eyebrow' },
         headline: { enabled: true, text: 'Headline' },
         body: { enabled: true, text: 'Body text goes here.' },
-        link: { enabled: false, text: 'Learn more', url: '' },
+        link: { enabled: true, text: 'Learn more', url: '#' },
         order: ['eyebrow', 'headline', 'body', 'link'],
       };
       return { type: 'text-block', settings: textBlockSettings };
@@ -211,6 +211,9 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
           { title: 'Episode 2', subtitle: 'The Discovery', metadata: 'CTA' },
           { title: 'Episode 3', subtitle: 'Breaking Point', metadata: 'CTA' },
         ],
+        padding: 0,
+        backgroundColor: 'transparent',
+        backgroundRadius: [0, 0, 0, 0],
       };
       return { type: 'list', settings: listSettings };
     }
