@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Eye, Settings, Layers, Palette,
   Sparkles, Send, Undo2, Redo2, Component,
@@ -14,9 +14,13 @@ import { EmailPreview } from '../preview/EmailPreview';
 type LeftNav = 'theme' | 'section' | 'component';
 
 export const BuilderLayout: React.FC = () => {
-  const { message, setView } = useMessageStore();
+  const { message, setView, selectSection } = useMessageStore();
   const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
+
+  const handleCanvasAreaClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) selectSection(null);
+  }, [selectSection]);
 
   if (!message) return null;
 
@@ -135,19 +139,21 @@ export const BuilderLayout: React.FC = () => {
         </div>
 
         {/* Canvas Area */}
-        <div style={{
-          background: 'var(--color-bg-tertiary)',
-          borderRadius: 16,
-          border: '1px solid var(--color-border-default)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          position: 'relative',
-          backgroundImage: `radial-gradient(circle at 1px 1px, var(--color-border-default) 1px, transparent 0)`,
-          backgroundSize: '24px 24px',
-        }}>
+        <div
+          onClick={handleCanvasAreaClick}
+          style={{
+            background: 'var(--color-bg-tertiary)',
+            borderRadius: 16,
+            border: '1px solid var(--color-border-default)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            position: 'relative',
+            backgroundImage: `radial-gradient(circle at 1px 1px, var(--color-border-default) 1px, transparent 0)`,
+            backgroundSize: '24px 24px',
+          }}>
           <Canvas />
         </div>
 

@@ -7,13 +7,14 @@ import { ControlButton } from './FloatingControls';
 export const Canvas: React.FC = () => {
   const {
     message, addSection, updateSection,
-    selectedSectionId, selectedComponentId,
+    selectedSectionId, selectedComponentId, selectSection,
     moveSectionUp, moveSectionDown, duplicateSection, removeSection,
     moveComponentUp, moveComponentDown, duplicateComponent, removeComponent,
   } = useMessageStore();
 
   const frameRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const [controlsTop, setControlsTop] = useState(0);
   const [primaryStarTop, setPrimaryStarTop] = useState<number | null>(null);
 
@@ -104,11 +105,19 @@ export const Canvas: React.FC = () => {
     }
   };
 
+  const handleBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as Node;
+    if (frameRef.current?.contains(target) || controlsRef.current?.contains(target)) return;
+    selectSection(null);
+  };
+
   return (
-    <div style={{
-      display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-      width: '100%', height: '100%', padding: 20, gap: 16,
-    }}>
+    <div
+      onClick={handleBackgroundClick}
+      style={{
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        width: '100%', height: '100%', padding: 20, gap: 16,
+      }}>
       {/* Left column — primary section star */}
       <div style={{
         width: 30, position: 'relative',
@@ -167,7 +176,7 @@ export const Canvas: React.FC = () => {
       </div>
 
       {/* Right column — floating controls */}
-      <div style={{
+      <div ref={controlsRef} style={{
         width: 50, display: 'flex', flexDirection: 'column', gap: 6,
         paddingTop: controlsTop,
         transition: 'opacity var(--transition-fast)',
