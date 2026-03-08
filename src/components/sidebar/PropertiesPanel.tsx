@@ -178,7 +178,34 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
   );
 }
 
-function SectionProperties({ section }: { section: Section }) {
+type PropsTab = 'content' | 'style';
+
+function TabSwitcher({ tab, onTabChange }: { tab: PropsTab; onTabChange: (t: PropsTab) => void }) {
+  return (
+    <div style={{ display: 'flex', gap: 4, padding: '0 0 8px', borderBottom: '1px solid var(--color-border-default)', marginBottom: 4 }}>
+      {(['content', 'style'] as const).map((t) => (
+        <button
+          key={t}
+          type="button"
+          onClick={() => onTabChange(t)}
+          style={{
+            flex: 1, height: 32, borderRadius: 8,
+            border: tab === t ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+            background: tab === t ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+            color: tab === t ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+            fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-family)',
+            cursor: 'pointer', transition: 'var(--transition-fast)',
+            textTransform: 'capitalize',
+          }}
+        >
+          {t}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }) {
   const updateSection = useMessageStore((s) => s.updateSection);
 
   const updateHydration = (updates: Partial<SectionHydration>) => {
@@ -193,41 +220,53 @@ function SectionProperties({ section }: { section: Section }) {
     });
   };
 
+  if (tab === 'content') {
+    return (
+      <>
+        <PanelSection title="Data Hydration">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Select
+              label="Source"
+              options={[
+                { value: 'query', label: 'Query' },
+                { value: 'collection', label: 'Collection' },
+                { value: 'merchandised-title', label: 'Merchandised Title' },
+                { value: 'custom', label: 'Custom' },
+              ]}
+              value={section.hydration.source}
+              onChange={(v) => updateHydration({ source: v as SectionHydration['source'] })}
+            />
+            <Select
+              label="Content Type"
+              options={contentTypes}
+              value={section.hydration.contentType || ''}
+              onChange={(v) => updateHydration({ contentType: v })}
+            />
+            <Select
+              label="Intent"
+              options={intentOptions}
+              value={section.hydration.intent || ''}
+              onChange={(v) => updateHydration({ intent: v })}
+            />
+            <Select
+              label="Package Type"
+              options={packageTypes}
+              value={section.hydration.packageType || ''}
+              onChange={(v) => updateHydration({ packageType: v })}
+            />
+          </div>
+        </PanelSection>
+        <PanelSection title="Settings">
+          <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
+            {section.isPrimary ? 'This is the primary section' : 'Use the ★ control to set as primary'}
+          </div>
+        </PanelSection>
+      </>
+    );
+  }
+
   return (
     <>
-      <PanelSection title="Data Hydration">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Select
-            label="Source"
-            options={[
-              { value: 'query', label: 'Query' },
-              { value: 'collection', label: 'Collection' },
-              { value: 'merchandised-title', label: 'Merchandised Title' },
-              { value: 'custom', label: 'Custom' },
-            ]}
-            value={section.hydration.source}
-            onChange={(v) => updateHydration({ source: v as SectionHydration['source'] })}
-          />
-          <Select
-            label="Content Type"
-            options={contentTypes}
-            value={section.hydration.contentType || ''}
-            onChange={(v) => updateHydration({ contentType: v })}
-          />
-          <Select
-            label="Intent"
-            options={intentOptions}
-            value={section.hydration.intent || ''}
-            onChange={(v) => updateHydration({ intent: v })}
-          />
-          <Select
-            label="Package Type"
-            options={packageTypes}
-            value={section.hydration.packageType || ''}
-            onChange={(v) => updateHydration({ packageType: v })}
-          />
-        </div>
-      </PanelSection>
       <PanelSection title="Visual">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
@@ -298,16 +337,11 @@ function SectionProperties({ section }: { section: Section }) {
           </div>
         </div>
       </PanelSection>
-      <PanelSection title="Settings">
-        <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
-          {section.isPrimary ? 'This is the primary section' : 'Use the ★ control to set as primary'}
-        </div>
-      </PanelSection>
     </>
   );
 }
 
-function TextBlockProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function TextBlockProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const settings = component.settings.type === 'text-block' ? component.settings.settings : null;
   if (!settings) return null;
@@ -341,8 +375,8 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
     transition: 'var(--transition-fast)',
   });
 
-  return (
-    <>
+  if (tab === 'content') {
+    return (
       <PanelSection title="Content">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {settings.order.map((key, idx) => {
@@ -394,27 +428,34 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
               </div>
             );
           })}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Alignment
-            </label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {(['left', 'center', 'right'] as const).map((a) => (
-                <StepperBtn
-                  key={a}
-                  onClick={() => update({ ...settings, alignment: a })}
-                  style={(settings.alignment ?? 'left') === a ? {
-                    border: '2px solid var(--color-brand)',
-                    background: 'var(--color-brand-subtle)',
-                    color: 'var(--color-brand)',
-                    fontSize: 12,
-                    flex: 1,
-                  } : { fontSize: 12, flex: 1 }}
-                >
-                  {a === 'left' ? <AlignLeft size={14} /> : a === 'center' ? <AlignCenter size={14} /> : <AlignRight size={14} />}
-                </StepperBtn>
-              ))}
-            </div>
+        </div>
+      </PanelSection>
+    );
+  }
+
+  return (
+    <>
+      <PanelSection title="Layout">
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+            Alignment
+          </label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['left', 'center', 'right'] as const).map((a) => (
+              <StepperBtn
+                key={a}
+                onClick={() => update({ ...settings, alignment: a })}
+                style={(settings.alignment ?? 'left') === a ? {
+                  border: '2px solid var(--color-brand)',
+                  background: 'var(--color-brand-subtle)',
+                  color: 'var(--color-brand)',
+                  fontSize: 12,
+                  flex: 1,
+                } : { fontSize: 12, flex: 1 }}
+              >
+                {a === 'left' ? <AlignLeft size={14} /> : a === 'center' ? <AlignCenter size={14} /> : <AlignRight size={14} />}
+              </StepperBtn>
+            ))}
           </div>
         </div>
       </PanelSection>
@@ -430,7 +471,7 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
   );
 }
 
-function RichTextProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function RichTextProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const settings = component.settings.type === 'rich-text' ? component.settings.settings : null;
   const [headingOpen, setHeadingOpen] = useState(false);
@@ -469,189 +510,188 @@ function RichTextProperties({ component, sectionId }: { component: MessageCompon
   const presetColors = ['#ffffff', '#e50914', '#ff6b6b', '#ffa726', '#ffee58', '#66bb6a', '#42a5f5', '#ab47bc', '#999999', '#000000'];
   const highlightColors = ['transparent', '#e50914', '#ff6b6b', '#ffa726', '#ffee58', '#66bb6a', '#42a5f5', '#ab47bc', '#333333', '#666666'];
 
+  if (tab === 'content') {
+    return (
+      <>
+        <PanelSection title="Text Style">
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            <button
+              type="button"
+              className="mep-select"
+              onClick={() => setHeadingOpen(!headingOpen)}
+              style={{
+                width: '100%', height: 36, borderRadius: 6,
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '0 10px',
+                background: 'var(--color-bg-tertiary)',
+                border: '1px solid var(--color-border-default)',
+                color: 'var(--color-text-primary)',
+                fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Type size={14} style={{ opacity: 0.5 }} />
+                Heading / Paragraph
+              </span>
+              <ChevronDown size={14} style={{ opacity: 0.5 }} />
+            </button>
+            {headingOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                borderRadius: 8, overflow: 'hidden', zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+              }}>
+                {headingOptions.map((opt) => (
+                  <button
+                    key={opt.tag}
+                    type="button"
+                    onClick={() => {
+                      execCommand('formatBlock', `<${opt.tag}>`);
+                      setHeadingOpen(false);
+                    }}
+                    style={{
+                      width: '100%', padding: '8px 12px', border: 'none',
+                      background: 'transparent', color: 'var(--color-text-primary)',
+                      fontFamily: 'var(--font-family)', fontSize: opt.tag === 'p' ? 13 : opt.tag === 'h1' ? 18 : opt.tag === 'h2' ? 16 : 14,
+                      fontWeight: opt.tag === 'p' ? 400 : 600,
+                      cursor: 'pointer', textAlign: 'left',
+                    }}
+                    className="mep-toolbar-btn"
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </PanelSection>
+
+        <PanelSection title="Formatting">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
+              <Bold size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('italic')} title="Italic (⌘I)">
+              <Italic size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('underline')} title="Underline (⌘U)">
+              <Underline size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('strikeThrough')} title="Strikethrough">
+              <Strikethrough size={14} />
+            </button>
+
+            <div style={{ position: 'relative' }}>
+              <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <Baseline size={14} />
+                  <div style={{ width: 12, height: 3, borderRadius: 1, background: settings.color }} />
+                </div>
+              </button>
+              {textColorOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
+                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                  borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
+                }}>
+                  {presetColors.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { execCommand('foreColor', c); setTextColorOpen(false); }}
+                      style={{
+                        width: 26, height: 26, borderRadius: 4, border: c === '#ffffff' ? '1px solid var(--color-border-default)' : '1px solid transparent',
+                        background: c, cursor: 'pointer',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setHighlightOpen(!highlightOpen); setTextColorOpen(false); }} title="Highlight color">
+                <Highlighter size={14} />
+              </button>
+              {highlightOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
+                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                  borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
+                }}>
+                  {highlightColors.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { execCommand('hiliteColor', c); setHighlightOpen(false); }}
+                      style={{
+                        width: 26, height: 26, borderRadius: 4,
+                        border: c === 'transparent' ? '2px dashed var(--color-border-default)' : '1px solid transparent',
+                        background: c === 'transparent' ? 'var(--color-bg-secondary)' : c, cursor: 'pointer',
+                      }}
+                      title={c === 'transparent' ? 'Remove highlight' : c}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
+              const size = prompt('Font size (1-7):', '3');
+              if (size) execCommand('fontSize', size);
+            }} title="Font size">
+              <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)' }}>Aa</span>
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
+              const url = prompt('Enter link URL:');
+              if (url) execCommand('createLink', url);
+            }} title="Insert link">
+              <Link size={14} />
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => { update({ ...settings, alignment: 'left' }); execCommand('justifyLeft'); }} title="Align left">
+              <AlignLeft size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => { update({ ...settings, alignment: 'center' }); execCommand('justifyCenter'); }} title="Align center">
+              <AlignCenter size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => { update({ ...settings, alignment: 'right' }); execCommand('justifyRight'); }} title="Align right">
+              <AlignRight size={14} />
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('formatBlock', '<blockquote>')} title="Blockquote">
+              <Quote size={14} />
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertUnorderedList')} title="Bulleted list">
+              <List size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertOrderedList')} title="Numbered list">
+              <ListOrdered size={14} />
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('outdent')} title="Decrease indent">
+              <IndentDecrease size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('indent')} title="Increase indent">
+              <IndentIncrease size={14} />
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('removeFormat')} title="Clear formatting">
+              <RemoveFormatting size={14} />
+            </button>
+          </div>
+        </PanelSection>
+      </>
+    );
+  }
+
   return (
     <>
-      <PanelSection title="Text Style">
-        <div style={{ position: 'relative', marginBottom: 8 }}>
-          <button
-            type="button"
-            className="mep-select"
-            onClick={() => setHeadingOpen(!headingOpen)}
-            style={{
-              width: '100%', height: 36, borderRadius: 6,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '0 10px',
-              background: 'var(--color-bg-tertiary)',
-              border: '1px solid var(--color-border-default)',
-              color: 'var(--color-text-primary)',
-              fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
-            }}
-          >
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Type size={14} style={{ opacity: 0.5 }} />
-              Heading / Paragraph
-            </span>
-            <ChevronDown size={14} style={{ opacity: 0.5 }} />
-          </button>
-          {headingOpen && (
-            <div style={{
-              position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-              background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-              borderRadius: 8, overflow: 'hidden', zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-            }}>
-              {headingOptions.map((opt) => (
-                <button
-                  key={opt.tag}
-                  type="button"
-                  onClick={() => {
-                    execCommand('formatBlock', `<${opt.tag}>`);
-                    setHeadingOpen(false);
-                  }}
-                  style={{
-                    width: '100%', padding: '8px 12px', border: 'none',
-                    background: 'transparent', color: 'var(--color-text-primary)',
-                    fontFamily: 'var(--font-family)', fontSize: opt.tag === 'p' ? 13 : opt.tag === 'h1' ? 18 : opt.tag === 'h2' ? 16 : 14,
-                    fontWeight: opt.tag === 'p' ? 400 : 600,
-                    cursor: 'pointer', textAlign: 'left',
-                  }}
-                  className="mep-toolbar-btn"
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </PanelSection>
-
-      <PanelSection title="Formatting">
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
-            <Bold size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('italic')} title="Italic (⌘I)">
-            <Italic size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('underline')} title="Underline (⌘U)">
-            <Underline size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('strikeThrough')} title="Strikethrough">
-            <Strikethrough size={14} />
-          </button>
-
-          {/* Text color */}
-          <div style={{ position: 'relative' }}>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <Baseline size={14} />
-                <div style={{ width: 12, height: 3, borderRadius: 1, background: settings.color }} />
-              </div>
-            </button>
-            {textColorOpen && (
-              <div style={{
-                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
-                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
-              }}>
-                {presetColors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => { execCommand('foreColor', c); setTextColorOpen(false); }}
-                    style={{
-                      width: 26, height: 26, borderRadius: 4, border: c === '#ffffff' ? '1px solid var(--color-border-default)' : '1px solid transparent',
-                      background: c, cursor: 'pointer',
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Highlight color */}
-          <div style={{ position: 'relative' }}>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setHighlightOpen(!highlightOpen); setTextColorOpen(false); }} title="Highlight color">
-              <Highlighter size={14} />
-            </button>
-            {highlightOpen && (
-              <div style={{
-                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
-                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
-              }}>
-                {highlightColors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => { execCommand('hiliteColor', c); setHighlightOpen(false); }}
-                    style={{
-                      width: 26, height: 26, borderRadius: 4,
-                      border: c === 'transparent' ? '2px dashed var(--color-border-default)' : '1px solid transparent',
-                      background: c === 'transparent' ? 'var(--color-bg-secondary)' : c, cursor: 'pointer',
-                    }}
-                    title={c === 'transparent' ? 'Remove highlight' : c}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
-            const size = prompt('Font size (1-7):', '3');
-            if (size) execCommand('fontSize', size);
-          }} title="Font size">
-            <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)' }}>Aa</span>
-          </button>
-
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
-            const url = prompt('Enter link URL:');
-            if (url) execCommand('createLink', url);
-          }} title="Insert link">
-            <Link size={14} />
-          </button>
-
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => { update({ ...settings, alignment: 'left' }); execCommand('justifyLeft'); }} title="Align left">
-            <AlignLeft size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => { update({ ...settings, alignment: 'center' }); execCommand('justifyCenter'); }} title="Align center">
-            <AlignCenter size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => { update({ ...settings, alignment: 'right' }); execCommand('justifyRight'); }} title="Align right">
-            <AlignRight size={14} />
-          </button>
-
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('formatBlock', '<blockquote>')} title="Blockquote">
-            <Quote size={14} />
-          </button>
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertUnorderedList')} title="Bulleted list">
-            <List size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertOrderedList')} title="Numbered list">
-            <ListOrdered size={14} />
-          </button>
-
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('outdent')} title="Decrease indent">
-            <IndentDecrease size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('indent')} title="Increase indent">
-            <IndentIncrease size={14} />
-          </button>
-
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('removeFormat')} title="Clear formatting">
-            <RemoveFormatting size={14} />
-          </button>
-        </div>
-      </PanelSection>
-
-      <PanelSection title="Style">
+      <PanelSection title="Typography">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
@@ -708,7 +748,7 @@ function RichTextProperties({ component, sectionId }: { component: MessageCompon
   );
 }
 
-function MediaProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function MediaProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const settings = component.settings.type === 'media' ? component.settings.settings : null;
   if (!settings) return null;
@@ -716,8 +756,8 @@ function MediaProperties({ component, sectionId }: { component: MessageComponent
   const update = (s: MediaSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'media', settings: s });
 
-  return (
-    <>
+  if (tab === 'content') {
+    return (
       <PanelSection title="Media">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Select
@@ -750,15 +790,22 @@ function MediaProperties({ component, sectionId }: { component: MessageComponent
             checked={settings.isInteractive}
             onChange={(v) => update({ ...settings, isInteractive: v })}
           />
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-              Image radius
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
-            </div>
+        </div>
+      </PanelSection>
+    );
+  }
+
+  return (
+    <>
+      <PanelSection title="Image">
+        <div>
+          <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+            Image radius
+          </label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
+            <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
+            <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
           </div>
         </div>
       </PanelSection>
@@ -774,7 +821,7 @@ function MediaProperties({ component, sectionId }: { component: MessageComponent
   );
 }
 
-function CTAProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function CTAProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const settings = component.settings.type === 'cta' ? component.settings.settings : null;
   if (!settings) return null;
@@ -788,8 +835,8 @@ function CTAProperties({ component, sectionId }: { component: MessageComponent; 
     update({ ...settings, buttons });
   };
 
-  return (
-    <>
+  if (tab === 'content') {
+    return (
       <PanelSection title="CTA Buttons">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {settings.buttons.map((btn, i) => (
@@ -832,19 +879,22 @@ function CTAProperties({ component, sectionId }: { component: MessageComponent; 
           ))}
         </div>
       </PanelSection>
-      <ComponentStyleControls
-        padding={settings.padding ?? 0}
-        backgroundColor={settings.backgroundColor ?? 'transparent'}
-        backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
-        strokeColor={settings.strokeColor ?? 'transparent'}
-        strokeWidth={settings.strokeWidth ?? 0}
-        onUpdate={(v) => update({ ...settings, ...v })}
-      />
-    </>
+    );
+  }
+
+  return (
+    <ComponentStyleControls
+      padding={settings.padding ?? 0}
+      backgroundColor={settings.backgroundColor ?? 'transparent'}
+      backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
+      strokeColor={settings.strokeColor ?? 'transparent'}
+      strokeWidth={settings.strokeWidth ?? 0}
+      onUpdate={(v) => update({ ...settings, ...v })}
+    />
   );
 }
 
-function GridProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function GridProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const settings = component.settings.type === 'grid' ? component.settings.settings : null;
   if (!settings) return null;
@@ -890,9 +940,9 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 };
 
-  return (
-    <>
-      <PanelSection title="Grid">
+  if (tab === 'content') {
+    return (
+      <PanelSection title="Grid Layout">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <label style={labelStyle}>Define by</label>
@@ -912,23 +962,6 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
                   {m}
                 </StepperBtn>
               ))}
-            </div>
-          </div>
-
-          <div>
-            <label style={labelStyle}>Gap</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, gap: Math.max(0, (settings.gap ?? 8) - 1) })} disabled={(settings.gap ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.gap ?? 8} onChange={(v) => update({ ...settings, gap: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, gap: (settings.gap ?? 8) + 1 })}>›</StepperBtn>
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Image radius</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, itemRadius: Math.max(0, (settings.itemRadius ?? 8) - 1) })} disabled={(settings.itemRadius ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.itemRadius ?? 8} onChange={(v) => update({ ...settings, itemRadius: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, itemRadius: (settings.itemRadius ?? 8) + 1 })}>›</StepperBtn>
             </div>
           </div>
           {mode === 'row' ? (
@@ -974,6 +1007,31 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
               ))}
             </>
           )}
+        </div>
+      </PanelSection>
+    );
+  }
+
+  return (
+    <>
+      <PanelSection title="Spacing">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Gap</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, gap: Math.max(0, (settings.gap ?? 8) - 1) })} disabled={(settings.gap ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.gap ?? 8} onChange={(v) => update({ ...settings, gap: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, gap: (settings.gap ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Image radius</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, itemRadius: Math.max(0, (settings.itemRadius ?? 8) - 1) })} disabled={(settings.itemRadius ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.itemRadius ?? 8} onChange={(v) => update({ ...settings, itemRadius: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, itemRadius: (settings.itemRadius ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </div>
         </div>
       </PanelSection>
       <ComponentStyleControls
@@ -1118,7 +1176,7 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
   );
 }
 
-function ListProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function ListProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const settings = component.settings.type === 'list' ? component.settings.settings : null;
   if (!settings) return null;
@@ -1127,8 +1185,8 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
     updateComponentSettings(sectionId, component.id, { type: 'list', settings: s });
 
 
-  return (
-    <>
+  if (tab === 'content') {
+    return (
       <PanelSection title="List">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Select
@@ -1229,20 +1287,27 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
             checked={settings.showThumbnail}
             onChange={(v) => update({ ...settings, showThumbnail: v })}
           />
-          {settings.showThumbnail && (
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                Thumbnail radius
-              </label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: Math.max(0, (settings.thumbnailRadius ?? 8) - 1) })} disabled={(settings.thumbnailRadius ?? 8) <= 0}>‹</StepperBtn>
-                <StepperInput value={settings.thumbnailRadius ?? 8} onChange={(v) => update({ ...settings, thumbnailRadius: Math.max(0, v || 0) })} />
-                <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
-              </div>
-            </div>
-          )}
         </div>
       </PanelSection>
+    );
+  }
+
+  return (
+    <>
+      {settings.showThumbnail && (
+        <PanelSection title="Thumbnail">
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              Thumbnail radius
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: Math.max(0, (settings.thumbnailRadius ?? 8) - 1) })} disabled={(settings.thumbnailRadius ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.thumbnailRadius ?? 8} onChange={(v) => update({ ...settings, thumbnailRadius: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </div>
+        </PanelSection>
+      )}
       <ComponentStyleControls
         title="List style"
         padding={settings.padding ?? 0}
@@ -1398,24 +1463,24 @@ function ListItemStyleSection({ settings, update }: { settings: ListSettings; up
   );
 }
 
-function ComponentProperties({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+function ComponentProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   if (component.settings.type === 'text-block') {
-    return <TextBlockProperties component={component} sectionId={sectionId} />;
+    return <TextBlockProperties component={component} sectionId={sectionId} tab={tab} />;
   }
   if (component.settings.type === 'rich-text') {
-    return <RichTextProperties component={component} sectionId={sectionId} />;
+    return <RichTextProperties component={component} sectionId={sectionId} tab={tab} />;
   }
   if (component.settings.type === 'media') {
-    return <MediaProperties component={component} sectionId={sectionId} />;
+    return <MediaProperties component={component} sectionId={sectionId} tab={tab} />;
   }
   if (component.settings.type === 'cta') {
-    return <CTAProperties component={component} sectionId={sectionId} />;
+    return <CTAProperties component={component} sectionId={sectionId} tab={tab} />;
   }
   if (component.settings.type === 'grid') {
-    return <GridProperties component={component} sectionId={sectionId} />;
+    return <GridProperties component={component} sectionId={sectionId} tab={tab} />;
   }
   if (component.settings.type === 'list') {
-    return <ListProperties component={component} sectionId={sectionId} />;
+    return <ListProperties component={component} sectionId={sectionId} tab={tab} />;
   }
   return null;
 }
@@ -1424,6 +1489,7 @@ export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {
   const message = useMessageStore((s) => s.message);
   const selectedSectionId = useMessageStore((s) => s.selectedSectionId);
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
+  const [tab, setTab] = useState<PropsTab>('content');
 
   if (!message) return null;
 
@@ -1447,7 +1513,12 @@ export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {
         </div>
       );
     }
-    return <div style={{ padding: 20 }}><SectionProperties section={section} /></div>;
+    return (
+      <div style={{ padding: 20 }}>
+        <TabSwitcher tab={tab} onTabChange={setTab} />
+        <SectionProperties section={section} tab={tab} />
+      </div>
+    );
   }
 
   if (mode === 'component') {
@@ -1458,7 +1529,12 @@ export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {
         </div>
       );
     }
-    return <div style={{ padding: 20 }}><ComponentProperties component={component} sectionId={section.id} /></div>;
+    return (
+      <div style={{ padding: 20 }}>
+        <TabSwitcher tab={tab} onTabChange={setTab} />
+        <ComponentProperties component={component} sectionId={section.id} tab={tab} />
+      </div>
+    );
   }
 
   if (!section && !component) {
@@ -1470,11 +1546,21 @@ export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {
   }
 
   if (component && section) {
-    return <div style={{ padding: 20 }}><ComponentProperties component={component} sectionId={section.id} /></div>;
+    return (
+      <div style={{ padding: 20 }}>
+        <TabSwitcher tab={tab} onTabChange={setTab} />
+        <ComponentProperties component={component} sectionId={section.id} tab={tab} />
+      </div>
+    );
   }
 
   if (section) {
-    return <div style={{ padding: 20 }}><SectionProperties section={section} /></div>;
+    return (
+      <div style={{ padding: 20 }}>
+        <TabSwitcher tab={tab} onTabChange={setTab} />
+        <SectionProperties section={section} tab={tab} />
+      </div>
+    );
   }
 
   return null;
