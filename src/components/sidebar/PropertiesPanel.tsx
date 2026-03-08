@@ -21,6 +21,7 @@ import type {
   ListItem,
   ListItemStyle,
   ListColumns,
+  GridCellStyle,
 } from '../../types/message';
 import {
   contentTypes,
@@ -961,7 +962,82 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
       />
+      <GridCellStyleSection settings={settings} update={update} />
     </>
+  );
+}
+
+function GridCellStyleSection({ settings, update }: { settings: GridSettings; update: (s: GridSettings) => void }) {
+  const mode = settings.cellStyleMode ?? 'whole';
+  const defaultCellStyle: GridCellStyle = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 };
+  const wholeStyle: GridCellStyle = settings.cellStyle ?? defaultCellStyle;
+
+  const totalCells = (settings.splitMode ?? 'row') === 'row'
+    ? (settings.rows ?? [3, 3]).reduce((a, b) => a + b, 0)
+    : (settings.cols ?? [2, 2, 2]).reduce((a, b) => a + b, 0);
+
+  const ensureCellStyles = (count: number): GridCellStyle[] => {
+    const existing = settings.cellStyles ?? [];
+    if (existing.length >= count) return existing.slice(0, count);
+    return [...existing, ...Array(count - existing.length).fill(null).map(() => ({ ...wholeStyle }))];
+  };
+
+  const setMode = (m: 'whole' | 'individual') => {
+    if (m === 'individual' && mode === 'whole') {
+      update({ ...settings, cellStyleMode: 'individual', cellStyles: ensureCellStyles(totalCells) });
+    } else {
+      update({ ...settings, cellStyleMode: m });
+    }
+  };
+
+  const updateCellStyle = (idx: number, style: GridCellStyle) => {
+    const styles = ensureCellStyles(totalCells);
+    styles[idx] = style;
+    update({ ...settings, cellStyles: styles });
+  };
+
+  return (
+    <PanelSection title="Cell style">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {(['whole', 'individual'] as const).map((m) => (
+            <StepperBtn
+              key={m}
+              onClick={() => setMode(m)}
+              style={mode === m ? {
+                border: '2px solid var(--color-brand)',
+                background: 'var(--color-brand-subtle)',
+                color: 'var(--color-brand)',
+                fontSize: 12,
+                flex: 1,
+              } : { fontSize: 12, flex: 1 }}
+            >
+              {m}
+            </StepperBtn>
+          ))}
+        </div>
+
+        {mode === 'whole' ? (
+          <ItemStyleControls
+            style={wholeStyle}
+            onChange={(s) => update({ ...settings, cellStyle: s as GridCellStyle })}
+          />
+        ) : (
+          ensureCellStyles(totalCells).map((cs, idx) => (
+            <div key={idx} style={{
+              borderTop: idx > 0 ? '1px solid var(--color-border-default)' : 'none',
+              paddingTop: idx > 0 ? 12 : 0,
+            }}>
+              <ItemStyleControls
+                label={`Cell ${idx + 1}`}
+                style={cs}
+                onChange={(s) => updateCellStyle(idx, s as GridCellStyle)}
+              />
+            </div>
+          ))
+        )}
+      </div>
+    </PanelSection>
   );
 }
 
@@ -1159,9 +1235,11 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
   );
 }
 
+type CellStyle = ListItemStyle | GridCellStyle;
+
 function ItemStyleControls({ style, onChange, label }: {
-  style: ListItemStyle;
-  onChange: (s: ListItemStyle) => void;
+  style: CellStyle;
+  onChange: (s: CellStyle) => void;
   label?: string;
 }) {
   const labelStyle: CSSProperties = { display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 };

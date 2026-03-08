@@ -167,11 +167,21 @@ export interface CTASettings {
   strokeWidth: number;
 }
 
+// Grid cell style
+export interface GridCellStyle {
+  padding: number;
+  backgroundColor: string;
+  backgroundRadius: [number, number, number, number];
+  strokeColor: string;
+  strokeWidth: number;
+}
+
 // Grid item
 export interface GridItem {
   entityId?: string;
   customAsset?: string;
   url: string;
+  style?: GridCellStyle;
 }
 
 // Grid settings
@@ -184,6 +194,9 @@ export interface GridSettings {
   cols: number[];
   gap: number;
   itemRadius: number;
+  cellStyleMode: 'whole' | 'individual';
+  cellStyle: GridCellStyle;
+  cellStyles: GridCellStyle[];
   padding: number;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];

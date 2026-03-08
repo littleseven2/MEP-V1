@@ -131,8 +131,31 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
   );
 }
 
-function GridCell({ n, radius }: { n: number; radius: number }) {
+function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number } }) {
   const poster = posters[(n - 1) % posters.length];
+  const cs = cellStyle;
+  const csRadius = cs?.backgroundRadius ?? [0, 0, 0, 0];
+  const hasCs = cs && (cs.padding > 0 || cs.backgroundColor !== 'transparent' || csRadius.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0));
+  if (hasCs) {
+    return (
+      <div style={{
+        padding: cs.padding,
+        background: cs.backgroundColor || 'transparent',
+        borderRadius: `${csRadius[0]}px ${csRadius[1]}px ${csRadius[2]}px ${csRadius[3]}px`,
+        ...strokeStyle(cs.strokeColor, cs.strokeWidth),
+      }}>
+        <div style={{
+          aspectRatio: '2/3',
+          borderRadius: radius,
+          overflow: 'hidden',
+          position: 'relative',
+          background: 'rgba(255,255,255,0.08)',
+        }}>
+          <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={{
       aspectRatio: '2/3',
@@ -141,20 +164,23 @@ function GridCell({ n, radius }: { n: number; radius: number }) {
       position: 'relative',
       background: 'rgba(255,255,255,0.08)',
     }}>
-      <img
-        src={poster.image}
-        alt={poster.title}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-      />
+      <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
     </div>
   );
 }
 
-function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; cellStyleMode?: 'whole' | 'individual'; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number }; cellStyles?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const gapPx = settings.gap ?? 8;
   const radius = settings.itemRadius ?? 8;
   const mode = settings.splitMode ?? 'row';
+  const csMode = settings.cellStyleMode ?? 'whole';
+  const defaultCs = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0] as [number, number, number, number], strokeColor: 'transparent', strokeWidth: 0 };
+  const wholeCs = settings.cellStyle ?? defaultCs;
+  const getCellStyle = (idx: number) => {
+    if (csMode === 'individual' && settings.cellStyles && settings.cellStyles[idx]) return settings.cellStyles[idx];
+    return wholeCs;
+  };
 
   const containerStyle: React.CSSProperties = {
     padding: settings.padding ?? 0,
@@ -171,8 +197,24 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
         {cols.map((rowCount, colIdx) => (
           <div key={colIdx} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: gapPx }}>
             {Array.from({ length: rowCount }, () => ++cellIdx).map((n) => {
+              const cs = getCellStyle(n - 1);
+              const csR = cs.backgroundRadius;
+              const hasCs = cs.padding > 0 || cs.backgroundColor !== 'transparent' || csR.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0);
               const poster = posters[(n - 1) % posters.length];
-              return (
+              return hasCs ? (
+                <div key={n} style={{
+                  flex: 1, minHeight: 0,
+                  padding: cs.padding,
+                  background: cs.backgroundColor || 'transparent',
+                  borderRadius: `${csR[0]}px ${csR[1]}px ${csR[2]}px ${csR[3]}px`,
+                  ...strokeStyle(cs.strokeColor, cs.strokeWidth),
+                  display: 'flex', flexDirection: 'column',
+                }}>
+                  <div style={{ flex: 1, borderRadius: radius, overflow: 'hidden', background: 'rgba(255,255,255,0.08)', minHeight: 0 }}>
+                    <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                </div>
+              ) : (
                 <div key={n} style={{
                   flex: 1,
                   borderRadius: radius,
@@ -201,7 +243,7 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
           gap: gapPx,
         }}>
           {Array.from({ length: colCount }, () => ++cellIdx).map((n) => (
-            <GridCell key={n} n={n} radius={radius} />
+            <GridCell key={n} n={n} radius={radius} cellStyle={getCellStyle(n - 1)} />
           ))}
         </div>
       ))}
