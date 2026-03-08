@@ -146,13 +146,13 @@ export const BuilderLayout: React.FC = () => {
           flexDirection: 'column',
         }}>
           <div style={{
-            padding: '16px 20px 12px',
+            padding: '18px 20px 14px',
             borderBottom: '1px solid var(--color-border-default)',
-            fontSize: 'var(--font-size-xs)',
-            fontWeight: 600,
+            fontSize: 14,
+            fontWeight: 500,
             textTransform: 'none',
-            letterSpacing: 'var(--letter-spacing-wide)',
-            color: 'var(--color-text-tertiary)',
+            letterSpacing: '-0.01em',
+            color: 'var(--color-text-primary)',
             fontFamily: 'var(--font-display)',
           }}>
             {leftNav === 'theme' ? 'Theme' : leftNav === 'section' ? 'Section' : 'Component'}
@@ -203,13 +203,13 @@ export const BuilderLayout: React.FC = () => {
           flexDirection: 'column',
         }}>
           <div style={{
-            padding: '16px 20px 12px',
+            padding: '18px 20px 14px',
             borderBottom: '1px solid var(--color-border-default)',
-            fontSize: 'var(--font-size-xs)',
-            fontWeight: 600,
+            fontSize: 14,
+            fontWeight: 500,
             textTransform: 'none',
-            letterSpacing: 'var(--letter-spacing-wide)',
-            color: 'var(--color-text-tertiary)',
+            letterSpacing: '-0.01em',
+            color: 'var(--color-text-primary)',
             fontFamily: 'var(--font-display)',
           }}>
             {getRightPanelTitle()}

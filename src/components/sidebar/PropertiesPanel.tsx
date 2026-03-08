@@ -182,17 +182,18 @@ type PropsTab = 'content' | 'style';
 
 function TabSwitcher({ tab, onTabChange }: { tab: PropsTab; onTabChange: (t: PropsTab) => void }) {
   return (
-    <div style={{ display: 'flex', gap: 4, padding: '0 0 8px', borderBottom: '1px solid var(--color-border-default)', marginBottom: 4 }}>
+    <div style={{ display: 'flex', borderBottom: '1px solid var(--color-border-default)', marginBottom: 8 }}>
       {(['content', 'style'] as const).map((t) => (
         <button
           key={t}
           type="button"
           onClick={() => onTabChange(t)}
           style={{
-            flex: 1, height: 32, borderRadius: 8,
-            border: tab === t ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
-            background: tab === t ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-            color: tab === t ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+            flex: 1, height: 36,
+            border: 'none',
+            borderBottom: tab === t ? '2px solid var(--color-brand)' : '2px solid transparent',
+            background: 'transparent',
+            color: tab === t ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
             fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-family)',
             cursor: 'pointer', transition: 'var(--transition-fast)',
             textTransform: 'capitalize',
