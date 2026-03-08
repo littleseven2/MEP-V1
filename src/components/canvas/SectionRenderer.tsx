@@ -11,7 +11,8 @@ export function SectionRenderer({ section }: SectionRendererProps) {
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const selectSection = useMessageStore((s) => s.selectSection);
 
-  const isSelected = selectedSectionId === section.id && !selectedComponentId;
+  const isActive = selectedSectionId === section.id;
+  const isSectionOnly = isActive && !selectedComponentId;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -23,7 +24,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       data-section-id={section.id}
       onClick={handleClick}
       style={{
-        borderLeft: isSelected ? '2px solid var(--color-brand)' : '2px solid transparent',
+        borderLeft: isActive ? '2px solid var(--color-brand)' : '2px solid transparent',
         background: section.background.value,
         padding: section.padding ?? 0,
         borderRadius: section.backgroundRadius
@@ -36,7 +37,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
         fontFamily: 'var(--font-family)',
       }}
     >
-      {isSelected && (
+      {isActive && (
         <div
           style={{
             padding: '6px 12px',
@@ -45,7 +46,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
             alignItems: 'center',
             gap: 8,
             fontSize: 12,
-            color: 'var(--color-text-secondary)',
+            color: isSectionOnly ? 'var(--color-text-secondary)' : 'rgba(255,255,255,0.35)',
           }}
         >
           <span style={{ textTransform: 'capitalize' }}>Section</span>
