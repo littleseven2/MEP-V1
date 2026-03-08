@@ -41,7 +41,7 @@ function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius
   );
 }
 
-function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; order: ('eyebrow' | 'headline' | 'body' | 'link')[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; order: ('eyebrow' | 'headline' | 'body' | 'link')[]; alignment?: 'left' | 'center' | 'right'; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const items = settings.order
     .filter((k) => (settings[k] as { enabled?: boolean })?.enabled)
     .map((k) => {
@@ -61,9 +61,12 @@ function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolea
 
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
 
+  const align = settings.alignment ?? 'left';
+
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 4,
+      textAlign: align,
       padding: settings.padding ?? 0,
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,

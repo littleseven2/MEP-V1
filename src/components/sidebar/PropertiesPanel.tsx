@@ -394,6 +394,28 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
               </div>
             );
           })}
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              Alignment
+            </label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['left', 'center', 'right'] as const).map((a) => (
+                <StepperBtn
+                  key={a}
+                  onClick={() => update({ ...settings, alignment: a })}
+                  style={(settings.alignment ?? 'left') === a ? {
+                    border: '2px solid var(--color-brand)',
+                    background: 'var(--color-brand-subtle)',
+                    color: 'var(--color-brand)',
+                    fontSize: 12,
+                    flex: 1,
+                  } : { fontSize: 12, flex: 1 }}
+                >
+                  {a === 'left' ? <AlignLeft size={14} /> : a === 'center' ? <AlignCenter size={14} /> : <AlignRight size={14} />}
+                </StepperBtn>
+              ))}
+            </div>
+          </div>
         </div>
       </PanelSection>
       <ComponentStyleControls

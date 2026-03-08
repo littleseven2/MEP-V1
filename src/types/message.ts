@@ -124,6 +124,7 @@ export interface TextBlockSettings {
   body: { enabled: boolean; text: string };
   link: { enabled: boolean; text: string; url: string };
   order: ('eyebrow' | 'headline' | 'body' | 'link')[];
+  alignment: 'left' | 'center' | 'right';
   padding: number;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];

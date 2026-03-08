@@ -164,6 +164,7 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         body: { enabled: true, text: 'Body text goes here.' },
         link: { enabled: true, text: 'Learn more', url: '#' },
         order: ['eyebrow', 'headline', 'body', 'link'],
+        alignment: 'left',
         padding: 0,
         backgroundColor: 'transparent',
         backgroundRadius: [0, 0, 0, 0],
