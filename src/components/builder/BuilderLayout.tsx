@@ -173,7 +173,7 @@ export const BuilderLayout: React.FC = () => {
           }}>
             {leftNav === 'section' ? 'Section Properties' : leftNav === 'component' ? 'Component Properties' : 'Properties'}
           </div>
-          <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
+          <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'var(--color-border-default) transparent' }}>
             {leftNav === 'section' && <PropertiesPanel mode="section" />}
             {leftNav === 'component' && <PropertiesPanel mode="component" />}
             {leftNav === 'theme' && (

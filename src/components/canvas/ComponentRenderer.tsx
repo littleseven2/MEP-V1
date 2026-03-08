@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useMessageStore } from '../../store/messageStore';
 import type { MessageComponent, RichTextSettings } from '../../types/message';
+import { posters } from '../../data/posters';
 
 interface ComponentRendererProps {
   component: MessageComponent;
@@ -14,9 +15,9 @@ function strokeStyle(color?: string, width?: number): React.CSSProperties {
   return { border: `${w}px solid ${c}` };
 }
 
-function MediaPreview({ settings }: { settings: { alignment: string; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius?: number; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
-  const hasBgRadius = r.some((v) => v > 0);
+  const imgRadius = settings.mediaRadius ?? 8;
   return (
     <div style={{
       padding: settings.padding ?? 0,
@@ -28,15 +29,13 @@ function MediaPreview({ settings }: { settings: { alignment: string; padding?: n
         style={{
           width: '100%',
           aspectRatio: '16/9',
-          background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-          borderRadius: hasBgRadius ? 0 : 8,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: settings.alignment === 'center' ? 'center' : settings.alignment === 'left' ? 'flex-start' : 'flex-end',
-          padding: 16,
+          borderRadius: imgRadius,
+          overflow: 'hidden',
+          position: 'relative',
+          background: 'rgba(255,255,255,0.08)',
         }}
       >
-        <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>Media</span>
+        <img src={posters[0].image} alt={posters[0].title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       </div>
     </div>
   );
@@ -133,18 +132,20 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
 }
 
 function GridCell({ n, radius }: { n: number; radius: number }) {
+  const poster = posters[(n - 1) % posters.length];
   return (
     <div style={{
-      aspectRatio: '1',
-      background: 'rgba(255,255,255,0.08)',
+      aspectRatio: '2/3',
       borderRadius: radius,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 12,
-      color: 'rgba(255,255,255,0.4)',
+      overflow: 'hidden',
+      position: 'relative',
+      background: 'rgba(255,255,255,0.08)',
     }}>
-      {n}
+      <img
+        src={poster.image}
+        alt={poster.title}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
     </div>
   );
 }
@@ -164,27 +165,25 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
 
   if (mode === 'column') {
     const cols = settings.cols ?? [2, 2, 2];
-    const maxRows = Math.max(...cols);
     let cellIdx = 0;
     return (
-      <div style={{ ...containerStyle, display: 'flex', gap: gapPx, alignItems: 'stretch', height: maxRows * 60 + (maxRows - 1) * gapPx }}>
+      <div style={{ ...containerStyle, display: 'flex', gap: gapPx, alignItems: 'stretch' }}>
         {cols.map((rowCount, colIdx) => (
           <div key={colIdx} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: gapPx }}>
-            {Array.from({ length: rowCount }, () => ++cellIdx).map((n) => (
-              <div key={n} style={{
-                flex: 1,
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: radius,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 12,
-                color: 'rgba(255,255,255,0.4)',
-                minHeight: 0,
-              }}>
-                {n}
-              </div>
-            ))}
+            {Array.from({ length: rowCount }, () => ++cellIdx).map((n) => {
+              const poster = posters[(n - 1) % posters.length];
+              return (
+                <div key={n} style={{
+                  flex: 1,
+                  borderRadius: radius,
+                  overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.08)',
+                  minHeight: 0,
+                }}>
+                  <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
@@ -227,21 +226,26 @@ function ListItemText({ item }: { item: { title: string; subtitle?: string; meta
   );
 }
 
-function ListThumbnail({ size = 60 }: { size?: number }) {
+function ListThumbnail({ size = 60, index = 0, radius = 8 }: { size?: number; index?: number; radius?: number }) {
+  const poster = posters[index % posters.length];
   return (
     <div style={{
       width: size, height: size,
-      background: 'rgba(255,255,255,0.08)', borderRadius: 8, flexShrink: 0,
-    }} />
+      borderRadius: radius, flexShrink: 0, overflow: 'hidden',
+      background: 'rgba(255,255,255,0.08)',
+    }}>
+      <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+    </div>
   );
 }
 
-function ListPreview({ settings }: { settings: { layout: string; columns: number; showThumbnail: boolean; showDivider: boolean; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; style?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function ListPreview({ settings }: { settings: { layout: string; columns: number; showThumbnail: boolean; showDivider: boolean; thumbnailRadius?: number; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; style?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const limit = settings.itemCount === 'all' ? settings.items.length : settings.itemCount;
   const items = settings.items.slice(0, limit);
   const isStacked = settings.layout === 'schedules';
   const bg = settings.backgroundColor ?? 'transparent';
   const dividerColor = 'rgba(255,255,255,0.15)';
+  const thumbRadius = settings.thumbnailRadius ?? 8;
   const radii = settings.backgroundRadius ?? [0, 0, 0, 0];
   const styleMode = settings.itemStyleMode ?? 'whole';
   const wholeStyle = settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0] as [number, number, number, number], strokeColor: 'transparent', strokeWidth: 0 };
@@ -284,8 +288,11 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
               {settings.showThumbnail && (
                 <div style={{
                   width: '100%', aspectRatio: '16/9',
-                  background: 'rgba(255,255,255,0.08)', borderRadius: 8,
-                }} />
+                  borderRadius: thumbRadius, overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.08)',
+                }}>
+                  <img src={posters[i % posters.length].image} alt={posters[i % posters.length].title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
               )}
               <ListItemText item={item} />
             </div>
@@ -306,11 +313,11 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
             {isRightAligned ? (
               <>
                 <ListItemText item={item} />
-                {settings.showThumbnail && <ListThumbnail />}
+                {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} />}
               </>
             ) : (
               <>
-                {settings.showThumbnail && <ListThumbnail />}
+                {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} />}
                 <ListItemText item={item} />
               </>
             )}

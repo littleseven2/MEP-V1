@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import {
   Bold, Italic, Underline, Strikethrough,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  AlignLeft, AlignCenter, AlignRight,
   Link, Quote, List, ListOrdered,
   IndentDecrease, IndentIncrease, RemoveFormatting,
   Type, Highlighter, Baseline, ChevronDown,
@@ -727,6 +727,16 @@ function MediaProperties({ component, sectionId }: { component: MessageComponent
             checked={settings.isInteractive}
             onChange={(v) => update({ ...settings, isInteractive: v })}
           />
+          <div>
+            <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              Image radius
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </div>
         </div>
       </PanelSection>
       <ComponentStyleControls
@@ -882,6 +892,22 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
             </div>
           </div>
 
+          <div>
+            <label style={labelStyle}>Gap</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, gap: Math.max(0, (settings.gap ?? 8) - 1) })} disabled={(settings.gap ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.gap ?? 8} onChange={(v) => update({ ...settings, gap: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, gap: (settings.gap ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>Image radius</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, itemRadius: Math.max(0, (settings.itemRadius ?? 8) - 1) })} disabled={(settings.itemRadius ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.itemRadius ?? 8} onChange={(v) => update({ ...settings, itemRadius: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, itemRadius: (settings.itemRadius ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </div>
           {mode === 'row' ? (
             <>
               <div>
@@ -925,22 +951,6 @@ function GridProperties({ component, sectionId }: { component: MessageComponent;
               ))}
             </>
           )}
-          <div>
-            <label style={labelStyle}>Gap</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, gap: Math.max(0, (settings.gap ?? 8) - 1) })} disabled={(settings.gap ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.gap ?? 8} onChange={(v) => update({ ...settings, gap: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, gap: (settings.gap ?? 8) + 1 })}>›</StepperBtn>
-            </div>
-          </div>
-          <div>
-            <label style={labelStyle}>Image radius</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, itemRadius: Math.max(0, (settings.itemRadius ?? 8) - 1) })} disabled={(settings.itemRadius ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.itemRadius ?? 8} onChange={(v) => update({ ...settings, itemRadius: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, itemRadius: (settings.itemRadius ?? 8) + 1 })}>›</StepperBtn>
-            </div>
-          </div>
         </div>
       </PanelSection>
       <ComponentStyleControls
@@ -1018,32 +1028,6 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
   const update = (s: ListSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'list', settings: s });
 
-  const addItem = () => {
-    const n = settings.items.length + 1;
-    const last = settings.items[settings.items.length - 1];
-    const newItem: ListItem = {
-      title: `Episode ${n}`,
-      subtitle: last?.subtitle || 'Subtitle',
-      metadata: last?.metadata || 'CTA',
-    };
-    if (settings.itemStyleMode === 'individual') {
-      newItem.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-    }
-    update({ ...settings, items: [...settings.items, newItem] });
-  };
-
-  const removeItem = (index: number) => {
-    update({
-      ...settings,
-      items: settings.items.filter((_, i) => i !== index),
-    });
-  };
-
-  const updateItem = (index: number, updates: Partial<ListItem>) => {
-    const items = [...settings.items];
-    items[index] = { ...items[index], ...updates };
-    update({ ...settings, items });
-  };
 
   return (
     <>
@@ -1147,6 +1131,18 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
             checked={settings.showThumbnail}
             onChange={(v) => update({ ...settings, showThumbnail: v })}
           />
+          {settings.showThumbnail && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                Thumbnail radius
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: Math.max(0, (settings.thumbnailRadius ?? 8) - 1) })} disabled={(settings.thumbnailRadius ?? 8) <= 0}>‹</StepperBtn>
+                <StepperInput value={settings.thumbnailRadius ?? 8} onChange={(v) => update({ ...settings, thumbnailRadius: Math.max(0, v || 0) })} />
+                <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
+              </div>
+            </div>
+          )}
         </div>
       </PanelSection>
       <ComponentStyleControls

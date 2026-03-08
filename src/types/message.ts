@@ -138,6 +138,7 @@ export interface MediaSettings {
   customUrl?: string;
   alignment: 'left' | 'center' | 'right';
   isInteractive: boolean;
+  mediaRadius: number;
   padding: number;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
@@ -215,6 +216,7 @@ export interface ListSettings {
   columns: ListColumns;
   showDivider: boolean;
   showThumbnail: boolean;
+  thumbnailRadius: number;
   itemCount: 'all' | number;
   items: ListItem[];
   itemStyleMode: 'whole' | 'individual';

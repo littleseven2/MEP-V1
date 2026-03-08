@@ -165,7 +165,7 @@ export function MessageSetup() {
                   { value: 'evergreen', label: 'Evergreen' },
                 ]}
                 value={cadence}
-                onChange={setCadence}
+                onChange={(v) => setCadence(v as 'temporal' | 'evergreen')}
               />
               <Select
                 label="Consent category"
