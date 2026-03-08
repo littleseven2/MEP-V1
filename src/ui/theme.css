@@ -20,6 +20,7 @@
   --color-text-secondary: #A0A0AB;
   --color-text-tertiary: #6B6B76;
   --color-text-disabled: #3A3A45;
+  --color-text-muted: #4A4A55;
   --color-text-inverse: #0D0D0F;
   --color-text-brand: #E54D4D;
 
@@ -31,6 +32,8 @@
   --color-success: #4ADE80;
   --color-warning: #FBBF24;
   --color-error: #ef4444;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
   --color-info: #60a5fa;
 
   --font-display: 'Inter', sans-serif;

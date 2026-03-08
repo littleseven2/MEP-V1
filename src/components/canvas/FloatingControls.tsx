@@ -42,8 +42,8 @@ export function ControlButton({
       onMouseEnter={(e) => {
         if (disabled) return;
         if (variant === 'delete') {
-          e.currentTarget.style.background = '#ef4444';
-          e.currentTarget.style.borderColor = '#ef4444';
+          e.currentTarget.style.background = 'var(--color-error)';
+          e.currentTarget.style.borderColor = 'var(--color-error)';
           e.currentTarget.style.color = 'white';
         } else {
           e.currentTarget.style.background = 'var(--color-brand)';

@@ -43,7 +43,7 @@ const variantStyles: Record<ButtonVariant, CSSProperties> = {
     color: 'var(--color-text-primary)',
   },
   danger: {
-    background: 'var(--color-danger, #dc2626)',
+    background: 'var(--color-danger)',
     color: 'white',
   },
 };
@@ -60,7 +60,7 @@ const hoverStyles: Record<ButtonVariant, CSSProperties> = {
     background: 'var(--color-bg-tertiary)',
   },
   danger: {
-    background: 'var(--color-danger-hover, #b91c1c)',
+    background: 'var(--color-danger-hover)',
   },
 };
 

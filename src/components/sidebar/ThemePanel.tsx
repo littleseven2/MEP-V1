@@ -136,7 +136,7 @@ const ColorRow: React.FC<{
   label: string; value: string; onChange: (v: string) => void;
 }> = ({ label, value, onChange }) => (
   <div>
-    <label style={{ display: 'block', fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>
+    <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
       {label}
     </label>
     <div style={{ display: 'flex', gap: 8 }}>
@@ -156,12 +156,12 @@ const ColorRow: React.FC<{
         onChange={(e) => onChange(e.target.value)}
         className="mep-input"
         style={{
-          flex: 1, padding: '8px 12px',
+          flex: 1, height: 36, padding: '0 12px',
           background: 'var(--color-bg-tertiary)',
           border: '1px solid var(--color-border-default)',
-          borderRadius: 'var(--radius-sm)',
+          borderRadius: 'var(--radius-md)',
           color: 'var(--color-text-primary)',
-          fontSize: 13, fontFamily: 'var(--font-mono)',
+          fontSize: '0.875rem', fontFamily: 'var(--font-mono)',
           outline: 'none', transition: 'all var(--transition-fast)',
         }}
       />

@@ -49,14 +49,33 @@ a {
 }
 
 
+.mep-input:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+
 .mep-input:focus {
   border-color: var(--color-brand) !important;
   box-shadow: 0 0 0 3px var(--color-brand-glow) !important;
 }
 
+.mep-select:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+
 .mep-select:focus {
   border-color: var(--color-brand) !important;
   box-shadow: 0 0 0 3px var(--color-brand-glow) !important;
+}
+
+.mep-stepper:hover:not(:disabled) {
+  background: var(--color-bg-hover) !important;
+  border-color: var(--color-border-strong) !important;
+}
+
+.mep-toolbar-btn:hover {
+  background: var(--color-bg-hover) !important;
+  border-color: var(--color-border-strong) !important;
+  color: var(--color-text-primary) !important;
 }
 
 textarea:focus {

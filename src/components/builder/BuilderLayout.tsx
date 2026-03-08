@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  ArrowLeft, Eye, Settings, Layers, Palette,
+  Eye, Settings, Layers, Palette,
   Sparkles, Send, Undo2, Redo2, Component,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';

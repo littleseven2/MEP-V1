@@ -26,7 +26,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
         borderLeft: isSelected ? '2px solid var(--color-brand)' : '2px solid transparent',
         background: section.background.value,
         transition: 'border-color var(--transition-fast)',
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: 'var(--font-family)',
       }}
     >
       {isSelected && (

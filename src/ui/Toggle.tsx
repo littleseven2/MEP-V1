@@ -86,7 +86,7 @@ export function Toggle({
         <span
           style={{
             fontFamily: 'var(--font-family)',
-            fontSize: '0.875rem',
+            fontSize: '0.75rem',
             color: 'var(--color-text-primary)',
           }}
         >

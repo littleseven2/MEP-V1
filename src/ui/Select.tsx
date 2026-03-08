@@ -41,6 +41,7 @@ export function Select({
   id,
 }: SelectProps) {
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const selectId = id ?? `select-${Math.random().toString(36).slice(2)}`;
 
@@ -81,6 +82,8 @@ export function Select({
         type="button"
         disabled={disabled}
         onClick={() => setOpen(!open)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
           width: '100%',
           height: dims.height,
@@ -88,7 +91,7 @@ export function Select({
           fontSize: dims.fontSize,
           borderRadius: 'var(--radius-md)',
           background: 'var(--color-bg-tertiary)',
-          border: error ? '1px solid var(--color-danger)' : '1px solid var(--color-border-default)',
+          border: error ? '1px solid var(--color-danger)' : hovered && !disabled ? '1px solid var(--color-border-strong)' : '1px solid var(--color-border-default)',
           fontFamily: 'var(--font-family)',
           color: selected ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
           cursor: disabled ? 'not-allowed' : 'pointer',
@@ -102,7 +105,7 @@ export function Select({
         {selected ? selected.label : placeholder || 'Select...'}
         <svg
           width="16" height="16" viewBox="0 0 24 24" fill="none"
-          stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           style={{
             position: 'absolute', right: 8, top: '50%', transform: `translateY(-50%) rotate(${open ? 180 : 0}deg)`,
             transition: 'transform 150ms ease',

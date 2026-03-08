@@ -1,5 +1,3 @@
-import './ui/theme.css';
-import './index.css';
 import { useMessageStore } from './store/messageStore';
 import { HomeScreen } from './components/setup/HomeScreen';
 import { MessageSetup } from './components/setup/MessageSetup';

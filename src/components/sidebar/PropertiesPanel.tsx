@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Link } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type {
@@ -47,6 +47,50 @@ function PanelSection({
       </h3>
       {children}
     </div>
+  );
+}
+
+function StepperBtn({ onClick, disabled, children, style }: { onClick: () => void; disabled?: boolean; children: React.ReactNode; style?: CSSProperties }) {
+  const [h, setH] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: !disabled && h ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        border: !disabled && h ? '1px solid var(--color-border-strong)' : '1px solid var(--color-border-default)',
+        color: disabled ? 'var(--color-text-muted)' : h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 18,
+        opacity: disabled ? 0.4 : 1,
+        transition: 'var(--transition-fast)',
+        ...style,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StepperInput({ value, onChange, style }: { value: number; onChange: (v: number) => void; style?: CSSProperties }) {
+  return (
+    <input
+      type="number"
+      value={value}
+      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      className="mep-input"
+      style={{
+        width: 40, height: 36, borderRadius: 8,
+        border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+        color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center',
+        outline: 'none', fontFamily: 'var(--font-family)',
+        transition: 'var(--transition-fast)',
+        ...style,
+      }}
+    />
   );
 }
 
@@ -153,6 +197,7 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
     background: 'transparent', border: '1px solid var(--color-border-default)',
     color: disabled ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
     cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 12, opacity: disabled ? 0.4 : 1, padding: 0,
+    transition: 'var(--transition-fast)',
   });
 
   return (
@@ -167,8 +212,8 @@ function TextBlockProperties({ component, sectionId }: { component: MessageCompo
               <div key={key}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <div style={{ display: 'flex', gap: 4 }}>
-                    <button type="button" style={arrowBtnStyle(isFirst)} disabled={isFirst} onClick={() => moveUp(key)}>▲</button>
-                    <button type="button" style={arrowBtnStyle(isLast)} disabled={isLast} onClick={() => moveDown(key)}>▼</button>
+                    <button type="button" className="mep-toolbar-btn" style={arrowBtnStyle(isFirst)} disabled={isFirst} onClick={() => moveUp(key)}>▲</button>
+                    <button type="button" className="mep-toolbar-btn" style={arrowBtnStyle(isLast)} disabled={isLast} onClick={() => moveDown(key)}>▼</button>
                   </div>
                   <div style={{ flex: 1 }}>
                     <Toggle
@@ -230,33 +275,34 @@ function RichTextProperties({ component, sectionId }: { component: MessageCompon
     border: active ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
     color: active ? 'var(--color-brand)' : 'var(--color-text-secondary)',
     cursor: 'pointer', padding: 0,
+    transition: 'var(--transition-fast)',
   });
 
   return (
     <>
       <PanelSection title="Formatting">
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          <button type="button" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
             <Bold size={14} />
           </button>
-          <button type="button" style={toolbarBtnStyle()} onClick={() => execCommand('italic')} title="Italic (⌘I)">
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('italic')} title="Italic (⌘I)">
             <Italic size={14} />
           </button>
-          <button type="button" style={toolbarBtnStyle()} onClick={() => execCommand('underline')} title="Underline (⌘U)">
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('underline')} title="Underline (⌘U)">
             <Underline size={14} />
           </button>
           <div style={{ width: 1, height: 32, background: 'var(--color-border-default)', margin: '0 4px' }} />
-          <button type="button" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => update({ ...settings, alignment: 'left' })} title="Align left">
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => update({ ...settings, alignment: 'left' })} title="Align left">
             <AlignLeft size={14} />
           </button>
-          <button type="button" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => update({ ...settings, alignment: 'center' })} title="Align center">
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => update({ ...settings, alignment: 'center' })} title="Align center">
             <AlignCenter size={14} />
           </button>
-          <button type="button" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => update({ ...settings, alignment: 'right' })} title="Align right">
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => update({ ...settings, alignment: 'right' })} title="Align right">
             <AlignRight size={14} />
           </button>
           <div style={{ width: 1, height: 32, background: 'var(--color-border-default)', margin: '0 4px' }} />
-          <button type="button" style={toolbarBtnStyle()} onClick={() => {
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
             const url = prompt('Enter link URL:');
             if (url) execCommand('createLink', url);
           }} title="Insert link">
@@ -271,25 +317,9 @@ function RichTextProperties({ component, sectionId }: { component: MessageCompon
               Font size
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button type="button" onClick={() => update({ ...settings, fontSize: Math.max(10, settings.fontSize - 1) })}
-                disabled={settings.fontSize <= 10}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: settings.fontSize <= 10 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                  cursor: settings.fontSize <= 10 ? 'not-allowed' : 'pointer', fontSize: 18,
-                  opacity: settings.fontSize <= 10 ? 0.4 : 1,
-                }}>‹</button>
-              <input type="number" value={settings.fontSize}
-                onChange={(e) => update({ ...settings, fontSize: Math.max(10, parseInt(e.target.value, 10) || 16) })}
-                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
-              />
-              <button type="button" onClick={() => update({ ...settings, fontSize: settings.fontSize + 1 })}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
-                }}>›</button>
+              <StepperBtn onClick={() => update({ ...settings, fontSize: Math.max(10, settings.fontSize - 1) })} disabled={settings.fontSize <= 10}>‹</StepperBtn>
+              <StepperInput value={settings.fontSize} onChange={(v) => update({ ...settings, fontSize: Math.max(10, v || 16) })} />
+              <StepperBtn onClick={() => update({ ...settings, fontSize: settings.fontSize + 1 })}>›</StepperBtn>
             </div>
           </div>
           <div>
@@ -297,25 +327,9 @@ function RichTextProperties({ component, sectionId }: { component: MessageCompon
               Line height
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button type="button" onClick={() => update({ ...settings, lineHeight: Math.max(1, +(settings.lineHeight - 0.1).toFixed(1)) })}
-                disabled={settings.lineHeight <= 1}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: settings.lineHeight <= 1 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                  cursor: settings.lineHeight <= 1 ? 'not-allowed' : 'pointer', fontSize: 18,
-                  opacity: settings.lineHeight <= 1 ? 0.4 : 1,
-                }}>‹</button>
-              <input type="number" step="0.1" value={settings.lineHeight}
-                onChange={(e) => update({ ...settings, lineHeight: Math.max(1, parseFloat(e.target.value) || 1.6) })}
-                style={{ width: 48, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
-              />
-              <button type="button" onClick={() => update({ ...settings, lineHeight: +(settings.lineHeight + 0.1).toFixed(1) })}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
-                }}>›</button>
+              <StepperBtn onClick={() => update({ ...settings, lineHeight: Math.max(1, +(settings.lineHeight - 0.1).toFixed(1)) })} disabled={settings.lineHeight <= 1}>‹</StepperBtn>
+              <StepperInput value={settings.lineHeight} onChange={(v) => update({ ...settings, lineHeight: Math.max(1, v || 1.6) })} style={{ width: 48 }} />
+              <StepperBtn onClick={() => update({ ...settings, lineHeight: +(settings.lineHeight + 0.1).toFixed(1) })}>›</StepperBtn>
             </div>
           </div>
           <div>
@@ -342,25 +356,9 @@ function RichTextProperties({ component, sectionId }: { component: MessageCompon
               Padding
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button type="button" onClick={() => update({ ...settings, padding: Math.max(0, settings.padding - 1) })}
-                disabled={settings.padding <= 0}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: settings.padding <= 0 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                  cursor: settings.padding <= 0 ? 'not-allowed' : 'pointer', fontSize: 18,
-                  opacity: settings.padding <= 0 ? 0.4 : 1,
-                }}>‹</button>
-              <input type="number" value={settings.padding}
-                onChange={(e) => update({ ...settings, padding: Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
-              />
-              <button type="button" onClick={() => update({ ...settings, padding: settings.padding + 1 })}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
-                }}>›</button>
+              <StepperBtn onClick={() => update({ ...settings, padding: Math.max(0, settings.padding - 1) })} disabled={settings.padding <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.padding} onChange={(v) => update({ ...settings, padding: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, padding: settings.padding + 1 })}>›</StepperBtn>
             </div>
           </div>
         </div>
@@ -503,14 +501,7 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
     border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
     color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center',
     outline: 'none', fontFamily: 'var(--font-family)',
-  };
-
-  const toggleBtnStyle: React.CSSProperties = {
-    width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: individual ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-    border: individual ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
-    color: individual ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-    cursor: 'pointer', fontSize: 11, fontWeight: 600, flexShrink: 0,
+    transition: 'var(--transition-fast)',
   };
 
   return (
@@ -520,26 +511,10 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
       </label>
       {!individual ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button type="button" onClick={() => onChange([Math.max(0, universalValue - 1), Math.max(0, universalValue - 1), Math.max(0, universalValue - 1), Math.max(0, universalValue - 1)])}
-            disabled={universalValue <= 0}
-            style={{
-              width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-              color: universalValue <= 0 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-              cursor: universalValue <= 0 ? 'not-allowed' : 'pointer', fontSize: 18,
-              opacity: universalValue <= 0 ? 0.4 : 1,
-            }}>‹</button>
-          <input type="number" value={universalValue}
-            onChange={(e) => { const v = Math.max(0, parseInt(e.target.value, 10) || 0); onChange([v, v, v, v]); }}
-            style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
-          />
-          <button type="button" onClick={() => { const v = universalValue + 1; onChange([v, v, v, v]); }}
-            style={{
-              width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-              color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
-            }}>›</button>
-          <button type="button" onClick={() => setIndividual(true)} style={toggleBtnStyle} title="Individual corners">⊞</button>
+          <StepperBtn onClick={() => { const v = Math.max(0, universalValue - 1); onChange([v, v, v, v]); }} disabled={universalValue <= 0}>‹</StepperBtn>
+          <StepperInput value={universalValue} onChange={(v) => { const val = Math.max(0, v || 0); onChange([val, val, val, val]); }} />
+          <StepperBtn onClick={() => { const v = universalValue + 1; onChange([v, v, v, v]); }}>›</StepperBtn>
+          <StepperBtn onClick={() => setIndividual(true)} style={individual ? { background: 'var(--color-brand-subtle)', border: '1px solid var(--color-brand)', color: 'var(--color-brand)', fontSize: 11, fontWeight: 600 } : { fontSize: 11, fontWeight: 600 }}>⊞</StepperBtn>
         </div>
       ) : (
         <div>
@@ -547,7 +522,7 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
             {(['TL', 'TR', 'BL', 'BR'] as const).map((corner, idx) => (
               <div key={corner} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <span style={{ fontSize: 10, color: 'var(--color-text-muted)', width: 18, flexShrink: 0 }}>{corner}</span>
-                <input type="number" value={radii[idx]}
+                <input type="number" className="mep-input" value={radii[idx]}
                   onChange={(e) => {
                     const newRadii = [...radii] as [number, number, number, number];
                     newRadii[idx] = Math.max(0, parseInt(e.target.value, 10) || 0);
@@ -559,7 +534,10 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
             ))}
           </div>
           <button type="button" onClick={() => { setIndividual(false); onChange([radii[0], radii[0], radii[0], radii[0]]); }}
-            style={{ marginTop: 6, background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: 11, cursor: 'pointer', padding: 0 }}>
+            style={{ marginTop: 6, background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: 11, cursor: 'pointer', padding: 0, transition: 'var(--transition-fast)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-text-primary)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-muted)'; }}
+          >
             ← Uniform
           </button>
         </div>
@@ -625,23 +603,18 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
             </label>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               {([1, 2, 3] as ListColumns[]).map((c) => (
-                <button
+                <StepperBtn
                   key={c}
-                  type="button"
                   onClick={() => update({ ...settings, columns: c, layout: c === 3 ? 'schedules' : settings.layout })}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: 8,
-                    border: settings.columns === c ? '2px solid var(--color-brand)' : '1px solid var(--color-border-default)',
-                    background: settings.columns === c ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-                    color: settings.columns === c ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                  style={settings.columns === c ? {
+                    border: '2px solid var(--color-brand)',
+                    background: 'var(--color-brand-subtle)',
+                    color: 'var(--color-brand)',
                     fontSize: 14,
-                    cursor: 'pointer',
-                  }}
+                  } : { fontSize: 14 }}
                 >
                   {c}
-                </button>
+                </StepperBtn>
               ))}
             </div>
           </div>
@@ -650,25 +623,15 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
               Items
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <button
-                type="button"
+              <StepperBtn
                 onClick={() => {
                   if (settings.items.length > 1) {
                     update({ ...settings, items: settings.items.slice(0, -1), itemCount: settings.items.length - 1 });
                   }
                 }}
                 disabled={settings.items.length <= 1}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: settings.items.length <= 1 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                  cursor: settings.items.length <= 1 ? 'not-allowed' : 'pointer', fontSize: 18,
-                  opacity: settings.items.length <= 1 ? 0.4 : 1,
-                }}
-              >
-                ‹
-              </button>
-              <input type="number" min={1} value={settings.items.length}
+              >‹</StepperBtn>
+              <input type="number" className="mep-input" min={1} value={settings.items.length}
                 onChange={(e) => {
                   const target = Math.max(1, parseInt(e.target.value, 10) || 1);
                   if (target > settings.items.length) {
@@ -682,10 +645,9 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
                     update({ ...settings, items: settings.items.slice(0, target), itemCount: target });
                   }
                 }}
-                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
+                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)', transition: 'var(--transition-fast)' }}
               />
-              <button
-                type="button"
+              <StepperBtn
                 onClick={() => {
                   const n = settings.items.length + 1;
                   const last = settings.items[settings.items.length - 1];
@@ -699,14 +661,7 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
                     itemCount: n,
                   });
                 }}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
-                }}
-              >
-                ›
-              </button>
+              >›</StepperBtn>
             </div>
           </div>
           <Toggle
@@ -728,25 +683,9 @@ function ListProperties({ component, sectionId }: { component: MessageComponent;
               Padding
             </label>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button type="button" onClick={() => update({ ...settings, padding: Math.max(0, (settings.padding ?? 0) - 1) })}
-                disabled={(settings.padding ?? 0) <= 0}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: (settings.padding ?? 0) <= 0 ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                  cursor: (settings.padding ?? 0) <= 0 ? 'not-allowed' : 'pointer', fontSize: 18,
-                  opacity: (settings.padding ?? 0) <= 0 ? 0.4 : 1,
-                }}>‹</button>
-              <input type="number" value={settings.padding ?? 0}
-                onChange={(e) => update({ ...settings, padding: Math.max(0, parseInt(e.target.value, 10) || 0) })}
-                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)' }}
-              />
-              <button type="button" onClick={() => update({ ...settings, padding: (settings.padding ?? 0) + 1 })}
-                style={{
-                  width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  color: 'var(--color-text-secondary)', cursor: 'pointer', fontSize: 18,
-                }}>›</button>
+              <StepperBtn onClick={() => update({ ...settings, padding: Math.max(0, (settings.padding ?? 0) - 1) })} disabled={(settings.padding ?? 0) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.padding ?? 0} onChange={(v) => update({ ...settings, padding: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, padding: (settings.padding ?? 0) + 1 })}>›</StepperBtn>
             </div>
           </div>
           <div>
@@ -841,7 +780,7 @@ export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {
 
   if (!section && !component) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 14 }}>
+      <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
         Select a section or component...
       </div>
     );

@@ -330,7 +330,7 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         marginBottom: 16,
         padding: 2,
         borderRadius: 8,
-        fontFamily: "'Inter', sans-serif",
+        fontFamily: 'var(--font-family)',
         outline: isSelected ? '2px solid rgba(229,77,77,0.4)' : '2px solid transparent',
         boxShadow: isSelected ? '0 0 0 4px rgba(229,77,77,0.2)' : 'none',
         cursor: 'pointer',
