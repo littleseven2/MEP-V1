@@ -1,24 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Check, Plus, MoreVertical, Pencil, Trash2, Copy } from 'lucide-react';
+import { Check, Plus, MoreVertical, Trash2, Copy } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { defaultThemes } from '../../data/defaults';
 import type { ThemeConfig } from '../../types/message';
 import { Select, Input } from '../../ui';
 
-type ThemeView = 'list' | 'editor';
-
 let themeIdCounter = 100;
 
-export function ThemePanel() {
+const defaultThemeState = [...defaultThemes];
+
+export function useThemeManager() {
   const message = useMessageStore((s) => s.message);
   const setTheme = useMessageStore((s) => s.setTheme);
 
-  const [themes, setThemes] = useState<ThemeConfig[]>(() => [...defaultThemes]);
+  const [themes, setThemes] = useState<ThemeConfig[]>(() => [...defaultThemeState]);
   const [activeThemeId, setActiveThemeId] = useState<string>(() => message?.theme.id ?? 'default-dark');
-  const [editingThemeId, setEditingThemeId] = useState<string | null>(null);
-  const [view, setView] = useState<ThemeView>('list');
-
-  if (!message) return null;
 
   const applyTheme = (theme: ThemeConfig) => {
     setActiveThemeId(theme.id);
@@ -28,16 +24,6 @@ export function ThemePanel() {
   const selectTheme = (themeId: string) => {
     const theme = themes.find((t) => t.id === themeId);
     if (theme) applyTheme(theme);
-  };
-
-  const editTheme = (themeId: string) => {
-    setEditingThemeId(themeId);
-    setView('editor');
-  };
-
-  const showList = () => {
-    setEditingThemeId(null);
-    setView('list');
   };
 
   const createNewTheme = () => {
@@ -63,8 +49,8 @@ export function ThemePanel() {
       },
     };
     setThemes((prev) => [...prev, newTheme]);
-    setEditingThemeId(newTheme.id);
-    setView('editor');
+    applyTheme(newTheme);
+    return newTheme.id;
   };
 
   const deleteTheme = (themeId: string) => {
@@ -85,51 +71,38 @@ export function ThemePanel() {
       name: `${theme.name} Copy`,
     };
     setThemes((prev) => [...prev, dup]);
-    setEditingThemeId(dup.id);
-    setView('editor');
+    applyTheme(dup);
+    return dup.id;
   };
 
-  const updateEditingTheme = (updates: Partial<ThemeConfig>) => {
-    if (!editingThemeId) return;
+  const updateTheme = (themeId: string, updates: Partial<ThemeConfig>) => {
     setThemes((prev) =>
-      prev.map((t) => (t.id === editingThemeId ? { ...t, ...updates } : t))
+      prev.map((t) => (t.id === themeId ? { ...t, ...updates } : t))
     );
-    if (editingThemeId === activeThemeId) {
-      const current = themes.find((t) => t.id === editingThemeId);
+    if (themeId === activeThemeId) {
+      const current = themes.find((t) => t.id === themeId);
       if (current) setTheme({ ...current, ...updates });
     }
   };
 
-  const editingTheme = themes.find((t) => t.id === editingThemeId);
+  const activeTheme = themes.find((t) => t.id === activeThemeId) ?? themes[0];
 
-  if (view === 'editor' && editingTheme) {
-    return (
-      <ThemeEditorView
-        theme={editingTheme}
-        onBack={showList}
-        onUpdate={updateEditingTheme}
-      />
-    );
-  }
-
-  return (
-    <ThemeListView
-      themes={themes}
-      activeThemeId={activeThemeId}
-      onSelect={selectTheme}
-      onEdit={editTheme}
-      onDelete={deleteTheme}
-      onDuplicate={duplicateTheme}
-      onCreate={createNewTheme}
-    />
-  );
+  return {
+    themes,
+    activeThemeId,
+    activeTheme,
+    selectTheme,
+    createNewTheme,
+    deleteTheme,
+    duplicateTheme,
+    updateTheme,
+  };
 }
 
-function ThemeListView({
+export function ThemePanel({
   themes,
   activeThemeId,
   onSelect,
-  onEdit,
   onDelete,
   onDuplicate,
   onCreate,
@@ -137,7 +110,6 @@ function ThemeListView({
   themes: ThemeConfig[];
   activeThemeId: string;
   onSelect: (id: string) => void;
-  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
   onCreate: () => void;
@@ -151,7 +123,6 @@ function ThemeListView({
             theme={theme}
             isActive={theme.id === activeThemeId}
             onSelect={() => onSelect(theme.id)}
-            onEdit={() => onEdit(theme.id)}
             onDelete={themes.length > 1 ? () => onDelete(theme.id) : undefined}
             onDuplicate={() => onDuplicate(theme.id)}
           />
@@ -197,18 +168,117 @@ function ThemeListView({
   );
 }
 
+export function ThemePropertiesPanel({
+  theme,
+  onUpdate,
+}: {
+  theme: ThemeConfig;
+  onUpdate: (updates: Partial<ThemeConfig>) => void;
+}) {
+  const updateColor = (key: keyof ThemeConfig['colors'], value: string) => {
+    onUpdate({ colors: { ...theme.colors, [key]: value } });
+  };
+
+  const updateTypography = (key: keyof ThemeConfig['typography'], value: string) => {
+    onUpdate({ typography: { ...theme.typography, [key]: value } });
+  };
+
+  return (
+    <div style={{ padding: 20 }}>
+      <input
+        type="text"
+        className="mep-input"
+        value={theme.name}
+        onChange={(e) => onUpdate({ name: e.target.value })}
+        placeholder="Theme name"
+        style={{
+          width: '100%',
+          height: 40,
+          padding: '0 12px',
+          background: 'var(--color-bg-tertiary)',
+          border: '1px solid var(--color-border-default)',
+          borderRadius: 'var(--radius-md)',
+          color: 'var(--color-text-primary)',
+          fontSize: 14,
+          fontWeight: 500,
+          fontFamily: 'var(--font-family)',
+          outline: 'none',
+          marginBottom: 16,
+          transition: 'var(--transition-fast)',
+        }}
+      />
+
+      <EditorSection title="Colors">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <ColorRow label="Primary" value={theme.colors.primary} onChange={(v) => updateColor('primary', v)} />
+          <ColorRow label="Background" value={theme.colors.background} onChange={(v) => updateColor('background', v)} />
+          <ColorRow label="Text" value={theme.colors.text} onChange={(v) => updateColor('text', v)} />
+          <ColorRow label="Secondary text" value={theme.colors.secondary} onChange={(v) => updateColor('secondary', v)} />
+        </div>
+      </EditorSection>
+
+      <EditorSection title="Typography">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Select
+            label="Heading font"
+            options={[
+              { value: 'Inter', label: 'Inter' },
+              { value: 'Netflix Sans', label: 'Netflix Sans' },
+              { value: 'Roboto', label: 'Roboto' },
+              { value: 'Arial', label: 'Arial' },
+            ]}
+            value={theme.typography.headlineFont}
+            onChange={(v) => updateTypography('headlineFont', v)}
+          />
+          <Select
+            label="Body font"
+            options={[
+              { value: 'Inter', label: 'Inter' },
+              { value: 'Netflix Sans', label: 'Netflix Sans' },
+              { value: 'Roboto', label: 'Roboto' },
+              { value: 'Arial', label: 'Arial' },
+            ]}
+            value={theme.typography.bodyFont}
+            onChange={(v) => updateTypography('bodyFont', v)}
+          />
+        </div>
+      </EditorSection>
+
+      <EditorSection title="Spacing" last>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Select
+            label="Content spacing"
+            options={[
+              { value: 'compact', label: 'Compact' },
+              { value: 'normal', label: 'Normal' },
+              { value: 'relaxed', label: 'Relaxed' },
+            ]}
+            value={theme.spacing}
+            onChange={(v) => onUpdate({ spacing: v as ThemeConfig['spacing'] })}
+          />
+          <Input
+            label="Border radius"
+            fullWidth
+            value={theme.radius}
+            onChange={(e) => onUpdate({ radius: e.target.value })}
+            placeholder="e.g. 8px"
+          />
+        </div>
+      </EditorSection>
+    </div>
+  );
+}
+
 function ThemeCard({
   theme,
   isActive,
   onSelect,
-  onEdit,
   onDelete,
   onDuplicate,
 }: {
   theme: ThemeConfig;
   isActive: boolean;
   onSelect: () => void;
-  onEdit: () => void;
   onDelete?: () => void;
   onDuplicate: () => void;
 }) {
@@ -277,7 +347,6 @@ function ThemeCard({
             boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
             zIndex: 100,
           }}>
-            <DropdownItem icon={<Pencil size={14} />} label="Edit" onClick={() => { setMenuOpen(false); onEdit(); }} />
             <DropdownItem icon={<Copy size={14} />} label="Duplicate" onClick={() => { setMenuOpen(false); onDuplicate(); }} />
             {onDelete && (
               <DropdownItem icon={<Trash2 size={14} />} label="Delete" variant="danger" onClick={() => { setMenuOpen(false); onDelete(); }} />
@@ -333,7 +402,7 @@ function DropdownItem({ icon, label, onClick, variant }: { icon: React.ReactNode
         borderRadius: 6,
         cursor: 'pointer',
         color: isDanger
-          ? h ? 'var(--color-error)' : 'var(--color-error)'
+          ? 'var(--color-error)'
           : h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
         fontSize: 13,
         transition: 'var(--transition-fast)',
@@ -348,161 +417,6 @@ function DropdownItem({ icon, label, onClick, variant }: { icon: React.ReactNode
     >
       {icon}
       {label}
-    </button>
-  );
-}
-
-function ThemeEditorView({
-  theme,
-  onBack,
-  onUpdate,
-}: {
-  theme: ThemeConfig;
-  onBack: () => void;
-  onUpdate: (updates: Partial<ThemeConfig>) => void;
-}) {
-  const updateColor = (key: keyof ThemeConfig['colors'], value: string) => {
-    onUpdate({ colors: { ...theme.colors, [key]: value } });
-  };
-
-  const updateTypography = (key: keyof ThemeConfig['typography'], value: string) => {
-    onUpdate({ typography: { ...theme.typography, [key]: value } });
-  };
-
-  return (
-    <div style={{ padding: 20 }}>
-      {/* Header with back button */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        marginBottom: 16,
-        paddingBottom: 12,
-        borderBottom: '1px solid var(--color-border-default)',
-      }}>
-        <BackBtn onClick={onBack} />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            Edit Theme
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>
-            Customize colors & typography
-          </div>
-        </div>
-      </div>
-
-      {/* Theme name input */}
-      <input
-        type="text"
-        className="mep-input"
-        value={theme.name}
-        onChange={(e) => onUpdate({ name: e.target.value })}
-        placeholder="Theme name"
-        style={{
-          width: '100%',
-          height: 40,
-          padding: '0 12px',
-          background: 'var(--color-bg-tertiary)',
-          border: '1px solid var(--color-border-default)',
-          borderRadius: 'var(--radius-md)',
-          color: 'var(--color-text-primary)',
-          fontSize: 14,
-          fontWeight: 500,
-          fontFamily: 'var(--font-family)',
-          outline: 'none',
-          marginBottom: 16,
-          transition: 'var(--transition-fast)',
-        }}
-      />
-
-      {/* Colors */}
-      <EditorSection title="Colors">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <ColorRow label="Primary" value={theme.colors.primary} onChange={(v) => updateColor('primary', v)} />
-          <ColorRow label="Background" value={theme.colors.background} onChange={(v) => updateColor('background', v)} />
-          <ColorRow label="Text" value={theme.colors.text} onChange={(v) => updateColor('text', v)} />
-          <ColorRow label="Secondary text" value={theme.colors.secondary} onChange={(v) => updateColor('secondary', v)} />
-        </div>
-      </EditorSection>
-
-      {/* Typography */}
-      <EditorSection title="Typography">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Select
-            label="Heading font"
-            options={[
-              { value: 'Inter', label: 'Inter' },
-              { value: 'Netflix Sans', label: 'Netflix Sans' },
-              { value: 'Roboto', label: 'Roboto' },
-              { value: 'Arial', label: 'Arial' },
-            ]}
-            value={theme.typography.headlineFont}
-            onChange={(v) => updateTypography('headlineFont', v)}
-          />
-          <Select
-            label="Body font"
-            options={[
-              { value: 'Inter', label: 'Inter' },
-              { value: 'Netflix Sans', label: 'Netflix Sans' },
-              { value: 'Roboto', label: 'Roboto' },
-              { value: 'Arial', label: 'Arial' },
-            ]}
-            value={theme.typography.bodyFont}
-            onChange={(v) => updateTypography('bodyFont', v)}
-          />
-        </div>
-      </EditorSection>
-
-      {/* Spacing */}
-      <EditorSection title="Spacing" last>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Select
-            label="Content spacing"
-            options={[
-              { value: 'compact', label: 'Compact' },
-              { value: 'normal', label: 'Normal' },
-              { value: 'relaxed', label: 'Relaxed' },
-            ]}
-            value={theme.spacing}
-            onChange={(v) => onUpdate({ spacing: v as ThemeConfig['spacing'] })}
-          />
-          <Input
-            label="Border radius"
-            fullWidth
-            value={theme.radius}
-            onChange={(e) => onUpdate({ radius: e.target.value })}
-            placeholder="e.g. 8px"
-          />
-        </div>
-      </EditorSection>
-    </div>
-  );
-}
-
-function BackBtn({ onClick }: { onClick: () => void }) {
-  const [h, setH] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      onMouseEnter={() => setH(true)}
-      onMouseLeave={() => setH(false)}
-      style={{
-        width: 32,
-        height: 32,
-        background: h ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
-        border: '1px solid var(--color-border-default)',
-        borderRadius: 8,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        color: h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-        transition: 'var(--transition-fast)',
-        flexShrink: 0,
-      }}
-    >
-      <ArrowLeft size={16} />
     </button>
   );
 }

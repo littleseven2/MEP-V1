@@ -7,16 +7,18 @@ import { useMessageStore } from '../../store/messageStore';
 import { Canvas } from '../canvas/Canvas';
 import { ComponentPalette } from '../sidebar/ComponentPalette';
 import { PropertiesPanel } from '../sidebar/PropertiesPanel';
-import { ThemePanel } from '../sidebar/ThemePanel';
+import { ThemePanel, ThemePropertiesPanel, useThemeManager } from '../sidebar/ThemePanel';
 import { SectionPanel } from '../sidebar/SectionPanel';
 import { EmailPreview } from '../preview/EmailPreview';
 
 type LeftNav = 'theme' | 'section' | 'component';
 
 export const BuilderLayout: React.FC = () => {
-  const { message, setView, selectSection } = useMessageStore();
+  const { message, setView, selectSection, selectedSectionId, selectedComponentId } = useMessageStore();
   const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
+
+  const themeManager = useThemeManager();
 
   const handleCanvasAreaClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) selectSection(null);
@@ -27,6 +29,30 @@ export const BuilderLayout: React.FC = () => {
   if (showPreview) {
     return <EmailPreview onClose={() => setShowPreview(false)} />;
   }
+
+  const hasCanvasSelection = !!selectedSectionId || !!selectedComponentId;
+  const selectedSection = message.sections.find((s) => s.id === selectedSectionId);
+  const hasComponentSelected = !!selectedComponentId && !!selectedSection?.components.find((c) => c.id === selectedComponentId);
+
+  const getRightPanelTitle = () => {
+    if (hasComponentSelected) {
+      const comp = selectedSection?.components.find((c) => c.id === selectedComponentId);
+      if (comp) {
+        const labels: Record<string, string> = {
+          'text-block': 'Text Block',
+          'rich-text': 'Rich Text',
+          'media': 'Media',
+          'cta': 'CTA',
+          'grid': 'Grid',
+          'list': 'List',
+        };
+        return labels[comp.type] || 'Component Properties';
+      }
+      return 'Component Properties';
+    }
+    if (selectedSectionId && selectedSection?.type === 'content') return 'Section Properties';
+    return 'Theme Properties';
+  };
 
   return (
     <div style={{
@@ -109,7 +135,7 @@ export const BuilderLayout: React.FC = () => {
           <VerticalNavItem icon={<Settings size={18} />} label="Setup" active={false} onClick={() => setView('setup')} />
         </div>
 
-        {/* Left Panel */}
+        {/* Left Panel — Library */}
         <div style={{
           background: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border-default)',
@@ -132,7 +158,16 @@ export const BuilderLayout: React.FC = () => {
             {leftNav === 'theme' ? 'Theme' : leftNav === 'section' ? 'Section' : 'Component'}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
-            {leftNav === 'theme' && <ThemePanel />}
+            {leftNav === 'theme' && (
+              <ThemePanel
+                themes={themeManager.themes}
+                activeThemeId={themeManager.activeThemeId}
+                onSelect={themeManager.selectTheme}
+                onDelete={themeManager.deleteTheme}
+                onDuplicate={themeManager.duplicateTheme}
+                onCreate={themeManager.createNewTheme}
+              />
+            )}
             {leftNav === 'section' && <SectionPanel />}
             {leftNav === 'component' && <ComponentPalette />}
           </div>
@@ -157,7 +192,7 @@ export const BuilderLayout: React.FC = () => {
           <Canvas />
         </div>
 
-        {/* Right Panel */}
+        {/* Right Panel — Properties (driven by canvas selection) */}
         <div style={{
           background: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border-default)',
@@ -177,15 +212,18 @@ export const BuilderLayout: React.FC = () => {
             color: 'var(--color-text-tertiary)',
             fontFamily: 'var(--font-display)',
           }}>
-            {leftNav === 'section' ? 'Section Properties' : leftNav === 'component' ? 'Component Properties' : 'Properties'}
+            {getRightPanelTitle()}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'var(--color-border-default) transparent' }}>
-            {leftNav === 'section' && <PropertiesPanel mode="section" />}
-            {leftNav === 'component' && <PropertiesPanel mode="component" />}
-            {leftNav === 'theme' && (
-              <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 13 }}>
-                Theme settings are on the left panel.
-              </div>
+            {hasComponentSelected ? (
+              <PropertiesPanel mode="component" />
+            ) : selectedSectionId && selectedSection?.type === 'content' ? (
+              <PropertiesPanel mode="section" />
+            ) : (
+              <ThemePropertiesPanel
+                theme={themeManager.activeTheme}
+                onUpdate={(updates) => themeManager.updateTheme(themeManager.activeThemeId, updates)}
+              />
             )}
           </div>
         </div>
