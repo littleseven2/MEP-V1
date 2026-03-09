@@ -1,7 +1,28 @@
 import { useRef, useEffect } from 'react';
+import { Info, Star, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent, RichTextSettings } from '../../types/message';
+import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout } from '../../types/message';
 import { posters } from '../../data/posters';
+
+function HornIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 12.5C5 12.5 3 12 2 10.5C1 9 1.5 7 1.5 7L8 4L10.5 11L5 12.5Z" fill="url(#horn-grad1)" />
+      <path d="M8 4L14.5 1.5C15.5 1 16.5 1.5 17 2.5L18.5 7C19 8 18.5 9 17.5 9.5L10.5 11L8 4Z" fill="url(#horn-grad2)" />
+      <path d="M5 12.5L4 15C3.7 15.7 4 16.3 4.7 16.5C5.4 16.7 6 16.3 6.3 15.6L7 13.5L5 12.5Z" fill="#8B2F8B" />
+      <defs>
+        <linearGradient id="horn-grad1" x1="1" y1="10" x2="10" y2="7" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#4A1942" />
+          <stop offset="1" stopColor="#8B2F6B" />
+        </linearGradient>
+        <linearGradient id="horn-grad2" x1="8" y1="8" x2="18" y2="4" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#C23074" />
+          <stop offset="1" stopColor="#E84393" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
 
 interface ComponentRendererProps {
   component: MessageComponent;
@@ -41,18 +62,21 @@ function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius
   );
 }
 
-function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; order: ('eyebrow' | 'headline' | 'body' | 'link')[]; alignment?: 'left' | 'center' | 'right'; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; callout?: { enabled: boolean; text: string; icon?: CalloutIcon }; order: ('eyebrow' | 'headline' | 'body' | 'link' | 'callout')[]; alignment?: 'left' | 'center' | 'right'; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const items = settings.order
-    .filter((k) => (settings[k] as { enabled?: boolean })?.enabled)
+    .filter((k) => {
+      const el = settings[k as keyof typeof settings];
+      return el && typeof el === 'object' && 'enabled' in el && el.enabled;
+    })
     .map((k) => {
-      const item = settings[k];
-      if (k === 'eyebrow') return { type: 'eyebrow' as const, text: item.text };
-      if (k === 'headline') return { type: 'headline' as const, text: item.text };
-      if (k === 'body') return { type: 'body' as const, text: item.text };
-      if (k === 'link') return { type: 'link' as const, text: item.text };
+      if (k === 'eyebrow') return { type: 'eyebrow' as const, text: settings.eyebrow.text };
+      if (k === 'headline') return { type: 'headline' as const, text: settings.headline.text };
+      if (k === 'body') return { type: 'body' as const, text: settings.body.text };
+      if (k === 'link') return { type: 'link' as const, text: settings.link.text };
+      if (k === 'callout' && settings.callout) return { type: 'callout' as const, text: settings.callout.text, icon: settings.callout.icon ?? 'horn' as CalloutIcon };
       return null;
     })
-    .filter(Boolean) as { type: string; text: string }[];
+    .filter(Boolean) as { type: string; text: string; icon?: CalloutIcon }[];
 
   const eyebrowColor = 'rgba(255,255,255,0.9)';
   const headlineColor = '#fff';
@@ -97,18 +121,36 @@ function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolea
               {item.text}
             </a>
           )}
+          {item?.type === 'callout' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: 8, background: 'rgba(0,0,0,0.5)',
+              borderRadius: 8, overflow: 'hidden',
+              width: 'fit-content',
+            }}>
+              <span style={{ color: '#fff', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                {calloutIcons[item.icon ?? 'horn']}
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap' }}>
+                {item.text}
+              </span>
+            </div>
+          )}
         </div>
       ))}
     </div>
   );
 }
 
-function CTAPreview({ settings }: { settings: { buttons: { enabled?: boolean; text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enabled?: boolean; text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const visibleButtons = settings.buttons.filter((btn) => btn.enabled ?? true);
+  const isSideBySide = settings.layout === '2-side-by-side';
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 8,
+      display: 'flex',
+      flexDirection: isSideBySide ? 'row' : 'column',
+      gap: 8,
       padding: settings.padding ?? 0,
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
@@ -119,6 +161,7 @@ function CTAPreview({ settings }: { settings: { buttons: { enabled?: boolean; te
           key={i}
           type="button"
           style={{
+            flex: isSideBySide ? 1 : undefined,
             padding: '12px 24px',
             background: btn.fillColor,
             border: `1px solid ${btn.borderColor}`,
@@ -461,6 +504,31 @@ function RichTextPreview({ settings, componentId, sectionId }: { settings: RichT
   );
 }
 
+const calloutIcons: Record<CalloutIcon, React.ReactNode> = {
+  horn: <HornIcon size={20} />,
+  info: <Info size={20} />,
+  star: <Star size={20} />,
+  alert: <AlertTriangle size={20} />,
+};
+
+function InlineCalloutBadge({ callout }: { callout: ComponentCallout }) {
+  if (!callout.enabled) return null;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      padding: 8, background: 'rgba(0,0,0,0.5)',
+      borderRadius: 8, overflow: 'hidden', width: 'fit-content',
+    }}>
+      <span style={{ color: '#fff', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+        {calloutIcons[callout.icon] ?? calloutIcons.horn}
+      </span>
+      <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap' }}>
+        {callout.text}
+      </span>
+    </div>
+  );
+}
+
 export function ComponentRenderer({ component, sectionId }: ComponentRendererProps) {
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const selectComponent = useMessageStore((s) => s.selectComponent);
@@ -487,6 +555,9 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
     content = <ListPreview settings={component.settings.settings} />;
   }
 
+  const callout = component.callout;
+  const showCallout = callout?.enabled;
+
   return (
     <div
       data-component-id={component.id}
@@ -502,7 +573,9 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         transition: 'outline var(--transition-fast), box-shadow var(--transition-fast)',
       }}
     >
+      {showCallout && callout.position === 'above' && <div style={{ marginBottom: 8 }}><InlineCalloutBadge callout={callout} /></div>}
       {content}
+      {showCallout && callout.position === 'below' && <div style={{ marginTop: 8 }}><InlineCalloutBadge callout={callout} /></div>}
     </div>
   );
 }

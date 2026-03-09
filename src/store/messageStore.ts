@@ -254,8 +254,8 @@ export const useMessageStore = create<MessageStore>((set) =>
           const section = state.message.sections.find((s) => s.id === sectionId);
           if (!section || section.type === 'header' || section.type === 'footer') return {};
           const sections = [...state.message.sections];
-          const footerIndex = sections.findIndex((s) => s.type === 'footer');
-          const insertIndex = footerIndex >= 0 ? footerIndex : sections.length;
+          const originalIndex = sections.findIndex((s) => s.id === sectionId);
+          const insertIndex = originalIndex + 1;
           const newSection: Section = {
             ...JSON.parse(JSON.stringify(section)),
             id: uuid(),
@@ -403,25 +403,26 @@ export const useMessageStore = create<MessageStore>((set) =>
       duplicateComponent: (sectionId, componentId) =>
         set((state) => {
           if (!state.message) return {};
+          let newCompId: string | null = null;
           const sections = state.message.sections.map((s) => {
             if (s.id !== sectionId) return s;
-            const comp = s.components.find((c) => c.id === componentId);
-            if (!comp) return s;
+            const compIndex = s.components.findIndex((c) => c.id === componentId);
+            if (compIndex < 0) return s;
+            const comp = s.components[compIndex];
             const newComp: MessageComponent = {
               ...JSON.parse(JSON.stringify(comp)),
               id: uuid(),
-              order: s.components.length,
+              order: compIndex + 1,
             };
-            return {
-              ...s,
-              components: [...s.components, newComp],
-            };
+            newCompId = newComp.id;
+            const components = [...s.components];
+            components.splice(compIndex + 1, 0, newComp);
+            components.forEach((c, i) => (c.order = i));
+            return { ...s, components };
           });
-          const section = sections.find((s) => s.id === sectionId);
-          const newComp = section?.components[section.components.length - 1];
           return {
             message: { ...state.message, sections },
-            selectedComponentId: newComp?.id ?? null,
+            selectedComponentId: newCompId,
           };
         }),
 

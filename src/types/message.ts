@@ -117,13 +117,17 @@ export interface Section {
   order: number;
 }
 
+// Text block element keys
+export type TextBlockElement = 'eyebrow' | 'headline' | 'body' | 'link' | 'callout';
+
 // Text block settings
 export interface TextBlockSettings {
   eyebrow: { enabled: boolean; text: string };
   headline: { enabled: boolean; text: string };
   body: { enabled: boolean; text: string };
   link: { enabled: boolean; text: string; url: string };
-  order: ('eyebrow' | 'headline' | 'body' | 'link')[];
+  callout: { enabled: boolean; text: string; icon: CalloutIcon };
+  order: TextBlockElement[];
   alignment: 'left' | 'center' | 'right';
   padding: number;
   backgroundColor: string;
@@ -247,6 +251,9 @@ export interface ListSettings {
   strokeWidth: number;
 }
 
+// Callout icon options
+export type CalloutIcon = 'horn' | 'info' | 'star' | 'alert';
+
 // Rich text settings
 export interface RichTextSettings {
   content: string;
@@ -280,6 +287,14 @@ export interface LinkedValue<T = string> {
 // Map of field paths to their linked state
 export type LinkedValues = Record<string, LinkedValue>;
 
+// Component-level callout (can be attached to any component)
+export interface ComponentCallout {
+  enabled: boolean;
+  text: string;
+  icon: CalloutIcon;
+  position: 'above' | 'below';
+}
+
 // Message component
 export interface MessageComponent {
   id: string;
@@ -287,6 +302,7 @@ export interface MessageComponent {
   settings: ComponentSettings;
   linkedValues: LinkedValues;
   attachments: unknown[];
+  callout?: ComponentCallout;
   order: number;
 }
 

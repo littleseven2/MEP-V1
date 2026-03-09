@@ -1,10 +1,46 @@
 import React, { useState } from 'react';
-import { Monitor, Smartphone, ArrowLeft, Sparkles } from 'lucide-react';
+import { Monitor, Smartphone, ArrowLeft, Sparkles, Info, Star, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { Section, MessageComponent } from '../../types/message';
+import type { Section, MessageComponent, CalloutIcon, ComponentCallout } from '../../types/message';
+
+function HornIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 12.5C5 12.5 3 12 2 10.5C1 9 1.5 7 1.5 7L8 4L10.5 11L5 12.5Z" fill="url(#horn-prev1)" />
+      <path d="M8 4L14.5 1.5C15.5 1 16.5 1.5 17 2.5L18.5 7C19 8 18.5 9 17.5 9.5L10.5 11L8 4Z" fill="url(#horn-prev2)" />
+      <path d="M5 12.5L4 15C3.7 15.7 4 16.3 4.7 16.5C5.4 16.7 6 16.3 6.3 15.6L7 13.5L5 12.5Z" fill="#8B2F8B" />
+      <defs>
+        <linearGradient id="horn-prev1" x1="1" y1="10" x2="10" y2="7" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#4A1942" />
+          <stop offset="1" stopColor="#8B2F6B" />
+        </linearGradient>
+        <linearGradient id="horn-prev2" x1="8" y1="8" x2="18" y2="4" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#C23074" />
+          <stop offset="1" stopColor="#E84393" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
 
 interface EmailPreviewProps {
   onClose: () => void;
+}
+
+function PreviewCalloutBadge({ callout }: { callout: ComponentCallout }) {
+  const iconMap: Record<CalloutIcon, React.ReactNode> = {
+    horn: <HornIcon size={14} />, info: <Info size={14} />, star: <Star size={14} />, alert: <AlertTriangle size={14} />,
+  };
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 6,
+      padding: 6, background: 'rgba(0,0,0,0.5)',
+      borderRadius: 6, width: 'fit-content',
+    }}>
+      <span style={{ color: '#fff', display: 'flex', alignItems: 'center' }}>{iconMap[callout.icon]}</span>
+      <span style={{ fontSize: 12, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{callout.text}</span>
+    </div>
+  );
 }
 
 function PreviewComponent({ component }: { component: MessageComponent }) {
@@ -30,6 +66,16 @@ function PreviewComponent({ component }: { component: MessageComponent }) {
           if (k === 'headline') return <div key={k} style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600 }}>{(item as { text: string }).text}</div>;
           if (k === 'body') return <p key={k} style={{ fontSize: 14, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>{(item as { text: string }).text}</p>;
           if (k === 'link') return <a key={k} href="#" style={{ fontSize: 14, color: 'var(--color-brand)' }}>{(item as { text: string }).text}</a>;
+          if (k === 'callout' && s.callout) {
+            const ci = s.callout;
+            const ciIconMap: Record<CalloutIcon, React.ReactNode> = { horn: <HornIcon size={14} />, info: <Info size={14} />, star: <Star size={14} />, alert: <AlertTriangle size={14} /> };
+            return (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: 6, background: 'rgba(0,0,0,0.5)', borderRadius: 6, width: 'fit-content' }}>
+                <span style={{ color: '#fff', display: 'flex', alignItems: 'center' }}>{ciIconMap[ci.icon]}</span>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{ci.text}</span>
+              </div>
+            );
+          }
           return null;
         })}
       </div>
@@ -132,9 +178,17 @@ function PreviewSection({ section }: { section: Section }) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {section.components.sort((a, b) => a.order - b.order).map((c) => (
-                <PreviewComponent key={c.id} component={c} />
-              ))}
+              {section.components.sort((a, b) => a.order - b.order).map((c) => {
+                const co = c.callout;
+                const showCo = co?.enabled;
+                return (
+                  <div key={c.id}>
+                    {showCo && co.position === 'above' && <div style={{ marginBottom: 8 }}><PreviewCalloutBadge callout={co} /></div>}
+                    <PreviewComponent component={c} />
+                    {showCo && co.position === 'below' && <div style={{ marginTop: 8 }}><PreviewCalloutBadge callout={co} /></div>}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

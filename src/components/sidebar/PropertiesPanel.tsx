@@ -1,10 +1,11 @@
-import { useState, type CSSProperties } from 'react';
+import { useState, useRef, type CSSProperties } from 'react';
 import {
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignCenter, AlignRight,
   Link, Quote, List, ListOrdered,
   IndentDecrease, IndentIncrease, RemoveFormatting,
   Type, Highlighter, Baseline, ChevronDown,
+  GripVertical,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type {
@@ -22,6 +23,7 @@ import type {
   ListItemStyle,
   ListColumns,
   GridCellStyle,
+  CalloutIcon,
   LinkedValues,
   LinkedValue,
 } from '../../types/message';
@@ -42,17 +44,17 @@ function PanelSection({
 }) {
   return (
     <div style={{
-      padding: '16px 0',
+      padding: '20px 0',
       borderBottom: '1px solid var(--color-border-default)',
     }}>
       <h3 style={{
-        fontFamily: 'var(--font-display)',
+        fontFamily: 'var(--font-family)',
         fontSize: 11,
         fontWeight: 600,
         color: 'var(--color-text-tertiary)',
         textTransform: 'none',
         letterSpacing: 'var(--letter-spacing-wide)',
-        marginBottom: 12,
+        marginBottom: 16,
       }}>
         {title}
       </h3>
@@ -354,74 +356,141 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
   const update = (s: TextBlockSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'text-block', settings: s });
 
-  const moveUp = (key: string) => {
-    const idx = settings.order.indexOf(key as typeof settings.order[number]);
-    if (idx <= 0) return;
-    const newOrder = [...settings.order];
-    [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
-    update({ ...settings, order: newOrder });
-  };
 
-  const moveDown = (key: string) => {
-    const idx = settings.order.indexOf(key as typeof settings.order[number]);
-    if (idx < 0 || idx >= settings.order.length - 1) return;
-    const newOrder = [...settings.order];
-    [newOrder[idx], newOrder[idx + 1]] = [newOrder[idx + 1], newOrder[idx]];
-    update({ ...settings, order: newOrder });
-  };
+  const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link', callout: 'Callout' };
 
-  const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link' };
-
-  const fieldVarMap: Record<string, string> = { eyebrow: 'eyebrow', headline: 'headline', body: 'body' };
+  const fieldVarMap: Record<string, string> = { eyebrow: 'eyebrow', headline: 'headline', body: 'body', callout: 'callout' };
+  const calloutIconOptions: { value: CalloutIcon; label: string }[] = [
+    { value: 'horn', label: 'Horn' },
+    { value: 'info', label: 'Info' },
+    { value: 'star', label: 'Star' },
+    { value: 'alert', label: 'Alert' },
+  ];
   const textVars = entityVariables.filter((v) => v.valueType === 'text');
 
-  const arrowBtnStyle = (disabled: boolean): React.CSSProperties => ({
-    width: 22, height: 22, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: 'transparent', border: '1px solid var(--color-border-default)',
-    color: disabled ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-    cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 12, opacity: disabled ? 0.4 : 1, padding: 0,
-    transition: 'var(--transition-fast)',
-  });
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const handleDragStart = (idx: number) => {
+    dragItem.current = idx;
+    setDragIdx(idx);
+  };
+  const handleDragEnter = (idx: number) => {
+    dragOverItem.current = idx;
+    setDragOverIdx(idx);
+  };
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const newOrder = [...settings.order];
+      const [removed] = newOrder.splice(dragItem.current, 1);
+      newOrder.splice(dragOverItem.current, 0, removed);
+      update({ ...settings, order: newOrder });
+    }
+    dragItem.current = null;
+    dragOverItem.current = null;
+    setDragIdx(null);
+    setDragOverIdx(null);
+  };
+
+  const getDropLine = (idx: number): 'above' | 'below' | null => {
+    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) return null;
+    if (idx === dragOverIdx) return dragIdx < dragOverIdx ? 'below' : 'above';
+    return null;
+  };
 
   if (tab === 'content') {
     return (
       <PanelSection title="Content">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {settings.order.map((key, idx) => {
-            const isFirst = idx === 0;
-            const isLast = idx === settings.order.length - 1;
             const fieldKey = fieldVarMap[key] ?? key;
+            const isEnabled = (settings[key] as { enabled: boolean }).enabled;
+            const isDragging = dragIdx === idx;
+            const dropLine = getDropLine(idx);
 
             return (
-              <div key={key}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    <button type="button" className="mep-toolbar-btn" style={arrowBtnStyle(isFirst)} disabled={isFirst} onClick={() => moveUp(key)}>▲</button>
-                    <button type="button" className="mep-toolbar-btn" style={arrowBtnStyle(isLast)} disabled={isLast} onClick={() => moveDown(key)}>▼</button>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <Toggle
-                      label={labels[key]}
-                      checked={(settings[key] as { enabled: boolean }).enabled}
-                      onChange={(v) => {
-                        if (key === 'link') update({ ...settings, link: { ...settings.link, enabled: v } });
-                        else update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), enabled: v } });
-                      }}
+              <div key={key} style={{ position: 'relative' }}>
+                {dropLine === 'above' && (
+                  <div style={{ position: 'absolute', top: -2, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+                )}
+                <div
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    background: isDragging ? 'var(--color-bg-tertiary)' : 'transparent',
+                    opacity: isDragging ? 0.4 : 1,
+                    cursor: 'grab',
+                    transition: 'var(--transition-fast)',
+                  }}
+                >
+                {dropLine === 'below' && (
+                  <div style={{ position: 'absolute', bottom: -2, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+                )}
+                  <GripVertical size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                  <span style={{
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: isEnabled ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                    fontFamily: 'var(--font-family)',
+                    userSelect: 'none',
+                  }}>
+                    {labels[key]}
+                  </span>
+                  <Toggle
+                    label=""
+                    size="sm"
+                    checked={isEnabled}
+                    onChange={(v) => {
+                      if (key === 'link') update({ ...settings, link: { ...settings.link, enabled: v } });
+                      else if (key === 'callout') update({ ...settings, callout: { ...settings.callout, enabled: v } });
+                      else update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), enabled: v } });
+                    }}
+                  />
+                </div>
+                {isEnabled && key !== 'link' && key !== 'callout' && (
+                  <div style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 4, paddingBottom: 4 }}>
+                    <LinkedField
+                      value={(settings[key] as { text: string }).text}
+                      linked={linked[fieldKey]}
+                      onChange={(v) => update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), text: v } })}
+                      onLink={(lv) => setLinked(fieldKey, lv)}
+                      variables={textVars}
+                      placeholder={labels[key]}
                     />
                   </div>
-                </div>
-                {(settings[key] as { enabled: boolean }).enabled && key !== 'link' && (
-                  <LinkedField
-                    value={(settings[key] as { text: string }).text}
-                    linked={linked[fieldKey]}
-                    onChange={(v) => update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), text: v } })}
-                    onLink={(lv) => setLinked(fieldKey, lv)}
-                    variables={textVars}
-                    placeholder={labels[key]}
-                  />
+                )}
+                {key === 'callout' && settings.callout.enabled && (
+                  <div style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 4, paddingBottom: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <LinkedField
+                      label="Callout text"
+                      value={settings.callout.text}
+                      linked={linked['callout']}
+                      onChange={(v) => update({ ...settings, callout: { ...settings.callout, text: v } })}
+                      onLink={(lv) => setLinked('callout', lv)}
+                      variables={textVars}
+                      placeholder="Callout text"
+                    />
+                    <Select
+                      label="Icon"
+                      options={calloutIconOptions}
+                      value={settings.callout.icon}
+                      onChange={(v) => update({ ...settings, callout: { ...settings.callout, icon: v as CalloutIcon } })}
+                    />
+                  </div>
                 )}
                 {key === 'link' && settings.link.enabled && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 4, paddingBottom: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <LinkedField
                       label="Link text"
                       value={settings.link.text}
@@ -884,6 +953,7 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
   };
 
   const addButton = () => {
+    if (settings.buttons.length >= 2) return;
     const n = settings.buttons.length + 1;
     update({
       ...settings,
@@ -892,8 +962,8 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
         text: `Button ${n}`,
         url: '',
         style: 'secondary' as const,
-        fillColor: '#333333',
-        borderColor: '#333333',
+        fillColor: 'transparent',
+        borderColor: '#888888',
         textColor: '#ffffff',
       }],
     });
@@ -911,11 +981,9 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
           {settings.buttons.map((btn, i) => (
             <div key={i} style={{ padding: 12, background: 'var(--color-bg-tertiary)', borderRadius: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <Toggle
-                  label={`Button ${i + 1}`}
-                  checked={btn.enabled ?? true}
-                  onChange={(v) => updateButton(i, { enabled: v })}
-                />
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)' }}>
+                  Button {i + 1}
+                </span>
                 {settings.buttons.length > 1 && (
                   <button
                     type="button"
@@ -928,66 +996,121 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
                   >×</button>
                 )}
               </div>
-              {(btn.enabled ?? true) && (
-                <>
-                  <LinkedField
-                    label="Text"
-                    value={btn.text}
-                    linked={linked[`btn.${i}.text`]}
-                    onChange={(v) => updateButton(i, { text: v })}
-                    onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
-                    variables={entityVariables.filter((v) => v.valueType === 'text')}
-                    placeholder="Button text"
-                  />
-                  <div style={{ marginTop: 8 }}>
-                    <LinkedField
-                      label="URL"
-                      value={btn.url}
-                      linked={linked[`btn.${i}.url`]}
-                      onChange={(v) => updateButton(i, { url: v })}
-                      onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
-                      variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
-                      placeholder="URL"
-                    />
-                  </div>
-                </>
-              )}
+              <LinkedField
+                label="Text"
+                value={btn.text}
+                linked={linked[`btn.${i}.text`]}
+                onChange={(v) => updateButton(i, { text: v })}
+                onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
+                variables={entityVariables.filter((v) => v.valueType === 'text')}
+                placeholder="Button text"
+              />
+              <div style={{ marginTop: 8 }}>
+                <LinkedField
+                  label="URL"
+                  value={btn.url}
+                  linked={linked[`btn.${i}.url`]}
+                  onChange={(v) => updateButton(i, { url: v })}
+                  onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
+                  variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
+                  placeholder="URL"
+                />
+              </div>
             </div>
           ))}
-          <button
-            type="button"
-            onClick={addButton}
-            style={{
-              width: '100%', height: 36, borderRadius: 8,
-              border: '1px dashed var(--color-border-default)',
-              background: 'transparent', color: 'var(--color-text-secondary)',
-              fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
-              transition: 'var(--transition-fast)',
-            }}
-          >
-            + Add button
-          </button>
+          {settings.buttons.length < 2 && (
+            <button
+              type="button"
+              onClick={addButton}
+              style={{
+                width: '100%', height: 36, borderRadius: 8,
+                border: '1px dashed var(--color-border-default)',
+                background: 'transparent', color: 'var(--color-text-secondary)',
+                fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
+                transition: 'var(--transition-fast)',
+              }}
+            >
+              + Add button
+            </button>
+          )}
         </div>
       </PanelSection>
     );
   }
 
+  const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 };
+
   return (
     <>
+      <PanelSection title="Layout">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Format</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {([
+                { value: 'stacked', label: 'Stacked' },
+                { value: 'side-by-side', label: 'Side by side' },
+              ] as const).map((opt) => (
+                <StepperBtn
+                  key={opt.value}
+                  onClick={() => update({ ...settings, layout: opt.value === 'stacked' ? '2-stacked' : '2-side-by-side' })}
+                  style={(settings.layout === '2-side-by-side' ? opt.value === 'side-by-side' : opt.value === 'stacked') ? {
+                    border: '2px solid var(--color-brand)',
+                    background: 'var(--color-brand-subtle)',
+                    color: 'var(--color-brand)',
+                    fontSize: 12,
+                    flex: 1,
+                  } : { fontSize: 12, flex: 1 }}
+                >
+                  {opt.label}
+                </StepperBtn>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PanelSection>
       <PanelSection title="Button Style">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {settings.buttons.map((btn, i) => (
-            <LinkedField
-              key={i}
-              label={`Button ${i + 1} fill`}
-              value={btn.fillColor}
-              linked={linked[`btn.${i}.fillColor`]}
-              onChange={(v) => updateButton(i, { fillColor: v })}
-              onLink={(lv) => setLinked(`btn.${i}.fillColor`, lv)}
-              variables={themeVariables.filter((v) => v.valueType === 'color')}
-              type="color"
-              placeholder="#E50914"
-            />
+            <div key={i} style={{ padding: 12, background: 'var(--color-bg-tertiary)', borderRadius: 8 }}>
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)' }}>
+                  Button {i + 1}
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <LinkedField
+                  label="Fill color"
+                  value={btn.fillColor}
+                  linked={linked[`btn.${i}.fillColor`]}
+                  onChange={(v) => updateButton(i, { fillColor: v })}
+                  onLink={(lv) => setLinked(`btn.${i}.fillColor`, lv)}
+                  variables={themeVariables.filter((v) => v.valueType === 'color')}
+                  type="color"
+                  placeholder="transparent"
+                />
+                <LinkedField
+                  label="Stroke color"
+                  value={btn.borderColor}
+                  linked={linked[`btn.${i}.borderColor`]}
+                  onChange={(v) => updateButton(i, { borderColor: v })}
+                  onLink={(lv) => setLinked(`btn.${i}.borderColor`, lv)}
+                  variables={themeVariables.filter((v) => v.valueType === 'color')}
+                  type="color"
+                  placeholder="transparent"
+                />
+                <LinkedField
+                  label="Text color"
+                  value={btn.textColor}
+                  linked={linked[`btn.${i}.textColor`]}
+                  onChange={(v) => updateButton(i, { textColor: v })}
+                  onLink={(lv) => setLinked(`btn.${i}.textColor`, lv)}
+                  variables={themeVariables.filter((v) => v.valueType === 'color')}
+                  type="color"
+                  placeholder="#ffffff"
+                />
+              </div>
+            </div>
           ))}
         </div>
       </PanelSection>
@@ -1608,25 +1731,22 @@ function ListItemStyleSection({ settings, update }: { settings: ListSettings; up
 }
 
 function ComponentProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
+  let typeSpecificContent: React.ReactNode = null;
   if (component.settings.type === 'text-block') {
-    return <TextBlockProperties component={component} sectionId={sectionId} tab={tab} />;
+    typeSpecificContent = <TextBlockProperties component={component} sectionId={sectionId} tab={tab} />;
+  } else if (component.settings.type === 'rich-text') {
+    typeSpecificContent = <RichTextProperties component={component} sectionId={sectionId} tab={tab} />;
+  } else if (component.settings.type === 'media') {
+    typeSpecificContent = <MediaProperties component={component} sectionId={sectionId} tab={tab} />;
+  } else if (component.settings.type === 'cta') {
+    typeSpecificContent = <CTAProperties component={component} sectionId={sectionId} tab={tab} />;
+  } else if (component.settings.type === 'grid') {
+    typeSpecificContent = <GridProperties component={component} sectionId={sectionId} tab={tab} />;
+  } else if (component.settings.type === 'list') {
+    typeSpecificContent = <ListProperties component={component} sectionId={sectionId} tab={tab} />;
   }
-  if (component.settings.type === 'rich-text') {
-    return <RichTextProperties component={component} sectionId={sectionId} tab={tab} />;
-  }
-  if (component.settings.type === 'media') {
-    return <MediaProperties component={component} sectionId={sectionId} tab={tab} />;
-  }
-  if (component.settings.type === 'cta') {
-    return <CTAProperties component={component} sectionId={sectionId} tab={tab} />;
-  }
-  if (component.settings.type === 'grid') {
-    return <GridProperties component={component} sectionId={sectionId} tab={tab} />;
-  }
-  if (component.settings.type === 'list') {
-    return <ListProperties component={component} sectionId={sectionId} tab={tab} />;
-  }
-  return null;
+
+  return <>{typeSpecificContent}</>;
 }
 
 export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {

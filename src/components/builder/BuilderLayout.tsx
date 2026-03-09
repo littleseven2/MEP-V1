@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   Eye, Settings, Layers, Palette,
-  Sparkles, Send, Undo2, Redo2, Component,
+  Sparkles, Send, Undo2, Redo2, Component, Paperclip,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { Canvas } from '../canvas/Canvas';
@@ -9,9 +9,10 @@ import { ComponentPalette } from '../sidebar/ComponentPalette';
 import { PropertiesPanel } from '../sidebar/PropertiesPanel';
 import { ThemePanel, ThemePropertiesPanel, useThemeManager } from '../sidebar/ThemePanel';
 import { SectionPanel } from '../sidebar/SectionPanel';
+import { AttachmentPanel } from '../sidebar/AttachmentPanel';
 import { EmailPreview } from '../preview/EmailPreview';
 
-type LeftNav = 'theme' | 'section' | 'component';
+type LeftNav = 'theme' | 'section' | 'component' | 'attachment';
 
 export const BuilderLayout: React.FC = () => {
   const { message, setView, selectSection, selectedSectionId, selectedComponentId } = useMessageStore();
@@ -34,6 +35,7 @@ export const BuilderLayout: React.FC = () => {
   const hasComponentSelected = !!selectedComponentId && !!selectedSection?.components.find((c) => c.id === selectedComponentId);
 
   const getRightPanelTitle = () => {
+    if (leftNav === 'theme') return 'Theme Properties';
     if (hasComponentSelected) {
       const comp = selectedSection?.components.find((c) => c.id === selectedComponentId);
       if (comp) {
@@ -130,6 +132,7 @@ export const BuilderLayout: React.FC = () => {
           <VerticalNavItem icon={<Palette size={18} />} label="Theme" active={leftNav === 'theme'} onClick={() => setLeftNav('theme')} />
           <VerticalNavItem icon={<Layers size={18} />} label="Section" active={leftNav === 'section'} onClick={() => setLeftNav('section')} />
           <VerticalNavItem icon={<Component size={18} />} label="Component" active={leftNav === 'component'} onClick={() => setLeftNav('component')} />
+          <VerticalNavItem icon={<Paperclip size={18} />} label="Attachment" active={leftNav === 'attachment'} onClick={() => setLeftNav('attachment')} />
           <div style={{ flex: 1 }} />
           <VerticalNavItem icon={<Settings size={18} />} label="Setup" active={false} onClick={() => setView('setup')} />
         </div>
@@ -154,7 +157,7 @@ export const BuilderLayout: React.FC = () => {
             color: 'var(--color-text-primary)',
             fontFamily: 'var(--font-display)',
           }}>
-            {leftNav === 'theme' ? 'Theme' : leftNav === 'section' ? 'Section' : 'Component'}
+            {leftNav === 'theme' ? 'Theme' : leftNav === 'section' ? 'Section' : leftNav === 'attachment' ? 'Attachment' : 'Component'}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'none' }}>
             {leftNav === 'theme' && (
@@ -169,6 +172,7 @@ export const BuilderLayout: React.FC = () => {
             )}
             {leftNav === 'section' && <SectionPanel />}
             {leftNav === 'component' && <ComponentPalette />}
+            {leftNav === 'attachment' && <AttachmentPanel />}
           </div>
         </div>
 
@@ -214,7 +218,12 @@ export const BuilderLayout: React.FC = () => {
             {getRightPanelTitle()}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'var(--color-border-default) transparent' }}>
-            {hasComponentSelected ? (
+            {leftNav === 'theme' ? (
+              <ThemePropertiesPanel
+                theme={themeManager.activeTheme}
+                onUpdate={(updates) => themeManager.updateTheme(themeManager.activeThemeId, updates)}
+              />
+            ) : hasComponentSelected ? (
               <PropertiesPanel mode="component" />
             ) : selectedSectionId && selectedSection?.type === 'content' ? (
               <PropertiesPanel mode="section" />

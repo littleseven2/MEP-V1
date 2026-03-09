@@ -384,6 +384,12 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
           if (k === 'headline') return <div key={k} style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, color: '#fff' }}>{(item as { text: string }).text}</div>;
           if (k === 'body') return <p key={k} style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, margin: 0 }}>{(item as { text: string }).text}</p>;
           if (k === 'link') return <a key={k} href="#" onClick={(e) => e.preventDefault()} style={{ fontSize: 10, color: 'var(--color-brand)' }}>{(item as { text: string }).text}</a>;
+          if (k === 'callout' && s.callout) return (
+            <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '3px 5px', background: 'rgba(0,0,0,0.5)', borderRadius: 4, width: 'fit-content' }}>
+              <span style={{ fontSize: 8, color: '#fff' }}>📣</span>
+              <span style={{ fontSize: 8, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{s.callout.text}</span>
+            </div>
+          );
           return null;
         })}
       </div>
@@ -515,9 +521,27 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
               {section.type === 'content' && section.components.length > 0 && (
                 <div style={{ padding: 12 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {section.components.sort((a, b) => a.order - b.order).map((c) => (
-                      <MiniPreviewComponent key={c.id} component={c} />
-                    ))}
+                    {section.components.sort((a, b) => a.order - b.order).map((c) => {
+                      const co = c.callout;
+                      const showCo = co?.enabled;
+                      return (
+                        <div key={c.id}>
+                          {showCo && co.position === 'above' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 4px', background: 'rgba(0,0,0,0.5)', borderRadius: 3, width: 'fit-content', marginBottom: 4 }}>
+                              <span style={{ fontSize: 7, color: '#fff' }}>📣</span>
+                              <span style={{ fontSize: 7, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{co.text}</span>
+                            </div>
+                          )}
+                          <MiniPreviewComponent component={c} />
+                          {showCo && co.position === 'below' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 4px', background: 'rgba(0,0,0,0.5)', borderRadius: 3, width: 'fit-content', marginTop: 4 }}>
+                              <span style={{ fontSize: 7, color: '#fff' }}>📣</span>
+                              <span style={{ fontSize: 7, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{co.text}</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
