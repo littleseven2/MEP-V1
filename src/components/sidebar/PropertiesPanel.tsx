@@ -30,8 +30,8 @@ import {
   intentOptions,
   packageTypes,
 } from '../../data/defaults';
-import { entityVariables, themeVariables, allVariables } from '../../data/variables';
-import { Select, Toggle, Input, LinkedField, LinkedWrapper } from '../../ui';
+import { entityVariables, themeVariables } from '../../data/variables';
+import { Select, Toggle, LinkedField, LinkedWrapper } from '../../ui';
 
 function PanelSection({
   title,

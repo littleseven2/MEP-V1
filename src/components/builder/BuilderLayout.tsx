@@ -30,7 +30,6 @@ export const BuilderLayout: React.FC = () => {
     return <EmailPreview onClose={() => setShowPreview(false)} />;
   }
 
-  const hasCanvasSelection = !!selectedSectionId || !!selectedComponentId;
   const selectedSection = message.sections.find((s) => s.id === selectedSectionId);
   const hasComponentSelected = !!selectedComponentId && !!selectedSection?.components.find((c) => c.id === selectedComponentId);
 
