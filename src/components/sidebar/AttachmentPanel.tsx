@@ -44,7 +44,6 @@ function HornIcon({ size = 18 }: { size?: number }) {
 
 export function AttachmentPanel() {
   const message = useMessageStore((s) => s.message);
-  const selectedSectionId = useMessageStore((s) => s.selectedSectionId);
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const updateComponent = useMessageStore((s) => s.updateComponent);
 
