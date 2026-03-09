@@ -105,7 +105,7 @@ function StepperInput({ value, onChange, style }: { value: number; onChange: (v:
   );
 }
 
-function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style', linked, onLink }: {
+function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style', linked, onLink, imageRadius, onImageRadiusUpdate }: {
   padding: number;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
@@ -115,12 +115,30 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
   title?: string;
   linked?: LinkedValues;
   onLink?: (fieldKey: string, lv: LinkedValue) => void;
+  imageRadius?: number;
+  onImageRadiusUpdate?: (v: number) => void;
 }) {
   const colorVars = themeVariables.filter((v) => v.valueType === 'color');
   const numberVars = [...themeVariables.filter((v) => v.valueType === 'text')];
   return (
     <PanelSection title={title}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {imageRadius !== undefined && onImageRadiusUpdate && (
+          <LinkedWrapper
+            label="Image radius"
+            linked={linked?.['mediaRadius']}
+            onLink={(lv) => onLink?.('mediaRadius', lv)}
+            variables={numberVars}
+            currentValue={String(imageRadius)}
+            onValueFromVariable={(v) => onImageRadiusUpdate(parseInt(v) || 0)}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => onImageRadiusUpdate(Math.max(0, imageRadius - 1))} disabled={imageRadius <= 0}>‹</StepperBtn>
+              <StepperInput value={imageRadius} onChange={(v) => onImageRadiusUpdate(Math.max(0, v || 0))} />
+              <StepperBtn onClick={() => onImageRadiusUpdate(imageRadius + 1)}>›</StepperBtn>
+            </div>
+          </LinkedWrapper>
+        )}
         <LinkedWrapper
           label="Padding"
           linked={linked?.['padding']}
@@ -774,33 +792,6 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
   if (tab === 'content') {
     return (
       <>
-        <PanelSection title="Elements">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <LinkedWrapper
-              linked={linked['format']}
-              onLink={(lv) => setLinked('format', lv)}
-              variables={entityVariables}
-              currentValue={settings.format}
-              onValueFromVariable={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
-            >
-              <Select
-                label="Artwork format"
-                options={[
-                  { value: 'poster', label: 'Poster' },
-                  { value: 'poster-art', label: 'Poster Art' },
-                  { value: 'banner', label: 'Banner' },
-                  { value: 'banner-art', label: 'Banner Art' },
-                  { value: 'hero', label: 'Hero' },
-                  { value: 'hero-art', label: 'Hero Art' },
-                  { value: 'thumbnail', label: 'Thumbnail' },
-                  { value: 'video', label: 'Video' },
-                ]}
-                value={settings.format}
-                onChange={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
-              />
-            </LinkedWrapper>
-          </div>
-        </PanelSection>
         <PanelSection title="Data">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <LinkedField
@@ -832,47 +823,27 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
       <PanelSection title="Layout">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
-            linked={linked['alignment']}
-            onLink={(lv) => setLinked('alignment', lv)}
-            variables={themeVariables}
-            currentValue={settings.alignment}
+            linked={linked['format']}
+            onLink={(lv) => setLinked('format', lv)}
+            variables={entityVariables}
+            currentValue={settings.format}
+            onValueFromVariable={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
           >
             <Select
-              label="Alignment"
+              label="Artwork format"
               options={[
-                { value: 'left', label: 'Left' },
-                { value: 'center', label: 'Center' },
-                { value: 'right', label: 'Right' },
+                { value: 'poster', label: 'Poster' },
+                { value: 'poster-art', label: 'Poster Art' },
+                { value: 'banner', label: 'Banner' },
+                { value: 'banner-art', label: 'Banner Art' },
+                { value: 'hero', label: 'Hero' },
+                { value: 'hero-art', label: 'Hero Art' },
+                { value: 'thumbnail', label: 'Thumbnail' },
+                { value: 'video', label: 'Video' },
               ]}
-              value={settings.alignment}
-              onChange={(v) => update({ ...settings, alignment: v as MediaSettings['alignment'] })}
+              value={settings.format}
+              onChange={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
             />
-          </LinkedWrapper>
-          <LinkedWrapper
-            linked={linked['isInteractive']}
-            onLink={(lv) => setLinked('isInteractive', lv)}
-            variables={entityVariables}
-            currentValue={String(settings.isInteractive)}
-          >
-            <Toggle
-              label="Interactive"
-              checked={settings.isInteractive}
-              onChange={(v) => update({ ...settings, isInteractive: v })}
-            />
-          </LinkedWrapper>
-          <LinkedWrapper
-            label="Image radius"
-            linked={linked['mediaRadius']}
-            onLink={(lv) => setLinked('mediaRadius', lv)}
-            variables={themeVariables.filter((v) => v.valueType === 'text')}
-            currentValue={String(settings.mediaRadius ?? 8)}
-            onValueFromVariable={(v) => update({ ...settings, mediaRadius: parseInt(v) || 8 })}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
-            </div>
           </LinkedWrapper>
         </div>
       </PanelSection>
@@ -885,6 +856,8 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
         onUpdate={(v) => update({ ...settings, ...v })}
         linked={linked}
         onLink={setLinked}
+        imageRadius={settings.mediaRadius ?? 8}
+        onImageRadiusUpdate={(v) => update({ ...settings, mediaRadius: v })}
       />
     </>
   );
