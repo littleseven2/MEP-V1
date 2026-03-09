@@ -149,6 +149,7 @@ export interface MediaSettings {
 
 // CTA button config
 export interface CTAButton {
+  enabled: boolean;
   text: string;
   url: string;
   style: 'primary' | 'secondary' | 'text-link';
@@ -175,6 +176,7 @@ export interface GridCellStyle {
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
   strokeWidth: number;
+  imageRadius: number;
 }
 
 // Grid item
@@ -228,8 +230,11 @@ export interface ListItem {
 export interface ListSettings {
   layout: ListLayout;
   columns: ListColumns;
-  showDivider: boolean;
+  showTitle: boolean;
+  showSubtitle: boolean;
+  showMetadata: boolean;
   showThumbnail: boolean;
+  showDivider: boolean;
   thumbnailRadius: number;
   itemCount: 'all' | number;
   items: ListItem[];

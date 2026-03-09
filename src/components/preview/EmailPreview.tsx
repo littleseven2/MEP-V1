@@ -38,7 +38,7 @@ function PreviewComponent({ component }: { component: MessageComponent }) {
   if (component.settings.type === 'cta') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {component.settings.settings.buttons.map((btn, i) => (
+        {component.settings.settings.buttons.filter((b) => b.enabled ?? true).map((btn, i) => (
           <button key={i} type="button" style={{
             padding: '12px 24px', background: btn.fillColor,
             border: `1px solid ${btn.borderColor}`, color: btn.textColor,
@@ -53,9 +53,9 @@ function PreviewComponent({ component }: { component: MessageComponent }) {
   if (component.settings.type === 'grid') {
     const s = component.settings.settings;
     const gapPx = s.gap ?? 8;
-    const radius = s.itemRadius ?? 8;
+    const fallbackRadius = s.cellStyle?.imageRadius ?? s.itemRadius ?? 8;
     const mode = s.splitMode ?? 'row';
-    const cellStyle = { aspectRatio: '1', background: 'var(--color-bg-tertiary)', borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--color-text-tertiary)' } as React.CSSProperties;
+    const cellStyle = { aspectRatio: '1', background: 'var(--color-bg-tertiary)', borderRadius: fallbackRadius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--color-text-tertiary)' } as React.CSSProperties;
     let n = 0;
     if (mode === 'column') {
       const cols = s.cols ?? [2, 2, 2];
@@ -100,9 +100,9 @@ function PreviewComponent({ component }: { component: MessageComponent }) {
               <div style={{ width: 48, height: 48, background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0 }} />
             )}
             <div>
-              <div style={{ fontWeight: 500, fontSize: 14 }}>{item.title}</div>
-              {item.subtitle && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{item.subtitle}</div>}
-              {item.metadata && <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{item.metadata}</div>}
+              {(s.showTitle ?? true) && <div style={{ fontWeight: 500, fontSize: 14 }}>{item.title}</div>}
+              {(s.showSubtitle ?? true) && item.subtitle && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{item.subtitle}</div>}
+              {(s.showMetadata ?? true) && item.metadata && <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{item.metadata}</div>}
             </div>
           </div>
         ))}

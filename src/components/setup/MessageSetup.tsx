@@ -392,7 +392,7 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
   if (component.settings.type === 'cta') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {component.settings.settings.buttons.map((btn, i) => (
+        {component.settings.settings.buttons.filter((b) => b.enabled ?? true).map((btn, i) => (
           <button key={i} type="button" style={{
             padding: '6px 12px', background: btn.fillColor,
             border: `1px solid ${btn.borderColor}`, color: btn.textColor,
@@ -407,9 +407,9 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
   if (component.settings.type === 'grid') {
     const s = component.settings.settings;
     const gapPx = Math.round((s.gap ?? 8) * 0.5);
-    const radius = Math.round((s.itemRadius ?? 8) * 0.5);
+    const fallbackRadius = Math.round((s.cellStyle?.imageRadius ?? s.itemRadius ?? 8) * 0.5);
     const mode = s.splitMode ?? 'row';
-    const cellStyle = { aspectRatio: '1', background: 'rgba(255,255,255,0.05)', borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'rgba(255,255,255,0.3)' } as React.CSSProperties;
+    const cellStyle = { aspectRatio: '1', background: 'rgba(255,255,255,0.05)', borderRadius: fallbackRadius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'rgba(255,255,255,0.3)' } as React.CSSProperties;
     let n = 0;
     if (mode === 'column') {
       const cols = (s.cols ?? [2, 2, 2]).slice(0, 4);
@@ -450,8 +450,8 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
               <div style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.08)', borderRadius: 4, flexShrink: 0 }} />
             )}
             <div>
-              <div style={{ fontWeight: 500, fontSize: 10, color: '#fff' }}>{item.title}</div>
-              {item.subtitle && <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)' }}>{item.subtitle}</div>}
+              {(s.showTitle ?? true) && <div style={{ fontWeight: 500, fontSize: 10, color: '#fff' }}>{item.title}</div>}
+              {(s.showSubtitle ?? true) && item.subtitle && <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)' }}>{item.subtitle}</div>}
             </div>
           </div>
         ))}

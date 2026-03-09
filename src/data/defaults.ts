@@ -208,6 +208,7 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         layout: '1-full',
         buttons: [
           {
+            enabled: true,
             text: 'Watch Now',
             url: '',
             style: 'primary',
@@ -235,7 +236,7 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         gap: 8,
         itemRadius: 8,
         cellStyleMode: 'whole',
-        cellStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 },
+        cellStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0, imageRadius: 8 },
         cellStyles: [],
         padding: 0,
         backgroundColor: 'transparent',
@@ -249,8 +250,11 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
       const listSettings: ListSettings = {
         layout: 'episodes',
         columns: 1,
-        showDivider: true,
+        showTitle: true,
+        showSubtitle: true,
+        showMetadata: true,
         showThumbnail: true,
+        showDivider: true,
         thumbnailRadius: 8,
         itemCount: 'all',
         items: [

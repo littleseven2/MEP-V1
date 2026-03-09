@@ -285,7 +285,7 @@ export function LinkedField({
             className="mep-color-picker"
             value={value === 'transparent' ? '#000000' : value}
             onChange={(e) => onChange(e.target.value)}
-            style={{ marginLeft: 4 }}
+            style={{ marginLeft: 0 }}
           />
         )}
         <input

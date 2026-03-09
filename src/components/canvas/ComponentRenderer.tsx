@@ -103,8 +103,9 @@ function TextBlockPreview({ settings }: { settings: { eyebrow: { enabled: boolea
   );
 }
 
-function CTAPreview({ settings }: { settings: { buttons: { text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function CTAPreview({ settings }: { settings: { buttons: { enabled?: boolean; text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
+  const visibleButtons = settings.buttons.filter((btn) => btn.enabled ?? true);
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 8,
@@ -113,7 +114,7 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
     }}>
-      {settings.buttons.map((btn, i) => (
+      {visibleButtons.map((btn, i) => (
         <button
           key={i}
           type="button"
@@ -134,10 +135,11 @@ function CTAPreview({ settings }: { settings: { buttons: { text: string; fillCol
   );
 }
 
-function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number } }) {
+function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number } }) {
   const poster = posters[(n - 1) % posters.length];
   const cs = cellStyle;
   const csRadius = cs?.backgroundRadius ?? [0, 0, 0, 0];
+  const imgRadius = cs?.imageRadius ?? radius;
   const hasCs = cs && (cs.padding > 0 || cs.backgroundColor !== 'transparent' || csRadius.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0));
   if (hasCs) {
     return (
@@ -149,7 +151,7 @@ function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellSty
       }}>
         <div style={{
           aspectRatio: '2/3',
-          borderRadius: radius,
+          borderRadius: imgRadius,
           overflow: 'hidden',
           position: 'relative',
           background: 'rgba(255,255,255,0.08)',
@@ -162,7 +164,7 @@ function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellSty
   return (
     <div style={{
       aspectRatio: '2/3',
-      borderRadius: radius,
+      borderRadius: imgRadius,
       overflow: 'hidden',
       position: 'relative',
       background: 'rgba(255,255,255,0.08)',
@@ -172,7 +174,7 @@ function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellSty
   );
 }
 
-function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; cellStyleMode?: 'whole' | 'individual'; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number }; cellStyles?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; cellStyleMode?: 'whole' | 'individual'; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }; cellStyles?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const gapPx = settings.gap ?? 8;
   const radius = settings.itemRadius ?? 8;
@@ -202,6 +204,7 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
             {Array.from({ length: rowCount }, () => ++cellIdx).map((n) => {
               const cs = getCellStyle(n - 1);
               const csR = cs.backgroundRadius;
+              const imgR = ('imageRadius' in cs ? (cs as { imageRadius?: number }).imageRadius : undefined) ?? radius;
               const hasCs = cs.padding > 0 || cs.backgroundColor !== 'transparent' || csR.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0);
               const poster = posters[(n - 1) % posters.length];
               return hasCs ? (
@@ -213,14 +216,14 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
                   ...strokeStyle(cs.strokeColor, cs.strokeWidth),
                   display: 'flex', flexDirection: 'column',
                 }}>
-                  <div style={{ flex: 1, borderRadius: radius, overflow: 'hidden', background: 'rgba(255,255,255,0.08)', minHeight: 0 }}>
+                  <div style={{ flex: 1, borderRadius: imgR, overflow: 'hidden', background: 'rgba(255,255,255,0.08)', minHeight: 0 }}>
                     <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                   </div>
                 </div>
               ) : (
                 <div key={n} style={{
                   flex: 1,
-                  borderRadius: radius,
+                  borderRadius: imgR,
                   overflow: 'hidden',
                   background: 'rgba(255,255,255,0.08)',
                   minHeight: 0,
@@ -254,14 +257,16 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
   );
 }
 
-function ListItemText({ item }: { item: { title: string; subtitle?: string; metadata?: string } }) {
+function ListItemText({ item, showTitle = true, showSubtitle = true, showMetadata = true }: { item: { title: string; subtitle?: string; metadata?: string }; showTitle?: boolean; showSubtitle?: boolean; showMetadata?: boolean }) {
   return (
     <div>
-      <div style={{ fontWeight: 500, fontSize: 14, color: '#fff' }}>{item.title}</div>
-      {item.subtitle && (
+      {showTitle && (
+        <div style={{ fontWeight: 500, fontSize: 14, color: '#fff' }}>{item.title}</div>
+      )}
+      {showSubtitle && item.subtitle && (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{item.subtitle}</div>
       )}
-      {item.metadata && (
+      {showMetadata && item.metadata && (
         <a href="#" onClick={(e) => e.preventDefault()} style={{
           display: 'inline-block', marginTop: 4, fontSize: 12, fontWeight: 500,
           color: 'rgba(255,255,255,0.8)', textDecoration: 'none',
@@ -284,10 +289,13 @@ function ListThumbnail({ size = 60, index = 0, radius = 8 }: { size?: number; in
   );
 }
 
-function ListPreview({ settings }: { settings: { layout: string; columns: number; showThumbnail: boolean; showDivider: boolean; thumbnailRadius?: number; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; style?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function ListPreview({ settings }: { settings: { layout: string; columns: number; showTitle?: boolean; showSubtitle?: boolean; showMetadata?: boolean; showThumbnail: boolean; showDivider: boolean; thumbnailRadius?: number; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; style?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const limit = settings.itemCount === 'all' ? settings.items.length : settings.itemCount;
   const items = settings.items.slice(0, limit);
   const isStacked = settings.layout === 'schedules';
+  const sTitle = settings.showTitle ?? true;
+  const sSub = settings.showSubtitle ?? true;
+  const sMeta = settings.showMetadata ?? true;
   const bg = settings.backgroundColor ?? 'transparent';
   const dividerColor = 'rgba(255,255,255,0.15)';
   const thumbRadius = settings.thumbnailRadius ?? 8;
@@ -339,7 +347,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
                   <img src={posters[i % posters.length].image} alt={posters[i % posters.length].title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
               )}
-              <ListItemText item={item} />
+              <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} />
             </div>
           );
         }
@@ -357,13 +365,13 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
           }}>
             {isRightAligned ? (
               <>
-                <ListItemText item={item} />
+                <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} />
                 {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} />}
               </>
             ) : (
               <>
                 {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} />}
-                <ListItemText item={item} />
+                <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} />
               </>
             )}
           </div>

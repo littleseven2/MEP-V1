@@ -257,11 +257,6 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
             />
           </div>
         </PanelSection>
-        <PanelSection title="Settings">
-          <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
-            {section.isPrimary ? 'This is the primary section' : 'Use the ★ control to set as primary'}
-          </div>
-        </PanelSection>
       </>
     );
   }
@@ -525,7 +520,7 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
   if (tab === 'content') {
     return (
       <>
-        <PanelSection title="Text Style">
+        <PanelSection title="Text Structure">
           <div style={{ position: 'relative', marginBottom: 8 }}>
             <button
               type="button"
@@ -578,7 +573,7 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
           </div>
         </PanelSection>
 
-        <PanelSection title="Formatting">
+        <PanelSection title="Content Editing">
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
               <Bold size={14} />
@@ -593,85 +588,11 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
               <Strikethrough size={14} />
             </button>
 
-            <div style={{ position: 'relative' }}>
-              <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                  <Baseline size={14} />
-                  <div style={{ width: 12, height: 3, borderRadius: 1, background: settings.color }} />
-                </div>
-              </button>
-              {textColorOpen && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
-                }}>
-                  {presetColors.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => { execCommand('foreColor', c); setTextColorOpen(false); }}
-                      style={{
-                        width: 26, height: 26, borderRadius: 4, border: c === '#ffffff' ? '1px solid var(--color-border-default)' : '1px solid transparent',
-                        background: c, cursor: 'pointer',
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ position: 'relative' }}>
-              <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setHighlightOpen(!highlightOpen); setTextColorOpen(false); }} title="Highlight color">
-                <Highlighter size={14} />
-              </button>
-              {highlightOpen && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
-                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                  borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
-                }}>
-                  {highlightColors.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => { execCommand('hiliteColor', c); setHighlightOpen(false); }}
-                      style={{
-                        width: 26, height: 26, borderRadius: 4,
-                        border: c === 'transparent' ? '2px dashed var(--color-border-default)' : '1px solid transparent',
-                        background: c === 'transparent' ? 'var(--color-bg-secondary)' : c, cursor: 'pointer',
-                      }}
-                      title={c === 'transparent' ? 'Remove highlight' : c}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
-              const size = prompt('Font size (1-7):', '3');
-              if (size) execCommand('fontSize', size);
-            }} title="Font size">
-              <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)' }}>Aa</span>
-            </button>
-
             <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
               const url = prompt('Enter link URL:');
               if (url) execCommand('createLink', url);
             }} title="Insert link">
               <Link size={14} />
-            </button>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => { update({ ...settings, alignment: 'left' }); execCommand('justifyLeft'); }} title="Align left">
-              <AlignLeft size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => { update({ ...settings, alignment: 'center' }); execCommand('justifyCenter'); }} title="Align center">
-              <AlignCenter size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => { update({ ...settings, alignment: 'right' }); execCommand('justifyRight'); }} title="Align right">
-              <AlignRight size={14} />
             </button>
 
             <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('formatBlock', '<blockquote>')} title="Blockquote">
@@ -703,6 +624,83 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
 
   return (
     <>
+      <PanelSection title="Text Appearance">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
+          <div style={{ position: 'relative' }}>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <Baseline size={14} />
+                <div style={{ width: 12, height: 3, borderRadius: 1, background: settings.color }} />
+              </div>
+            </button>
+            {textColorOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
+                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
+              }}>
+                {presetColors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => { execCommand('foreColor', c); setTextColorOpen(false); }}
+                    style={{
+                      width: 26, height: 26, borderRadius: 4, border: c === '#ffffff' ? '1px solid var(--color-border-default)' : '1px solid transparent',
+                      background: c, cursor: 'pointer',
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ position: 'relative' }}>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setHighlightOpen(!highlightOpen); setTextColorOpen(false); }} title="Highlight color">
+              <Highlighter size={14} />
+            </button>
+            {highlightOpen && (
+              <div style={{
+                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
+                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
+              }}>
+                {highlightColors.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => { execCommand('hiliteColor', c); setHighlightOpen(false); }}
+                    style={{
+                      width: 26, height: 26, borderRadius: 4,
+                      border: c === 'transparent' ? '2px dashed var(--color-border-default)' : '1px solid transparent',
+                      background: c === 'transparent' ? 'var(--color-bg-secondary)' : c, cursor: 'pointer',
+                    }}
+                    title={c === 'transparent' ? 'Remove highlight' : c}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
+            const size = prompt('Font size (1-7):', '3');
+            if (size) execCommand('fontSize', size);
+          }} title="Font size">
+            <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)' }}>Aa</span>
+          </button>
+
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => { update({ ...settings, alignment: 'left' }); execCommand('justifyLeft'); }} title="Align left">
+            <AlignLeft size={14} />
+          </button>
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => { update({ ...settings, alignment: 'center' }); execCommand('justifyCenter'); }} title="Align center">
+            <AlignCenter size={14} />
+          </button>
+          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => { update({ ...settings, alignment: 'right' }); execCommand('justifyRight'); }} title="Align right">
+            <AlignRight size={14} />
+          </button>
+        </div>
+      </PanelSection>
       <PanelSection title="Typography">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
@@ -775,31 +773,64 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
 
   if (tab === 'content') {
     return (
-      <PanelSection title="Media">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <LinkedWrapper
-            linked={linked['format']}
-            onLink={(lv) => setLinked('format', lv)}
-            variables={entityVariables}
-            currentValue={settings.format}
-            onValueFromVariable={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
-          >
-            <Select
-              label="Format"
-              options={[
-                { value: 'poster', label: 'Poster' },
-                { value: 'poster-art', label: 'Poster Art' },
-                { value: 'banner', label: 'Banner' },
-                { value: 'banner-art', label: 'Banner Art' },
-                { value: 'hero', label: 'Hero' },
-                { value: 'hero-art', label: 'Hero Art' },
-                { value: 'thumbnail', label: 'Thumbnail' },
-                { value: 'video', label: 'Video' },
-              ]}
-              value={settings.format}
-              onChange={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
+      <>
+        <PanelSection title="Elements">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <LinkedWrapper
+              linked={linked['format']}
+              onLink={(lv) => setLinked('format', lv)}
+              variables={entityVariables}
+              currentValue={settings.format}
+              onValueFromVariable={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
+            >
+              <Select
+                label="Artwork format"
+                options={[
+                  { value: 'poster', label: 'Poster' },
+                  { value: 'poster-art', label: 'Poster Art' },
+                  { value: 'banner', label: 'Banner' },
+                  { value: 'banner-art', label: 'Banner Art' },
+                  { value: 'hero', label: 'Hero' },
+                  { value: 'hero-art', label: 'Hero Art' },
+                  { value: 'thumbnail', label: 'Thumbnail' },
+                  { value: 'video', label: 'Video' },
+                ]}
+                value={settings.format}
+                onChange={(v) => update({ ...settings, format: v as MediaSettings['format'] })}
+              />
+            </LinkedWrapper>
+          </div>
+        </PanelSection>
+        <PanelSection title="Data">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <LinkedField
+              label="Source URL"
+              value={settings.url}
+              linked={linked['url']}
+              onChange={(v) => update({ ...settings, url: v })}
+              onLink={(lv) => setLinked('url', lv)}
+              variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
+              placeholder="Auto-populated from entity"
             />
-          </LinkedWrapper>
+            <LinkedField
+              label="Custom URL override"
+              value={settings.customUrl ?? ''}
+              linked={linked['customUrl']}
+              onChange={(v) => update({ ...settings, customUrl: v })}
+              onLink={(lv) => setLinked('customUrl', lv)}
+              variables={entityVariables.filter((v) => v.valueType === 'url')}
+              placeholder="Optional custom URL"
+            />
+          </div>
+        </PanelSection>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PanelSection title="Layout">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
             linked={linked['alignment']}
             onLink={(lv) => setLinked('alignment', lv)}
@@ -829,28 +860,21 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
               onChange={(v) => update({ ...settings, isInteractive: v })}
             />
           </LinkedWrapper>
+          <LinkedWrapper
+            label="Image radius"
+            linked={linked['mediaRadius']}
+            onLink={(lv) => setLinked('mediaRadius', lv)}
+            variables={themeVariables.filter((v) => v.valueType === 'text')}
+            currentValue={String(settings.mediaRadius ?? 8)}
+            onValueFromVariable={(v) => update({ ...settings, mediaRadius: parseInt(v) || 8 })}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
+              <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
+              <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
+            </div>
+          </LinkedWrapper>
         </div>
-      </PanelSection>
-    );
-  }
-
-  return (
-    <>
-      <PanelSection title="Image">
-        <LinkedWrapper
-          label="Image radius"
-          linked={linked['mediaRadius']}
-          onLink={(lv) => setLinked('mediaRadius', lv)}
-          variables={themeVariables.filter((v) => v.valueType === 'text')}
-          currentValue={String(settings.mediaRadius ?? 8)}
-          onValueFromVariable={(v) => update({ ...settings, mediaRadius: parseInt(v) || 8 })}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
-            <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
-            <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
-          </div>
-        </LinkedWrapper>
       </PanelSection>
       <ComponentStyleControls
         padding={settings.padding ?? 0}
@@ -886,62 +910,125 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
     update({ ...settings, buttons });
   };
 
+  const addButton = () => {
+    const n = settings.buttons.length + 1;
+    update({
+      ...settings,
+      buttons: [...settings.buttons, {
+        enabled: true,
+        text: `Button ${n}`,
+        url: '',
+        style: 'secondary' as const,
+        fillColor: '#333333',
+        borderColor: '#333333',
+        textColor: '#ffffff',
+      }],
+    });
+  };
+
+  const removeButton = (index: number) => {
+    if (settings.buttons.length <= 1) return;
+    update({ ...settings, buttons: settings.buttons.filter((_, i) => i !== index) });
+  };
+
   if (tab === 'content') {
     return (
-      <PanelSection title="CTA Buttons">
+      <PanelSection title="Elements">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {settings.buttons.map((btn, i) => (
             <div key={i} style={{ padding: 12, background: 'var(--color-bg-tertiary)', borderRadius: 8 }}>
-              <LinkedField
-                label="Text"
-                value={btn.text}
-                linked={linked[`btn.${i}.text`]}
-                onChange={(v) => updateButton(i, { text: v })}
-                onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
-                variables={entityVariables.filter((v) => v.valueType === 'text')}
-                placeholder="Button text"
-              />
-              <div style={{ marginTop: 8 }}>
-                <LinkedField
-                  label="URL"
-                  value={btn.url}
-                  linked={linked[`btn.${i}.url`]}
-                  onChange={(v) => updateButton(i, { url: v })}
-                  onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
-                  variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
-                  placeholder="URL"
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <Toggle
+                  label={`Button ${i + 1}`}
+                  checked={btn.enabled ?? true}
+                  onChange={(v) => updateButton(i, { enabled: v })}
                 />
+                {settings.buttons.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeButton(i)}
+                    style={{
+                      background: 'none', border: 'none', color: 'var(--color-text-muted)',
+                      cursor: 'pointer', fontSize: 16, padding: '0 4px', lineHeight: 1,
+                    }}
+                    title="Remove button"
+                  >×</button>
+                )}
               </div>
-              <div style={{ marginTop: 8 }}>
-                <LinkedField
-                  label="Fill"
-                  value={btn.fillColor}
-                  linked={linked[`btn.${i}.fillColor`]}
-                  onChange={(v) => updateButton(i, { fillColor: v })}
-                  onLink={(lv) => setLinked(`btn.${i}.fillColor`, lv)}
-                  variables={themeVariables.filter((v) => v.valueType === 'color')}
-                  type="color"
-                  placeholder="#E50914"
-                />
-              </div>
+              {(btn.enabled ?? true) && (
+                <>
+                  <LinkedField
+                    label="Text"
+                    value={btn.text}
+                    linked={linked[`btn.${i}.text`]}
+                    onChange={(v) => updateButton(i, { text: v })}
+                    onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
+                    variables={entityVariables.filter((v) => v.valueType === 'text')}
+                    placeholder="Button text"
+                  />
+                  <div style={{ marginTop: 8 }}>
+                    <LinkedField
+                      label="URL"
+                      value={btn.url}
+                      linked={linked[`btn.${i}.url`]}
+                      onChange={(v) => updateButton(i, { url: v })}
+                      onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
+                      variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
+                      placeholder="URL"
+                    />
+                  </div>
+                </>
+              )}
             </div>
           ))}
+          <button
+            type="button"
+            onClick={addButton}
+            style={{
+              width: '100%', height: 36, borderRadius: 8,
+              border: '1px dashed var(--color-border-default)',
+              background: 'transparent', color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
+              transition: 'var(--transition-fast)',
+            }}
+          >
+            + Add button
+          </button>
         </div>
       </PanelSection>
     );
   }
 
   return (
-    <ComponentStyleControls
-      padding={settings.padding ?? 0}
-      backgroundColor={settings.backgroundColor ?? 'transparent'}
-      backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
-      strokeColor={settings.strokeColor ?? 'transparent'}
-      strokeWidth={settings.strokeWidth ?? 0}
-      onUpdate={(v) => update({ ...settings, ...v })}
-      linked={linked}
-      onLink={setLinked}
-    />
+    <>
+      <PanelSection title="Button Style">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {settings.buttons.map((btn, i) => (
+            <LinkedField
+              key={i}
+              label={`Button ${i + 1} fill`}
+              value={btn.fillColor}
+              linked={linked[`btn.${i}.fillColor`]}
+              onChange={(v) => updateButton(i, { fillColor: v })}
+              onLink={(lv) => setLinked(`btn.${i}.fillColor`, lv)}
+              variables={themeVariables.filter((v) => v.valueType === 'color')}
+              type="color"
+              placeholder="#E50914"
+            />
+          ))}
+        </div>
+      </PanelSection>
+      <ComponentStyleControls
+        padding={settings.padding ?? 0}
+        backgroundColor={settings.backgroundColor ?? 'transparent'}
+        backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
+        strokeColor={settings.strokeColor ?? 'transparent'}
+        strokeWidth={settings.strokeWidth ?? 0}
+        onUpdate={(v) => update({ ...settings, ...v })}
+        linked={linked}
+        onLink={setLinked}
+      />
+    </>
   );
 }
 
@@ -999,6 +1086,16 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
 
   if (tab === 'content') {
     return (
+      <PanelSection title="Grid Data">
+        <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+          Grid cells are populated from entity data. Select cells on the canvas to configure individual content.
+        </p>
+      </PanelSection>
+    );
+  }
+
+  return (
+    <>
       <PanelSection title="Grid Layout">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
@@ -1066,11 +1163,6 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
           )}
         </div>
       </PanelSection>
-    );
-  }
-
-  return (
-    <>
       <PanelSection title="Spacing">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
@@ -1081,16 +1173,9 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
               <StepperBtn onClick={() => update({ ...settings, gap: (settings.gap ?? 8) + 1 })}>›</StepperBtn>
             </div>
           </div>
-          <div>
-            <label style={labelStyle}>Image radius</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, itemRadius: Math.max(0, (settings.itemRadius ?? 8) - 1) })} disabled={(settings.itemRadius ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.itemRadius ?? 8} onChange={(v) => update({ ...settings, itemRadius: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, itemRadius: (settings.itemRadius ?? 8) + 1 })}>›</StepperBtn>
-            </div>
-          </div>
         </div>
       </PanelSection>
+      <GridCellStyleSection settings={settings} update={update} />
       <ComponentStyleControls
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
@@ -1101,81 +1186,20 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
         linked={linked}
         onLink={setLinked}
       />
-      <GridCellStyleSection settings={settings} update={update} />
     </>
   );
 }
 
 function GridCellStyleSection({ settings, update }: { settings: GridSettings; update: (s: GridSettings) => void }) {
-  const mode = settings.cellStyleMode ?? 'whole';
-  const defaultCellStyle: GridCellStyle = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 };
+  const defaultCellStyle: GridCellStyle = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0, imageRadius: settings.cellStyle?.imageRadius ?? settings.itemRadius ?? 8 };
   const wholeStyle: GridCellStyle = settings.cellStyle ?? defaultCellStyle;
-
-  const totalCells = (settings.splitMode ?? 'row') === 'row'
-    ? (settings.rows ?? [3, 3]).reduce((a, b) => a + b, 0)
-    : (settings.cols ?? [2, 2, 2]).reduce((a, b) => a + b, 0);
-
-  const ensureCellStyles = (count: number): GridCellStyle[] => {
-    const existing = settings.cellStyles ?? [];
-    if (existing.length >= count) return existing.slice(0, count);
-    return [...existing, ...Array(count - existing.length).fill(null).map(() => ({ ...wholeStyle }))];
-  };
-
-  const setMode = (m: 'whole' | 'individual') => {
-    if (m === 'individual' && mode === 'whole') {
-      update({ ...settings, cellStyleMode: 'individual', cellStyles: ensureCellStyles(totalCells) });
-    } else {
-      update({ ...settings, cellStyleMode: m });
-    }
-  };
-
-  const updateCellStyle = (idx: number, style: GridCellStyle) => {
-    const styles = ensureCellStyles(totalCells);
-    styles[idx] = style;
-    update({ ...settings, cellStyles: styles });
-  };
 
   return (
     <PanelSection title="Cell style">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {(['whole', 'individual'] as const).map((m) => (
-            <StepperBtn
-              key={m}
-              onClick={() => setMode(m)}
-              style={mode === m ? {
-                border: '2px solid var(--color-brand)',
-                background: 'var(--color-brand-subtle)',
-                color: 'var(--color-brand)',
-                fontSize: 12,
-                flex: 1,
-              } : { fontSize: 12, flex: 1 }}
-            >
-              {m}
-            </StepperBtn>
-          ))}
-        </div>
-
-        {mode === 'whole' ? (
-          <ItemStyleControls
-            style={wholeStyle}
-            onChange={(s) => update({ ...settings, cellStyle: s as GridCellStyle })}
-          />
-        ) : (
-          ensureCellStyles(totalCells).map((cs, idx) => (
-            <div key={idx} style={{
-              borderTop: idx > 0 ? '1px solid var(--color-border-default)' : 'none',
-              paddingTop: idx > 0 ? 12 : 0,
-            }}>
-              <ItemStyleControls
-                label={`Cell ${idx + 1}`}
-                style={cs}
-                onChange={(s) => updateCellStyle(idx, s as GridCellStyle)}
-              />
-            </div>
-          ))
-        )}
-      </div>
+      <ItemStyleControls
+        style={wholeStyle}
+        onChange={(s) => update({ ...settings, cellStyle: s as GridCellStyle })}
+      />
     </PanelSection>
   );
 }
@@ -1251,7 +1275,99 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
 
   if (tab === 'content') {
     return (
-      <PanelSection title="List">
+      <>
+        <PanelSection title="Elements">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <Toggle
+              label="Thumbnail"
+              checked={settings.showThumbnail}
+              onChange={(v) => update({ ...settings, showThumbnail: v })}
+            />
+            <Toggle
+              label="Title"
+              checked={settings.showTitle ?? true}
+              onChange={(v) => update({ ...settings, showTitle: v })}
+            />
+            <Toggle
+              label="Subtitle"
+              checked={settings.showSubtitle ?? true}
+              onChange={(v) => update({ ...settings, showSubtitle: v })}
+            />
+            <Toggle
+              label="Metadata / CTA"
+              checked={settings.showMetadata ?? true}
+              onChange={(v) => update({ ...settings, showMetadata: v })}
+            />
+          </div>
+        </PanelSection>
+        <PanelSection title="Data">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <LinkedWrapper
+              label="Items"
+              linked={linked['itemCount']}
+              onLink={(lv) => setLinked('itemCount', lv)}
+              variables={entityVariables}
+              currentValue={String(settings.items.length)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <StepperBtn
+                  onClick={() => {
+                    if (settings.items.length > 1) {
+                      update({ ...settings, items: settings.items.slice(0, -1), itemCount: settings.items.length - 1 });
+                    }
+                  }}
+                  disabled={settings.items.length <= 1}
+                >‹</StepperBtn>
+                <input type="number" className="mep-input" min={1} value={settings.items.length}
+                  onChange={(e) => {
+                    const target = Math.max(1, parseInt(e.target.value, 10) || 1);
+                    if (target > settings.items.length) {
+                      const newItems = [...settings.items];
+                      const last = settings.items[settings.items.length - 1];
+                      for (let j = settings.items.length; j < target; j++) {
+                        const ni: ListItem = { title: `Episode ${j + 1}`, subtitle: last?.subtitle || 'Subtitle', metadata: last?.metadata || 'CTA' };
+                        if (settings.itemStyleMode === 'individual') {
+                          ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
+                        }
+                        newItems.push(ni);
+                      }
+                      update({ ...settings, items: newItems, itemCount: target });
+                    } else if (target < settings.items.length) {
+                      update({ ...settings, items: settings.items.slice(0, target), itemCount: target });
+                    }
+                  }}
+                  style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)', transition: 'var(--transition-fast)' }}
+                />
+                <StepperBtn
+                  onClick={() => {
+                    const n = settings.items.length + 1;
+                    const last = settings.items[settings.items.length - 1];
+                    const ni: ListItem = {
+                      title: `Episode ${n}`,
+                      subtitle: last?.subtitle || 'Subtitle',
+                      metadata: last?.metadata || 'CTA',
+                    };
+                    if (settings.itemStyleMode === 'individual') {
+                      ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
+                    }
+                    update({
+                      ...settings,
+                      items: [...settings.items, ni],
+                      itemCount: n,
+                    });
+                  }}
+                >›</StepperBtn>
+              </div>
+            </LinkedWrapper>
+          </div>
+        </PanelSection>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PanelSection title="List Layout">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
             linked={linked['layout']}
@@ -1298,63 +1414,6 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
             </div>
           </LinkedWrapper>
           <LinkedWrapper
-            label="Items"
-            linked={linked['itemCount']}
-            onLink={(lv) => setLinked('itemCount', lv)}
-            variables={entityVariables}
-            currentValue={String(settings.items.length)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <StepperBtn
-                onClick={() => {
-                  if (settings.items.length > 1) {
-                    update({ ...settings, items: settings.items.slice(0, -1), itemCount: settings.items.length - 1 });
-                  }
-                }}
-                disabled={settings.items.length <= 1}
-              >‹</StepperBtn>
-              <input type="number" className="mep-input" min={1} value={settings.items.length}
-                onChange={(e) => {
-                  const target = Math.max(1, parseInt(e.target.value, 10) || 1);
-                  if (target > settings.items.length) {
-                    const newItems = [...settings.items];
-                    const last = settings.items[settings.items.length - 1];
-                    for (let j = settings.items.length; j < target; j++) {
-                      const ni: ListItem = { title: `Episode ${j + 1}`, subtitle: last?.subtitle || 'Subtitle', metadata: last?.metadata || 'CTA' };
-                      if (settings.itemStyleMode === 'individual') {
-                        ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-                      }
-                      newItems.push(ni);
-                    }
-                    update({ ...settings, items: newItems, itemCount: target });
-                  } else if (target < settings.items.length) {
-                    update({ ...settings, items: settings.items.slice(0, target), itemCount: target });
-                  }
-                }}
-                style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)', transition: 'var(--transition-fast)' }}
-              />
-              <StepperBtn
-                onClick={() => {
-                  const n = settings.items.length + 1;
-                  const last = settings.items[settings.items.length - 1];
-                  const ni: ListItem = {
-                    title: `Episode ${n}`,
-                    subtitle: last?.subtitle || 'Subtitle',
-                    metadata: last?.metadata || 'CTA',
-                  };
-                  if (settings.itemStyleMode === 'individual') {
-                    ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-                  }
-                  update({
-                    ...settings,
-                    items: [...settings.items, ni],
-                    itemCount: n,
-                  });
-                }}
-              >›</StepperBtn>
-            </div>
-          </LinkedWrapper>
-          <LinkedWrapper
             linked={linked['showDivider']}
             onLink={(lv) => setLinked('showDivider', lv)}
             variables={themeVariables}
@@ -1366,25 +1425,8 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
               onChange={(v) => update({ ...settings, showDivider: v })}
             />
           </LinkedWrapper>
-          <LinkedWrapper
-            linked={linked['showThumbnail']}
-            onLink={(lv) => setLinked('showThumbnail', lv)}
-            variables={entityVariables}
-            currentValue={String(settings.showThumbnail)}
-          >
-            <Toggle
-              label="Show thumbnail"
-              checked={settings.showThumbnail}
-              onChange={(v) => update({ ...settings, showThumbnail: v })}
-            />
-          </LinkedWrapper>
         </div>
       </PanelSection>
-    );
-  }
-
-  return (
-    <>
       {settings.showThumbnail && (
         <PanelSection title="Thumbnail">
           <LinkedWrapper
@@ -1430,6 +1472,16 @@ function ItemStyleControls({ style, onChange, label }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {label && <div style={{ ...labelStyle, fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 0 }}>{label}</div>}
+      {'imageRadius' in style && (
+        <div>
+          <label style={labelStyle}>Image radius</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <StepperBtn onClick={() => onChange({ ...style, imageRadius: Math.max(0, ((style as GridCellStyle).imageRadius ?? 8) - 1) })} disabled={((style as GridCellStyle).imageRadius ?? 8) <= 0}>‹</StepperBtn>
+            <StepperInput value={(style as GridCellStyle).imageRadius ?? 8} onChange={(v) => onChange({ ...style, imageRadius: Math.max(0, v || 0) })} />
+            <StepperBtn onClick={() => onChange({ ...style, imageRadius: ((style as GridCellStyle).imageRadius ?? 8) + 1 })}>›</StepperBtn>
+          </div>
+        </div>
+      )}
       <div>
         <label style={labelStyle}>Padding</label>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1440,21 +1492,32 @@ function ItemStyleControls({ style, onChange, label }: {
       </div>
       <div>
         <label style={labelStyle}>Background color</label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 0,
+          height: 36, borderRadius: 8,
+          background: 'var(--color-bg-tertiary)',
+          border: '1px solid var(--color-border-default)',
+          overflow: 'hidden',
+        }}>
           <input
             type="color"
             className="mep-color-picker"
             value={style.backgroundColor === 'transparent' ? '#000000' : style.backgroundColor}
             onChange={(e) => onChange({ ...style, backgroundColor: e.target.value })}
+            style={{ marginLeft: 0 }}
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Input
-              fullWidth
-              value={style.backgroundColor}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...style, backgroundColor: e.target.value })}
-              placeholder="transparent"
-            />
-          </div>
+          <input
+            type="text"
+            value={style.backgroundColor}
+            onChange={(e) => onChange({ ...style, backgroundColor: e.target.value })}
+            placeholder="transparent"
+            className="mep-input"
+            style={{
+              flex: 1, height: '100%', border: 'none', background: 'transparent',
+              color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)',
+              fontSize: 13, padding: '0 8px', outline: 'none', minWidth: 0,
+            }}
+          />
         </div>
       </div>
       <RadiusControl
@@ -1463,21 +1526,32 @@ function ItemStyleControls({ style, onChange, label }: {
       />
       <div>
         <label style={labelStyle}>Stroke color</label>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 0,
+          height: 36, borderRadius: 8,
+          background: 'var(--color-bg-tertiary)',
+          border: '1px solid var(--color-border-default)',
+          overflow: 'hidden',
+        }}>
           <input
             type="color"
             className="mep-color-picker"
             value={(style.strokeColor ?? 'transparent') === 'transparent' ? '#000000' : style.strokeColor}
             onChange={(e) => onChange({ ...style, strokeColor: e.target.value })}
+            style={{ marginLeft: 0 }}
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <Input
-              fullWidth
-              value={style.strokeColor ?? 'transparent'}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ ...style, strokeColor: e.target.value })}
-              placeholder="transparent"
-            />
-          </div>
+          <input
+            type="text"
+            value={style.strokeColor ?? 'transparent'}
+            onChange={(e) => onChange({ ...style, strokeColor: e.target.value })}
+            placeholder="transparent"
+            className="mep-input"
+            style={{
+              flex: 1, height: '100%', border: 'none', background: 'transparent',
+              color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)',
+              fontSize: 13, padding: '0 8px', outline: 'none', minWidth: 0,
+            }}
+          />
         </div>
       </div>
       <div>
