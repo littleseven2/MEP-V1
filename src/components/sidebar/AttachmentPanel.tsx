@@ -1,7 +1,5 @@
 import { useMessageStore } from '../../store/messageStore';
-import type { ComponentCallout, CalloutIcon } from '../../types/message';
-import { entityVariables } from '../../data/variables';
-import { Select, Toggle, LinkedField } from '../../ui';
+import type { ComponentCallout } from '../../types/message';
 
 const defaultCallout: ComponentCallout = {
   enabled: false,
@@ -9,18 +7,6 @@ const defaultCallout: ComponentCallout = {
   icon: 'horn',
   position: 'above',
 };
-
-const iconOptions: { value: CalloutIcon; label: string }[] = [
-  { value: 'horn', label: 'Horn' },
-  { value: 'info', label: 'Info' },
-  { value: 'star', label: 'Star' },
-  { value: 'alert', label: 'Alert' },
-];
-
-const positionOptions: { value: ComponentCallout['position']; label: string }[] = [
-  { value: 'above', label: 'Above component' },
-  { value: 'below', label: 'Below component' },
-];
 
 function HornIcon({ size = 18 }: { size?: number }) {
   return (
@@ -42,6 +28,10 @@ function HornIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+const attachmentItems: { id: string; icon: React.ReactNode; label: string; description: string }[] = [
+  { id: 'callout', icon: <HornIcon size={18} />, label: 'Callout', description: 'Announcement banner' },
+];
+
 export function AttachmentPanel() {
   const message = useMessageStore((s) => s.message);
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
@@ -60,125 +50,106 @@ export function AttachmentPanel() {
     }
   }
 
-  if (!component || !sectionId) {
-    return (
-      <div style={{ padding: 20 }}>
-        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
-          Select a component on the canvas to manage its attachments.
-        </p>
-        <div style={{ marginTop: 20 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            padding: 12, borderRadius: 12,
-            border: '1px solid var(--color-border-default)',
-            opacity: 0.4,
-          }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: 'var(--color-bg-tertiary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <HornIcon size={18} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-                Callout
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-                Announcement banner
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const hasComponent = !!component && !!sectionId;
+  const callout: ComponentCallout = component?.callout ?? defaultCallout;
 
-  const callout: ComponentCallout = component.callout ?? defaultCallout;
-  const sid = sectionId;
-
-  const update = (updates: Partial<ComponentCallout>) => {
-    updateComponent(sid, component!.id, {
-      callout: { ...callout, ...updates },
-    });
+  const handleClick = (itemId: string) => {
+    if (!hasComponent || !sectionId || !component) return;
+    if (itemId === 'callout') {
+      updateComponent(sectionId, component.id, {
+        callout: { ...callout, enabled: !callout.enabled },
+      });
+    }
   };
-
-  const componentLabels: Record<string, string> = {
-    'text-block': 'Text Block',
-    'rich-text': 'Rich Text',
-    'media': 'Media',
-    'cta': 'CTA',
-    'grid': 'Grid',
-    'list': 'List',
-  };
-  const compLabel = componentLabels[component.type] || component.type;
 
   return (
     <div style={{ padding: 20 }}>
-      <p style={{ fontSize: 11, color: 'var(--color-text-tertiary)', marginBottom: 16, fontFamily: 'var(--font-family)' }}>
-        Attach to: <span style={{ color: 'var(--color-text-primary)', fontWeight: 500 }}>{compLabel}</span>
-      </p>
+      {!hasComponent && (
+        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+          Select a component on the canvas to add attachments.
+        </p>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {attachmentItems.map((item) => {
+          const isActive = item.id === 'callout' && callout.enabled;
 
-      {/* Callout attachment card */}
-      <div style={{
-        padding: 16,
-        borderRadius: 12,
-        border: callout.enabled
-          ? '1px solid var(--color-brand)'
-          : '1px solid var(--color-border-default)',
-        background: callout.enabled
-          ? 'var(--color-brand-subtle)'
-          : 'var(--color-bg-tertiary)',
-        transition: 'var(--transition-fast)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: callout.enabled ? 16 : 0 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: callout.enabled ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'var(--transition-fast)',
-          }}>
-            <HornIcon size={18} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: 'var(--font-family)' }}>
-              Callout
+          return (
+            <div
+              key={item.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => handleClick(item.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleClick(item.id);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: 12,
+                borderRadius: 12,
+                border: isActive ? '1px solid var(--color-brand)' : '1px solid transparent',
+                background: isActive ? 'var(--color-brand-subtle)' : 'transparent',
+                cursor: !hasComponent ? 'not-allowed' : 'pointer',
+                opacity: !hasComponent ? 0.25 : 1,
+                transition: 'var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => {
+                if (!hasComponent) return;
+                e.currentTarget.style.transform = 'translateX(4px)';
+                if (!isActive) e.currentTarget.style.borderColor = 'var(--color-border-default)';
+                const iconBox = e.currentTarget.querySelector('[data-icon-box]') as HTMLElement;
+                if (iconBox) {
+                  iconBox.style.background = 'var(--color-brand)';
+                  iconBox.style.color = 'white';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateX(0)';
+                if (!isActive) e.currentTarget.style.borderColor = 'transparent';
+                const iconBox = e.currentTarget.querySelector('[data-icon-box]') as HTMLElement;
+                if (iconBox) {
+                  iconBox.style.background = isActive ? 'var(--color-brand)' : 'var(--color-bg-tertiary)';
+                  iconBox.style.color = isActive ? 'white' : 'var(--color-text-secondary)';
+                }
+              }}
+            >
+              <div
+                data-icon-box
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 10,
+                  background: isActive ? 'var(--color-brand)' : 'var(--color-bg-tertiary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: isActive ? 'white' : 'var(--color-text-secondary)',
+                  transition: 'var(--transition-fast)',
+                }}
+              >
+                {item.icon}
+              </div>
+              <div>
+                <div style={{
+                  fontFamily: 'var(--font-family)',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: 'var(--color-text-primary)',
+                }}>
+                  {item.label}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--font-family)',
+                  fontSize: 12,
+                  color: 'var(--color-text-secondary)',
+                }}>
+                  {item.description}
+                </div>
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-              Announcement banner
-            </div>
-          </div>
-          <Toggle
-            label=""
-            checked={callout.enabled}
-            onChange={(v) => update({ enabled: v })}
-          />
-        </div>
-
-        {callout.enabled && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <LinkedField
-              label="Text"
-              value={callout.text}
-              onChange={(v) => update({ text: v })}
-              onLink={() => {}}
-              variables={entityVariables.filter((v) => v.valueType === 'text')}
-              placeholder="Callout text"
-            />
-            <Select
-              label="Icon"
-              options={iconOptions}
-              value={callout.icon}
-              onChange={(v) => update({ icon: v as CalloutIcon })}
-            />
-            <Select
-              label="Position"
-              options={positionOptions}
-              value={callout.position}
-              onChange={(v) => update({ position: v as ComponentCallout['position'] })}
-            />
-          </div>
-        )}
+          );
+        })}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { Info, Star, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout } from '../../types/message';
+import type { MessageComponent, RichTextSettings, CalloutIcon } from '../../types/message';
 import { posters } from '../../data/posters';
 
 function HornIcon({ size = 20 }: { size?: number }) {
@@ -511,24 +511,6 @@ const calloutIcons: Record<CalloutIcon, React.ReactNode> = {
   alert: <AlertTriangle size={20} />,
 };
 
-function InlineCalloutBadge({ callout }: { callout: ComponentCallout }) {
-  if (!callout.enabled) return null;
-  return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      padding: 8, background: 'rgba(0,0,0,0.5)',
-      borderRadius: 8, overflow: 'hidden', width: 'fit-content',
-    }}>
-      <span style={{ color: '#fff', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-        {calloutIcons[callout.icon] ?? calloutIcons.horn}
-      </span>
-      <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap' }}>
-        {callout.text}
-      </span>
-    </div>
-  );
-}
-
 export function ComponentRenderer({ component, sectionId }: ComponentRendererProps) {
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const selectComponent = useMessageStore((s) => s.selectComponent);
@@ -555,9 +537,6 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
     content = <ListPreview settings={component.settings.settings} />;
   }
 
-  const callout = component.callout;
-  const showCallout = callout?.enabled;
-
   return (
     <div
       data-component-id={component.id}
@@ -573,9 +552,7 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         transition: 'outline var(--transition-fast), box-shadow var(--transition-fast)',
       }}
     >
-      {showCallout && callout.position === 'above' && <div style={{ marginBottom: 8 }}><InlineCalloutBadge callout={callout} /></div>}
       {content}
-      {showCallout && callout.position === 'below' && <div style={{ marginTop: 8 }}><InlineCalloutBadge callout={callout} /></div>}
     </div>
   );
 }
