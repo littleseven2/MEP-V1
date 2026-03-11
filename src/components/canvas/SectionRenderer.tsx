@@ -1,5 +1,5 @@
 import { useMessageStore } from '../../store/messageStore';
-import { ComponentRenderer } from './ComponentRenderer';
+import { ComponentRenderer, CalloutBadge, MetadataRow, LiveBadgeRow, CountdownBadge } from './ComponentRenderer';
 import type { Section } from '../../types/message';
 
 interface SectionRendererProps {
@@ -10,9 +10,11 @@ export function SectionRenderer({ section }: SectionRendererProps) {
   const selectedSectionId = useMessageStore((s) => s.selectedSectionId);
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const selectSection = useMessageStore((s) => s.selectSection);
+  const theme = useMessageStore((s) => s.message?.theme);
 
   const isActive = selectedSectionId === section.id;
   const isSectionOnly = isActive && !selectedComponentId;
+  const sectionPadding = (section.padding ?? 0) + (theme?.sectionPadding ?? 0);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,7 +28,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       style={{
         borderLeft: isActive ? '2px solid var(--color-brand)' : '2px solid transparent',
         background: section.background.value,
-        padding: section.padding ?? 0,
+        padding: sectionPadding,
         borderRadius: section.backgroundRadius
           ? `${section.backgroundRadius[0]}px ${section.backgroundRadius[1]}px ${section.backgroundRadius[2]}px ${section.backgroundRadius[3]}px`
           : 0,
@@ -87,6 +89,18 @@ export function SectionRenderer({ section }: SectionRendererProps) {
 
         {section.type === 'content' && (
           <>
+            {section.callout?.enabled && section.callout.position === 'above' && (
+              <div style={{ marginBottom: 8 }}><CalloutBadge callout={section.callout} /></div>
+            )}
+            {section.liveBadge?.enabled && section.liveBadge.position === 'above' && (
+              <div style={{ marginBottom: 8 }}><LiveBadgeRow liveBadge={section.liveBadge} /></div>
+            )}
+            {section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === 'above' && (
+              <div style={{ marginBottom: 8 }}><MetadataRow metadata={section.metadata} /></div>
+            )}
+            {section.countdown?.enabled && section.countdown.position === 'above' && (
+              <div style={{ marginBottom: 8 }}><CountdownBadge countdown={section.countdown} /></div>
+            )}
             {section.components.length === 0 ? (
               <div
                 style={{
@@ -102,6 +116,18 @@ export function SectionRenderer({ section }: SectionRendererProps) {
               section.components
                 .sort((a, b) => a.order - b.order)
                 .map((comp) => <ComponentRenderer key={comp.id} component={comp} sectionId={section.id} />)
+            )}
+            {section.countdown?.enabled && section.countdown.position === 'below' && (
+              <div style={{ marginTop: 8 }}><CountdownBadge countdown={section.countdown} /></div>
+            )}
+            {section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === 'below' && (
+              <div style={{ marginTop: 8 }}><MetadataRow metadata={section.metadata} /></div>
+            )}
+            {section.liveBadge?.enabled && section.liveBadge.position === 'below' && (
+              <div style={{ marginTop: 8 }}><LiveBadgeRow liveBadge={section.liveBadge} /></div>
+            )}
+            {section.callout?.enabled && section.callout.position === 'below' && (
+              <div style={{ marginTop: 8 }}><CalloutBadge callout={section.callout} /></div>
             )}
           </>
         )}

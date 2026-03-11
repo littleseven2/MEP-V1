@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Eye, Settings, Layers, Palette,
   Sparkles, Send, Undo2, Redo2, Component, Paperclip,
@@ -18,8 +18,37 @@ export const BuilderLayout: React.FC = () => {
   const { message, setView, selectSection, selectedSectionId, selectedComponentId } = useMessageStore();
   const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
+  const [rightPanelFocus, setRightPanelFocus] = useState<'theme' | 'canvas'>('canvas');
 
   const themeManager = useThemeManager();
+
+  const prevSelectionRef = useRef({ selectedComponentId, selectedSectionId });
+  useEffect(() => {
+    const prev = prevSelectionRef.current;
+    const selectionChanged =
+      prev.selectedComponentId !== selectedComponentId ||
+      prev.selectedSectionId !== selectedSectionId;
+    prevSelectionRef.current = { selectedComponentId, selectedSectionId };
+
+    if (selectionChanged && (selectedComponentId || selectedSectionId)) {
+      setRightPanelFocus('canvas');
+    }
+  }, [selectedComponentId, selectedSectionId]);
+
+  const handleThemeSelect = useCallback((themeId: string) => {
+    themeManager.selectTheme(themeId);
+    setRightPanelFocus('theme');
+  }, [themeManager]);
+
+  const handleThemeCreate = useCallback(() => {
+    themeManager.createNewTheme();
+    setRightPanelFocus('theme');
+  }, [themeManager]);
+
+  const handleLeftNavChange = useCallback((nav: LeftNav) => {
+    setLeftNav(nav);
+    if (nav === 'theme') setRightPanelFocus('theme');
+  }, []);
 
   const handleCanvasAreaClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) selectSection(null);
@@ -33,9 +62,11 @@ export const BuilderLayout: React.FC = () => {
 
   const selectedSection = message.sections.find((s) => s.id === selectedSectionId);
   const hasComponentSelected = !!selectedComponentId && !!selectedSection?.components.find((c) => c.id === selectedComponentId);
+  const hasCanvasSelection = hasComponentSelected || (!!selectedSectionId && selectedSection?.type === 'content');
+  const showThemeProps = rightPanelFocus === 'theme' || !hasCanvasSelection;
 
   const getRightPanelTitle = () => {
-    if (leftNav === 'theme') return 'Theme Properties';
+    if (showThemeProps) return 'Theme Properties';
     if (hasComponentSelected) {
       const comp = selectedSection?.components.find((c) => c.id === selectedComponentId);
       if (comp) {
@@ -129,10 +160,10 @@ export const BuilderLayout: React.FC = () => {
           gap: 4,
           boxShadow: 'var(--shadow-md)',
         }}>
-          <VerticalNavItem icon={<Palette size={18} />} label="Theme" active={leftNav === 'theme'} onClick={() => setLeftNav('theme')} />
-          <VerticalNavItem icon={<Layers size={18} />} label="Section" active={leftNav === 'section'} onClick={() => setLeftNav('section')} />
-          <VerticalNavItem icon={<Component size={18} />} label="Component" active={leftNav === 'component'} onClick={() => setLeftNav('component')} />
-          <VerticalNavItem icon={<Paperclip size={18} />} label="Attachment" active={leftNav === 'attachment'} onClick={() => setLeftNav('attachment')} />
+          <VerticalNavItem icon={<Palette size={18} />} label="Theme" active={leftNav === 'theme'} onClick={() => handleLeftNavChange('theme')} />
+          <VerticalNavItem icon={<Layers size={18} />} label="Section" active={leftNav === 'section'} onClick={() => handleLeftNavChange('section')} />
+          <VerticalNavItem icon={<Component size={18} />} label="Component" active={leftNav === 'component'} onClick={() => handleLeftNavChange('component')} />
+          <VerticalNavItem icon={<Paperclip size={18} />} label="Attachment" active={leftNav === 'attachment'} onClick={() => handleLeftNavChange('attachment')} />
           <div style={{ flex: 1 }} />
           <VerticalNavItem icon={<Settings size={18} />} label="Setup" active={false} onClick={() => setView('setup')} />
         </div>
@@ -164,10 +195,10 @@ export const BuilderLayout: React.FC = () => {
               <ThemePanel
                 themes={themeManager.themes}
                 activeThemeId={themeManager.activeThemeId}
-                onSelect={themeManager.selectTheme}
+                onSelect={handleThemeSelect}
                 onDelete={themeManager.deleteTheme}
                 onDuplicate={themeManager.duplicateTheme}
-                onCreate={themeManager.createNewTheme}
+                onCreate={handleThemeCreate}
               />
             )}
             {leftNav === 'section' && <SectionPanel />}
@@ -218,7 +249,7 @@ export const BuilderLayout: React.FC = () => {
             {getRightPanelTitle()}
           </div>
           <div style={{ flex: 1, overflow: 'auto', scrollbarWidth: 'thin', scrollbarColor: 'var(--color-border-default) transparent' }}>
-            {leftNav === 'theme' ? (
+            {showThemeProps ? (
               <ThemePropertiesPanel
                 theme={themeManager.activeTheme}
                 onUpdate={(updates) => themeManager.updateTheme(themeManager.activeThemeId, updates)}

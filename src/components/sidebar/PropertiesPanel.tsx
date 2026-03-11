@@ -26,6 +26,7 @@ import type {
   CalloutIcon,
   LinkedValues,
   LinkedValue,
+  MarqueeConfig,
 } from '../../types/message';
 import {
   contentTypes,
@@ -928,6 +929,10 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
         imageRadius={settings.mediaRadius ?? 8}
         onImageRadiusUpdate={(v) => update({ ...settings, mediaRadius: v })}
       />
+      <MarqueeControls
+        marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
+        onChange={(m) => update({ ...settings, marquee: m })}
+      />
     </>
   );
 }
@@ -1281,6 +1286,10 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
         onUpdate={(v) => update({ ...settings, ...v })}
         linked={linked}
         onLink={setLinked}
+      />
+      <MarqueeControls
+        marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
+        onChange={(m) => update({ ...settings, marquee: m })}
       />
     </>
   );
@@ -1724,6 +1733,65 @@ function ListItemStyleSection({ settings, update }: { settings: ListSettings; up
               />
             </div>
           ))
+        )}
+      </div>
+    </PanelSection>
+  );
+}
+
+function MarqueeControls({ marquee, onChange }: { marquee: MarqueeConfig; onChange: (m: MarqueeConfig) => void }) {
+  return (
+    <PanelSection title="Marquee">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Toggle
+          label="Show marquee"
+          checked={marquee.enabled}
+          onChange={(v) => onChange({ ...marquee, enabled: v })}
+        />
+        {marquee.enabled && (
+          <>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                Position
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['above', 'below'] as const).map((pos) => (
+                  <StepperBtn
+                    key={pos}
+                    onClick={() => onChange({ ...marquee, position: pos })}
+                    style={(marquee.position ?? 'below') === pos ? {
+                      border: '2px solid var(--color-brand)',
+                      background: 'var(--color-brand-subtle)',
+                      color: 'var(--color-brand)',
+                      fontSize: 12,
+                      flex: 1,
+                    } : { fontSize: 12, flex: 1 }}
+                  >
+                    {pos === 'above' ? 'Top' : 'Bottom'}
+                  </StepperBtn>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                Text
+              </label>
+              <input
+                type="text"
+                value={marquee.text}
+                onChange={(e) => onChange({ ...marquee, text: e.target.value })}
+                placeholder="Marquee"
+                className="mep-input"
+                style={{
+                  width: '100%', height: 36, borderRadius: 8,
+                  border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+                  color: 'var(--color-text-primary)', fontSize: 13, padding: '0 10px',
+                  outline: 'none', fontFamily: 'var(--font-family)',
+                  transition: 'var(--transition-fast)',
+                }}
+              />
+            </div>
+          </>
         )}
       </div>
     </PanelSection>

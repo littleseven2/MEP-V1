@@ -524,6 +524,10 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
                     {section.components.sort((a, b) => a.order - b.order).map((c) => {
                       const co = c.callout;
                       const showCo = co?.enabled;
+                      const md = c.metadata;
+                      const showMd = md?.enabled && md.items.length > 0;
+                      const lb = c.liveBadge;
+                      const showLb = lb?.enabled;
                       return (
                         <div key={c.id}>
                           {showCo && co.position === 'above' && (
@@ -532,7 +536,47 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
                               <span style={{ fontSize: 7, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{co.text}</span>
                             </div>
                           )}
+                          {showLb && lb.position === 'above' && (
+                            <div style={{ display: 'flex', alignItems: 'center', width: 'fit-content', marginBottom: 4 }}>
+                              <div style={{ background: '#e50914', padding: '0 4px', borderTopLeftRadius: 2, borderBottomLeftRadius: 2 }}>
+                                <span style={{ fontSize: 7, fontWeight: 500, color: '#fff', lineHeight: '12px' }}>{lb.label}</span>
+                              </div>
+                              <div style={{ background: '#fff', padding: '0 3px', borderTopRightRadius: 2, borderBottomRightRadius: 2 }}>
+                                <span style={{ fontSize: 7, fontWeight: 500, color: '#000', lineHeight: '12px' }}>{lb.value}</span>
+                              </div>
+                            </div>
+                          )}
+                          {showMd && md.position === 'above' && (
+                            <div style={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                              {md.items.map((item, i) => (
+                                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                  <span style={{ fontSize: 7, color: '#fff', whiteSpace: 'nowrap' }}>{item}</span>
+                                  {i < md.items.length - 1 && <span style={{ width: 2, height: 2, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                           <MiniPreviewComponent component={c} />
+                          {showMd && md.position === 'below' && (
+                            <div style={{ display: 'flex', gap: 3, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+                              {md.items.map((item, i) => (
+                                <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                  <span style={{ fontSize: 7, color: '#fff', whiteSpace: 'nowrap' }}>{item}</span>
+                                  {i < md.items.length - 1 && <span style={{ width: 2, height: 2, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {showLb && lb.position === 'below' && (
+                            <div style={{ display: 'flex', alignItems: 'center', width: 'fit-content', marginTop: 4 }}>
+                              <div style={{ background: '#e50914', padding: '0 4px', borderTopLeftRadius: 2, borderBottomLeftRadius: 2 }}>
+                                <span style={{ fontSize: 7, fontWeight: 500, color: '#fff', lineHeight: '12px' }}>{lb.label}</span>
+                              </div>
+                              <div style={{ background: '#fff', padding: '0 3px', borderTopRightRadius: 2, borderBottomRightRadius: 2 }}>
+                                <span style={{ fontSize: 7, fontWeight: 500, color: '#000', lineHeight: '12px' }}>{lb.value}</span>
+                              </div>
+                            </div>
+                          )}
                           {showCo && co.position === 'below' && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 3, padding: '2px 4px', background: 'rgba(0,0,0,0.5)', borderRadius: 3, width: 'fit-content', marginTop: 4 }}>
                               <span style={{ fontSize: 7, color: '#fff' }}>📣</span>

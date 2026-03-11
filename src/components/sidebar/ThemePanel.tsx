@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, Plus, MoreVertical, Trash2, Copy } from 'lucide-react';
+import { Check, Plus, MoreVertical, Trash2, Copy, ChevronRight } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import { defaultThemes } from '../../data/defaults';
-import type { ThemeConfig } from '../../types/message';
+import { defaultThemes, defaultTextStyles } from '../../data/defaults';
+import type { ThemeConfig, TextStyleKey, TextStyle } from '../../types/message';
 import { Select, Input } from '../../ui';
 
 let themeIdCounter = 100;
@@ -14,7 +14,11 @@ export function useThemeManager() {
   const setTheme = useMessageStore((s) => s.setTheme);
 
   const [themes, setThemes] = useState<ThemeConfig[]>(() => [...defaultThemeState]);
-  const [activeThemeId, setActiveThemeId] = useState<string>(() => message?.theme.id ?? 'default-dark');
+  const [activeThemeId, setActiveThemeId] = useState<string>(() => {
+    const msgId = message?.theme.id;
+    if (msgId && defaultThemeState.some((t) => t.id === msgId)) return msgId;
+    return defaultThemeState[0].id;
+  });
 
   const applyTheme = (theme: ThemeConfig) => {
     setActiveThemeId(theme.id);
@@ -40,8 +44,11 @@ export function useThemeManager() {
       typography: {
         headlineFont: 'Inter',
         bodyFont: 'Inter',
+        textStyles: { ...defaultTextStyles },
       },
       spacing: 'normal',
+      sectionPadding: 0,
+      componentPadding: 0,
       background: {
         type: 'solid',
         value: '#0D0D0F',
@@ -75,17 +82,17 @@ export function useThemeManager() {
     return dup.id;
   };
 
+  const activeTheme = themes.find((t) => t.id === activeThemeId) ?? themes[0];
+
   const updateTheme = (themeId: string, updates: Partial<ThemeConfig>) => {
     setThemes((prev) =>
       prev.map((t) => (t.id === themeId ? { ...t, ...updates } : t))
     );
     if (themeId === activeThemeId) {
-      const current = themes.find((t) => t.id === themeId);
-      if (current) setTheme({ ...current, ...updates });
+      const current = themes.find((t) => t.id === themeId) ?? activeTheme;
+      setTheme({ ...current, ...updates });
     }
   };
-
-  const activeTheme = themes.find((t) => t.id === activeThemeId) ?? themes[0];
 
   return {
     themes,
@@ -168,6 +175,84 @@ export function ThemePanel({
   );
 }
 
+function StyleSection({
+  title,
+  preview,
+  children,
+  defaultOpen,
+}: {
+  title: string;
+  preview: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen ?? false);
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      style={{
+        background: hovered && !open ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        border: '1px solid var(--color-border-default)',
+        borderRadius: 12,
+        overflow: 'hidden',
+        transition: 'background 0.15s ease',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '14px 14px 14px 16px',
+          gap: 12,
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--color-text-tertiary)',
+            letterSpacing: '0.02em',
+            marginBottom: 10,
+            fontFamily: 'var(--font-display)',
+          }}>
+            {title}
+          </div>
+          {preview}
+        </div>
+        <ChevronRight
+          size={16}
+          style={{
+            flexShrink: 0,
+            color: 'var(--color-text-muted)',
+            transition: 'transform 0.2s ease',
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+        />
+      </button>
+      {open && (
+        <div style={{
+          padding: '0 16px 16px',
+          borderTop: '1px solid var(--color-border-default)',
+          paddingTop: 14,
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ThemePropertiesPanel({
   theme,
   onUpdate,
@@ -179,12 +264,23 @@ export function ThemePropertiesPanel({
     onUpdate({ colors: { ...theme.colors, [key]: value } });
   };
 
-  const updateTypography = (key: keyof ThemeConfig['typography'], value: string) => {
+  const updateTypography = (key: 'headlineFont' | 'bodyFont', value: string) => {
     onUpdate({ typography: { ...theme.typography, [key]: value } });
   };
 
+  const textStyles = theme.typography.textStyles ?? defaultTextStyles;
+
+  const updateTextStyle = (styleKey: TextStyleKey, field: keyof TextStyle, value: number) => {
+    const updated = {
+      ...textStyles,
+      [styleKey]: { ...textStyles[styleKey], [field]: value },
+    };
+    onUpdate({ typography: { ...theme.typography, textStyles: updated } });
+  };
+
   return (
-    <div style={{ padding: 20 }}>
+    <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {/* Theme name */}
       <input
         type="text"
         className="mep-input"
@@ -203,22 +299,105 @@ export function ThemePropertiesPanel({
           fontWeight: 500,
           fontFamily: 'var(--font-family)',
           outline: 'none',
-          marginBottom: 16,
           transition: 'var(--transition-fast)',
         }}
       />
 
-      <EditorSection title="Colors">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <ColorRow label="Primary" value={theme.colors.primary} onChange={(v) => updateColor('primary', v)} />
-          <ColorRow label="Background" value={theme.colors.background} onChange={(v) => updateColor('background', v)} />
-          <ColorRow label="Text" value={theme.colors.text} onChange={(v) => updateColor('text', v)} />
-          <ColorRow label="Secondary text" value={theme.colors.secondary} onChange={(v) => updateColor('secondary', v)} />
+      {/* Themes preview card */}
+      <div style={{
+        background: 'var(--color-bg-tertiary)',
+        border: '1px solid var(--color-border-default)',
+        borderRadius: 12,
+        padding: '14px 16px',
+      }}>
+        <div style={{
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'var(--color-text-tertiary)',
+          letterSpacing: '0.02em',
+          marginBottom: 12,
+          fontFamily: 'var(--font-display)',
+        }}>
+          Themes
         </div>
-      </EditorSection>
+        <div style={{
+          background: theme.colors.background,
+          borderRadius: parseInt(theme.radius) || 8,
+          padding: '12px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          border: '1px solid rgba(255,255,255,0.06)',
+          overflow: 'hidden',
+        }}>
+          <span style={{
+            fontSize: 28,
+            fontWeight: 700,
+            color: theme.colors.text,
+            fontFamily: theme.typography.headlineFont,
+            lineHeight: 1,
+            letterSpacing: '-0.02em',
+            flexShrink: 0,
+          }}>
+            Aa
+          </span>
+          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+            {[theme.colors.secondary, theme.colors.background, theme.colors.text].map((c, i) => (
+              <div key={i} style={{
+                width: 24,
+                height: 24,
+                borderRadius: i === 0 ? '5px 0 0 5px' : i === 2 ? '0 5px 5px 0' : 0,
+                background: c,
+                border: '1px solid rgba(255,255,255,0.12)',
+              }} />
+            ))}
+          </div>
+          <div style={{ flex: 1 }} />
+          <div style={{
+            background: theme.colors.primary,
+            color: theme.colors.text,
+            fontSize: 9,
+            fontWeight: 700,
+            padding: '4px 10px',
+            borderRadius: Math.max(2, (parseInt(theme.radius) || 8) / 2),
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            fontFamily: theme.typography.bodyFont,
+            flexShrink: 0,
+          }}>
+            BUTTON
+          </div>
+        </div>
+      </div>
 
-      <EditorSection title="Typography">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Fonts */}
+      <StyleSection
+        title="Fonts"
+        preview={
+          <div>
+            <div style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: 'var(--color-text-primary)',
+              fontFamily: theme.typography.headlineFont,
+              lineHeight: 1.3,
+              marginBottom: 4,
+            }}>
+              Heading
+            </div>
+            <div style={{
+              fontSize: 13,
+              color: 'var(--color-text-secondary)',
+              fontFamily: theme.typography.bodyFont,
+              lineHeight: 1.4,
+            }}>
+              This is your paragraph.
+            </div>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Select
             label="Heading font"
             options={[
@@ -241,10 +420,84 @@ export function ThemePropertiesPanel({
             value={theme.typography.bodyFont}
             onChange={(v) => updateTypography('bodyFont', v)}
           />
-        </div>
-      </EditorSection>
 
-      <EditorSection title="Spacing" last>
+          <div style={{
+            borderTop: '1px solid var(--color-border-default)',
+            paddingTop: 12,
+          }}>
+            <TypeScaleGroup
+              groupLabel="Heading"
+              entries={headingStyleEntries}
+              textStyles={textStyles}
+              font={theme.typography.headlineFont}
+              onStyleChange={updateTextStyle}
+            />
+            <TypeScaleGroup
+              groupLabel="Body"
+              entries={bodyStyleEntries}
+              textStyles={textStyles}
+              font={theme.typography.bodyFont}
+              onStyleChange={updateTextStyle}
+              style={{ marginTop: 8 }}
+            />
+          </div>
+        </div>
+      </StyleSection>
+
+      {/* Colors */}
+      <StyleSection
+        title="Colors"
+        preview={
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([
+              { c: theme.colors.primary, label: 'Primary' },
+              { c: theme.colors.secondary, label: 'Secondary' },
+              { c: theme.colors.background, label: 'Background' },
+              { c: theme.colors.text, label: 'Text' },
+            ]).map((item, i) => (
+              <div
+                key={i}
+                title={item.label}
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: i === 0 ? '6px 0 0 6px' : i === 3 ? '0 6px 6px 0' : 0,
+                  background: item.c,
+                  border: '1px solid rgba(255,255,255,0.12)',
+                }}
+              />
+            ))}
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <ColorRow label="Primary" value={theme.colors.primary} onChange={(v) => updateColor('primary', v)} />
+          <ColorRow label="Background" value={theme.colors.background} onChange={(v) => updateColor('background', v)} />
+          <ColorRow label="Text" value={theme.colors.text} onChange={(v) => updateColor('text', v)} />
+          <ColorRow label="Secondary text" value={theme.colors.secondary} onChange={(v) => updateColor('secondary', v)} />
+        </div>
+      </StyleSection>
+
+      {/* Spacing */}
+      <StyleSection
+        title="Spacing"
+        preview={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family)',
+              textTransform: 'capitalize',
+            }}>
+              {theme.spacing}
+            </span>
+            <span style={{ width: 1, height: 12, background: 'var(--color-border-default)' }} />
+            <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'var(--font-family)' }}>
+              S:{theme.sectionPadding ?? 0} C:{theme.componentPadding ?? 0}
+            </span>
+          </div>
+        }
+      >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Select
             label="Content spacing"
@@ -256,6 +509,75 @@ export function ThemePropertiesPanel({
             value={theme.spacing}
             onChange={(v) => onUpdate({ spacing: v as ThemeConfig['spacing'] })}
           />
+          <PaddingRow
+            label="Section padding"
+            value={theme.sectionPadding ?? 0}
+            onChange={(v) => onUpdate({ sectionPadding: v })}
+          />
+          <PaddingRow
+            label="Component padding"
+            value={theme.componentPadding ?? 0}
+            onChange={(v) => onUpdate({ componentPadding: v })}
+          />
+        </div>
+      </StyleSection>
+
+      {/* Image Block */}
+      <StyleSection
+        title="Image Block"
+        preview={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{
+              width: 40,
+              height: 28,
+              borderRadius: Math.min(6, parseInt(theme.radius) || 8),
+              background: `linear-gradient(135deg, ${theme.colors.primary}44, ${theme.colors.primary}22)`,
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path d="m21 15-5-5L5 21" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+              {theme.radius} radius
+            </span>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            label="Image radius"
+            fullWidth
+            value={theme.radius}
+            onChange={(e) => onUpdate({ radius: e.target.value })}
+            placeholder="e.g. 8px"
+          />
+        </div>
+      </StyleSection>
+
+      {/* Radius */}
+      <StyleSection
+        title="Radius"
+        preview={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{
+              width: 24,
+              height: 24,
+              borderRadius: parseInt(theme.radius) || 8,
+              border: '2px solid var(--color-text-secondary)',
+            }} />
+            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+              {theme.radius}
+            </span>
+          </div>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Input
             label="Border radius"
             fullWidth
@@ -264,7 +586,264 @@ export function ThemePropertiesPanel({
             placeholder="e.g. 8px"
           />
         </div>
-      </EditorSection>
+      </StyleSection>
+    </div>
+  );
+}
+
+const headingStyleEntries: [TextStyleKey, string][] = [
+  ['display', 'Display'],
+  ['headline', 'Headline'],
+  ['subheadline', 'Subheadline'],
+  ['title', 'Title'],
+  ['bodyLarge', 'Body (Large)'],
+];
+
+const bodyStyleEntries: [TextStyleKey, string][] = [
+  ['body', 'Body'],
+  ['label', 'Label'],
+  ['legal', 'Legal'],
+];
+
+const textStyleEntries: [TextStyleKey, string][] = [
+  ...headingStyleEntries,
+  ...bodyStyleEntries,
+];
+
+function TypeScaleGroup({
+  groupLabel,
+  entries,
+  textStyles,
+  font,
+  onStyleChange,
+  style: containerStyle,
+}: {
+  groupLabel: string;
+  entries: [TextStyleKey, string][];
+  textStyles: Record<TextStyleKey, TextStyle>;
+  font: string;
+  onStyleChange: (key: TextStyleKey, field: keyof TextStyle, value: number) => void;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div style={containerStyle}>
+      <div style={{
+        fontSize: 10,
+        fontWeight: 600,
+        color: 'var(--color-text-muted)',
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        marginBottom: 4,
+        fontFamily: 'var(--font-display)',
+      }}>
+        {groupLabel}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        {entries.map(([key, label]) => (
+          <FontStyleRow
+            key={key}
+            label={label}
+            style={textStyles[key]}
+            font={font}
+            onChange={(field, value) => onStyleChange(key, field, value)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const weightOptions: { value: number; label: string }[] = [
+  { value: 100, label: 'Thin' },
+  { value: 200, label: 'Extra Light' },
+  { value: 300, label: 'Light' },
+  { value: 400, label: 'Regular' },
+  { value: 500, label: 'Medium' },
+  { value: 600, label: 'Semi Bold' },
+  { value: 700, label: 'Bold' },
+  { value: 800, label: 'Extra Bold' },
+  { value: 900, label: 'Black' },
+];
+
+
+function FontStyleRow({
+  label,
+  style,
+  font,
+  onChange,
+}: {
+  label: string;
+  style: TextStyle;
+  font: string;
+  onChange: (field: keyof TextStyle, value: number) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const previewSize = Math.min(style.fontSize, 22);
+
+  return (
+    <div style={{
+      borderBottom: '1px solid var(--color-border-default)',
+    }}>
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '10px 0',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{
+          flex: 1,
+          fontSize: previewSize,
+          fontWeight: style.fontWeight,
+          fontFamily: font,
+          color: 'var(--color-text-primary)',
+          lineHeight: 1.3,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}>
+          {label}
+        </span>
+        <span style={{
+          fontSize: 11,
+          color: 'var(--color-text-muted)',
+          fontFamily: 'var(--font-family)',
+          fontWeight: 400,
+          flexShrink: 0,
+        }}>
+          {style.fontSize}px
+        </span>
+        <ChevronRight
+          size={12}
+          style={{
+            flexShrink: 0,
+            color: 'var(--color-text-muted)',
+            transition: 'transform 0.15s ease',
+            transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+        />
+      </button>
+
+      {expanded && (
+        <div style={{
+          paddingBottom: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{
+                display: 'block',
+                fontSize: 10,
+                color: 'var(--color-text-muted)',
+                marginBottom: 3,
+                fontFamily: 'var(--font-family)',
+              }}>
+                Size
+              </label>
+              <input
+                type="number"
+                value={style.fontSize}
+                onChange={(e) => onChange('fontSize', Math.max(8, Number(e.target.value) || 12))}
+                className="mep-input"
+                style={{
+                  width: '100%',
+                  height: 30,
+                  padding: '0 6px',
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border-default)',
+                  borderRadius: 6,
+                  color: 'var(--color-text-primary)',
+                  fontSize: 12,
+                  fontFamily: 'var(--font-mono)',
+                  textAlign: 'center',
+                  outline: 'none',
+                }}
+              />
+            </div>
+            <div style={{ flex: 1.5 }}>
+              <label style={{
+                display: 'block',
+                fontSize: 10,
+                color: 'var(--color-text-muted)',
+                marginBottom: 3,
+                fontFamily: 'var(--font-family)',
+              }}>
+                Weight
+              </label>
+              <select
+                value={style.fontWeight}
+                onChange={(e) => onChange('fontWeight', Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  height: 30,
+                  padding: '0 6px',
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border-default)',
+                  borderRadius: 6,
+                  color: 'var(--color-text-primary)',
+                  fontSize: 12,
+                  fontFamily: 'var(--font-family)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 6px center',
+                  paddingRight: 22,
+                }}
+              >
+                {weightOptions.map((w) => (
+                  <option key={w.value} value={w.value}>
+                    {w.label} ({w.value})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{
+                display: 'block',
+                fontSize: 10,
+                color: 'var(--color-text-muted)',
+                marginBottom: 3,
+                fontFamily: 'var(--font-family)',
+              }}>
+                Line H
+              </label>
+              <input
+                type="number"
+                value={style.lineHeight}
+                onChange={(e) => onChange('lineHeight', Math.max(1, Number(e.target.value) || style.fontSize))}
+                className="mep-input"
+                style={{
+                  width: '100%',
+                  height: 30,
+                  padding: '0 6px',
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border-default)',
+                  borderRadius: 6,
+                  color: 'var(--color-text-primary)',
+                  fontSize: 12,
+                  fontFamily: 'var(--font-mono)',
+                  textAlign: 'center',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -421,25 +1000,66 @@ function DropdownItem({ icon, label, onClick, variant }: { icon: React.ReactNode
   );
 }
 
-function EditorSection({ title, children, last }: { title: string; children: React.ReactNode; last?: boolean }) {
+
+function ThemeStepperBtn({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
+  const [h, setH] = React.useState(false);
   return (
-    <div style={{
-      marginBottom: last ? 0 : 20,
-      paddingBottom: last ? 0 : 16,
-      borderBottom: last ? 'none' : '1px solid var(--color-border-default)',
-    }}>
-      <h3 style={{
-        fontFamily: 'var(--font-display)',
-        fontSize: 11,
-        fontWeight: 600,
-        color: 'var(--color-text-tertiary)',
-        textTransform: 'none',
-        letterSpacing: 'var(--letter-spacing-wide)',
-        marginBottom: 12,
-      }}>
-        {title}
-      </h3>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      style={{
+        width: 36, height: 36, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: !disabled && h ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        border: !disabled && h ? '1px solid var(--color-border-strong)' : '1px solid var(--color-border-default)',
+        color: disabled ? 'var(--color-text-muted)' : h ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+        cursor: disabled ? 'not-allowed' : 'pointer', fontSize: 18,
+        opacity: disabled ? 0.4 : 1,
+        transition: 'var(--transition-fast)',
+      }}
+    >
       {children}
+    </button>
+  );
+}
+
+function ThemeStepperInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  return (
+    <input
+      type="number"
+      value={value}
+      onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+      className="mep-input"
+      style={{
+        width: 40, height: 36, borderRadius: 8,
+        border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+        color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center',
+        outline: 'none', fontFamily: 'var(--font-family)',
+        transition: 'var(--transition-fast)',
+      }}
+    />
+  );
+}
+
+function PaddingRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div>
+      <label style={{
+        display: 'block',
+        fontSize: '0.75rem',
+        fontFamily: 'var(--font-display)',
+        color: 'var(--color-text-secondary)',
+        marginBottom: 4,
+      }}>
+        {label}
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <ThemeStepperBtn onClick={() => onChange(Math.max(0, value - 1))} disabled={value <= 0}>‹</ThemeStepperBtn>
+        <ThemeStepperInput value={value} onChange={(v) => onChange(Math.max(0, v || 0))} />
+        <ThemeStepperBtn onClick={() => onChange(value + 1)}>›</ThemeStepperBtn>
+      </div>
     </div>
   );
 }

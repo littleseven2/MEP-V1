@@ -72,6 +72,16 @@ export interface MessageAttributes {
   eligibility?: string;
 }
 
+// Individual text style definition
+export interface TextStyle {
+  fontSize: number;
+  fontWeight: number;
+  lineHeight: number;
+}
+
+// Named text style keys used in the typography scale
+export type TextStyleKey = 'display' | 'headline' | 'subheadline' | 'title' | 'bodyLarge' | 'body' | 'label' | 'legal';
+
 // Theme configuration
 export interface ThemeConfig {
   id: string;
@@ -86,8 +96,11 @@ export interface ThemeConfig {
   typography: {
     headlineFont: string;
     bodyFont: string;
+    textStyles: Record<TextStyleKey, TextStyle>;
   };
   spacing: 'compact' | 'normal' | 'relaxed';
+  sectionPadding: number;
+  componentPadding: number;
   background: BackgroundConfig;
 }
 
@@ -114,6 +127,10 @@ export interface Section {
   strokeWidth: number;
   conditions: unknown[];
   components: MessageComponent[];
+  callout?: ComponentCallout;
+  metadata?: ComponentMetadata;
+  liveBadge?: ComponentLiveBadge;
+  countdown?: ComponentCountdown;
   order: number;
 }
 
@@ -149,6 +166,7 @@ export interface MediaSettings {
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
   strokeWidth: number;
+  marquee?: MarqueeConfig;
 }
 
 // CTA button config
@@ -171,6 +189,13 @@ export interface CTASettings {
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
   strokeWidth: number;
+}
+
+// Marquee configuration (shown behind media/grid components)
+export interface MarqueeConfig {
+  enabled: boolean;
+  text: string;
+  position: 'above' | 'below';
 }
 
 // Grid cell style
@@ -209,6 +234,7 @@ export interface GridSettings {
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
   strokeWidth: number;
+  marquee?: MarqueeConfig;
 }
 
 // List columns
@@ -295,6 +321,30 @@ export interface ComponentCallout {
   position: 'above' | 'below';
 }
 
+// Component-level metadata (can be attached to any component)
+export interface ComponentMetadata {
+  enabled: boolean;
+  items: string[];
+  position: 'above' | 'below';
+}
+
+// Component-level live badge (can be attached to any component)
+export interface ComponentLiveBadge {
+  enabled: boolean;
+  label: string;
+  value: string;
+  position: 'above' | 'below';
+}
+
+// Component-level countdown timer (can be attached to any component or section)
+export interface ComponentCountdown {
+  enabled: boolean;
+  days: string;
+  hours: string;
+  minutes: string;
+  position: 'above' | 'below';
+}
+
 // Message component
 export interface MessageComponent {
   id: string;
@@ -303,6 +353,9 @@ export interface MessageComponent {
   linkedValues: LinkedValues;
   attachments: unknown[];
   callout?: ComponentCallout;
+  metadata?: ComponentMetadata;
+  liveBadge?: ComponentLiveBadge;
+  countdown?: ComponentCountdown;
   order: number;
 }
 

@@ -1,6 +1,8 @@
 import type {
   SelectOption,
   ThemeConfig,
+  TextStyle,
+  TextStyleKey,
   ComponentType,
   ComponentSettings,
   TextBlockSettings,
@@ -10,6 +12,17 @@ import type {
   GridSettings,
   ListSettings,
 } from '../types/message';
+
+export const defaultTextStyles: Record<TextStyleKey, TextStyle> = {
+  display:     { fontSize: 56, fontWeight: 900, lineHeight: 70 },
+  headline:    { fontSize: 36, fontWeight: 700, lineHeight: 45 },
+  subheadline: { fontSize: 24, fontWeight: 500, lineHeight: 30 },
+  title:       { fontSize: 20, fontWeight: 500, lineHeight: 30 },
+  bodyLarge:   { fontSize: 18, fontWeight: 400, lineHeight: 27 },
+  body:        { fontSize: 16, fontWeight: 400, lineHeight: 24 },
+  label:       { fontSize: 14, fontWeight: 500, lineHeight: 19 },
+  legal:       { fontSize: 12, fontWeight: 400, lineHeight: 18 },
+};
 
 // Consent categories for message setup
 export const consentCategories: SelectOption[] = [
@@ -79,8 +92,11 @@ export const defaultThemes: ThemeConfig[] = [
     typography: {
       headlineFont: 'Netflix Sans',
       bodyFont: 'Netflix Sans',
+      textStyles: { ...defaultTextStyles },
     },
     spacing: 'normal',
+    sectionPadding: 0,
+    componentPadding: 0,
     background: {
       type: 'solid',
       value: '#141414',
@@ -100,8 +116,11 @@ export const defaultThemes: ThemeConfig[] = [
     typography: {
       headlineFont: 'Netflix Sans',
       bodyFont: 'Netflix Sans',
+      textStyles: { ...defaultTextStyles },
     },
     spacing: 'relaxed',
+    sectionPadding: 8,
+    componentPadding: 4,
     background: {
       type: 'gradient',
       value: 'linear-gradient(180deg, #1a1a2e 0%, #0d0d0d 100%)',
@@ -121,8 +140,11 @@ export const defaultThemes: ThemeConfig[] = [
     typography: {
       headlineFont: 'Netflix Sans',
       bodyFont: 'Netflix Sans',
+      textStyles: { ...defaultTextStyles },
     },
     spacing: 'compact',
+    sectionPadding: 0,
+    componentPadding: 0,
     background: {
       type: 'solid',
       value: '#1a1a1a',
@@ -142,8 +164,11 @@ export const defaultThemes: ThemeConfig[] = [
     typography: {
       headlineFont: 'Netflix Sans',
       bodyFont: 'Netflix Sans',
+      textStyles: { ...defaultTextStyles },
     },
     spacing: 'relaxed',
+    sectionPadding: 12,
+    componentPadding: 8,
     background: {
       type: 'gradient',
       value: 'linear-gradient(180deg, #0a4d68 0%, #05161a 100%)',
@@ -201,6 +226,7 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         backgroundRadius: [0, 0, 0, 0],
         strokeColor: 'transparent',
         strokeWidth: 0,
+        marquee: { enabled: false, text: 'Marquee', position: 'below' },
       };
       return { type: 'media', settings: mediaSettings };
     }
@@ -244,6 +270,7 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         backgroundRadius: [0, 0, 0, 0],
         strokeColor: 'transparent',
         strokeWidth: 0,
+        marquee: { enabled: false, text: 'Marquee', position: 'below' },
       };
       return { type: 'grid', settings: gridSettings };
     }

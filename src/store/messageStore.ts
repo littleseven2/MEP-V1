@@ -10,7 +10,7 @@ import type {
   ThemeConfig,
   ComponentSettings,
 } from '../types/message';
-import { getDefaultComponentSettings } from '../data/defaults';
+import { getDefaultComponentSettings, defaultTextStyles } from '../data/defaults';
 
 const DEFAULT_THEME: ThemeConfig = {
   id: 'default',
@@ -25,8 +25,11 @@ const DEFAULT_THEME: ThemeConfig = {
   typography: {
     headlineFont: 'Netflix Sans',
     bodyFont: 'Netflix Sans',
+    textStyles: { ...defaultTextStyles },
   },
   spacing: 'normal',
+  sectionPadding: 0,
+  componentPadding: 0,
   background: {
     type: 'solid',
     value: '#000000',
