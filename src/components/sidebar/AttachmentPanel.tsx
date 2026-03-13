@@ -23,9 +23,12 @@ const defaultLiveBadge: ComponentLiveBadge = {
 
 const defaultCountdown: ComponentCountdown = {
   enabled: false,
+  variant: 'A',
   days: '21',
   hours: '3',
   minutes: '47',
+  message: 'Starts in 3 days',
+  imageUrl: '',
   position: 'above',
 };
 

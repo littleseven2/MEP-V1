@@ -5,7 +5,7 @@ import {
   Link, Quote, List, ListOrdered,
   IndentDecrease, IndentIncrease, RemoveFormatting,
   Type, Highlighter, Baseline, ChevronDown,
-  GripVertical,
+  GripVertical, ChevronRight, Link2, Unlink2,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type {
@@ -27,7 +27,15 @@ import type {
   LinkedValues,
   LinkedValue,
   MarqueeConfig,
+  ComponentCallout,
+  ComponentMetadata,
+  ComponentLiveBadge,
+  ComponentCountdown,
+  CountdownVariant,
+  AttachmentKey,
+  Padding,
 } from '../../types/message';
+import { parsePadding, paddingToCss, isUniformPadding, uniformPaddingValue } from '../../types/message';
 import {
   contentTypes,
   intentOptions,
@@ -36,31 +44,174 @@ import {
 import { entityVariables, themeVariables } from '../../data/variables';
 import { Select, Toggle, LinkedField, LinkedWrapper } from '../../ui';
 
-function PanelSection({
+function PropertyGroup({
+  title,
+  preview,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  preview?: React.ReactNode;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <div
+      style={{
+        background: hovered && !open ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        border: '1px solid var(--color-border-default)',
+        borderRadius: 6,
+        overflow: 'hidden',
+        transition: 'background 0.15s ease',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '12px 12px 12px 14px',
+          gap: 10,
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: 'var(--color-text-tertiary)',
+            letterSpacing: '0.02em',
+            fontFamily: 'var(--font-family)',
+            marginBottom: !open && preview ? 6 : 0,
+          }}>
+            {title}
+          </div>
+          {!open && preview && (
+            <div style={{
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>
+              {preview}
+            </div>
+          )}
+        </div>
+        <ChevronRight
+          size={14}
+          style={{
+            flexShrink: 0,
+            color: 'var(--color-text-muted)',
+            transition: 'transform 0.2s ease',
+            transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}
+        />
+      </button>
+      {open && (
+        <div style={{
+          padding: '0 14px 14px',
+          borderTop: '1px solid var(--color-border-default)',
+          paddingTop: 12,
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContentCard({
   title,
   children,
+  defaultOpen = false,
 }: {
   title: string;
   children: React.ReactNode;
+  defaultOpen?: boolean;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
+
   return (
     <div style={{
-      padding: '20px 0',
-      borderBottom: '1px solid var(--color-border-default)',
+      background: 'var(--color-bg-tertiary)',
+      border: '1px solid var(--color-border-default)',
+      borderRadius: 6,
+      overflow: 'hidden',
     }}>
-      <h3 style={{
-        fontFamily: 'var(--font-family)',
-        fontSize: 11,
-        fontWeight: 600,
-        color: 'var(--color-text-tertiary)',
-        textTransform: 'none',
-        letterSpacing: 'var(--letter-spacing-wide)',
-        marginBottom: 16,
-      }}>
-        {title}
-      </h3>
-      {children}
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '8px 10px',
+          width: '100%',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+        }}
+      >
+        <span style={{
+          flex: 1,
+          fontSize: 12,
+          fontWeight: 500,
+          fontFamily: 'var(--font-family)',
+          color: 'var(--color-text-primary)',
+          userSelect: 'none',
+        }}>
+          {title}
+        </span>
+        <ChevronRight
+          size={11}
+          style={{
+            flexShrink: 0,
+            color: 'var(--color-text-muted)',
+            transform: open ? 'rotate(90deg)' : 'none',
+            transition: 'transform 0.15s ease',
+          }}
+        />
+      </button>
+      {open && (
+        <div style={{
+          padding: '0 10px 10px',
+          borderTop: '1px solid var(--color-border-default)',
+          paddingTop: 10,
+        }}>
+          {children}
+        </div>
+      )}
     </div>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <h3 style={{
+      fontFamily: 'var(--font-family)',
+      fontSize: 11,
+      fontWeight: 600,
+      color: 'var(--color-text-tertiary)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.06em',
+      margin: 0,
+      padding: '8px 0 2px',
+    }}>
+      {title}
+    </h3>
   );
 }
 
@@ -108,13 +259,78 @@ function StepperInput({ value, onChange, style }: { value: number; onChange: (v:
   );
 }
 
+const SIDE_LABELS = ['T', 'R', 'B', 'L'] as const;
+
+function PaddingControl({ label = 'Padding', value, onChange }: { label?: string; value: Padding; onChange: (v: Padding) => void }) {
+  const uniform = isUniformPadding(value);
+  const [expanded, setExpanded] = useState(!uniform);
+  const sides = parsePadding(value);
+
+  const toggleLink = () => {
+    if (expanded) {
+      onChange(sides[0]);
+      setExpanded(false);
+    } else {
+      setExpanded(true);
+      if (typeof value === 'number') onChange([value, value, value, value]);
+    }
+  };
+
+  const updateSide = (idx: number, v: number) => {
+    const next: [number, number, number, number] = [...sides];
+    next[idx] = Math.max(0, v);
+    onChange(next);
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <label style={{ fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)' }}>{label}</label>
+        <button
+          type="button"
+          onClick={toggleLink}
+          title={expanded ? 'Link all sides' : 'Unlink sides'}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: expanded ? 'var(--color-brand)' : 'var(--color-text-muted)',
+            padding: 2, display: 'flex', alignItems: 'center',
+            transition: 'color var(--transition-fast)',
+          }}
+        >
+          {expanded ? <Unlink2 size={13} /> : <Link2 size={13} />}
+        </button>
+      </div>
+      {!expanded ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <StepperBtn onClick={() => onChange(Math.max(0, uniformPaddingValue(value) - 1))} disabled={uniformPaddingValue(value) <= 0}>‹</StepperBtn>
+          <StepperInput value={uniformPaddingValue(value)} onChange={(v) => onChange(Math.max(0, v || 0))} />
+          <StepperBtn onClick={() => onChange(uniformPaddingValue(value) + 1)}>›</StepperBtn>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          {SIDE_LABELS.map((lbl, i) => (
+            <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--color-text-muted)', width: 12, textAlign: 'center', fontFamily: 'var(--font-family)' }}>{lbl}</span>
+              <StepperInput
+                value={sides[i]}
+                onChange={(v) => updateSide(i, v || 0)}
+                style={{ width: '100%', height: 30, fontSize: 12, borderRadius: 6 }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style', linked, onLink, imageRadius, onImageRadiusUpdate }: {
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
   strokeWidth: number;
-  onUpdate: (vals: { padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }) => void;
+  onUpdate: (vals: { padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }) => void;
   title?: string;
   linked?: LinkedValues;
   onLink?: (fieldKey: string, lv: LinkedValue) => void;
@@ -123,8 +339,15 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
 }) {
   const colorVars = themeVariables.filter((v) => v.valueType === 'color');
   const numberVars = [...themeVariables.filter((v) => v.valueType === 'text')];
+  const previewParts: string[] = [];
+  const padVal = uniformPaddingValue(padding);
+  if (padVal > 0) previewParts.push(isUniformPadding(padding) ? `pad ${padVal}` : `pad ${parsePadding(padding).join('/')}`);
+  if (backgroundColor !== 'transparent') previewParts.push(`bg ${backgroundColor}`);
+  if (strokeWidth > 0) previewParts.push(`stroke ${strokeWidth}`);
+  if (imageRadius !== undefined && imageRadius !== 8) previewParts.push(`radius ${imageRadius}`);
+
   return (
-    <PanelSection title={title}>
+    <PropertyGroup title={title} preview={previewParts.length ? previewParts.join(' · ') : 'Default'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {imageRadius !== undefined && onImageRadiusUpdate && (
           <LinkedWrapper
@@ -142,20 +365,7 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
             </div>
           </LinkedWrapper>
         )}
-        <LinkedWrapper
-          label="Padding"
-          linked={linked?.['padding']}
-          onLink={(lv) => onLink?.('padding', lv)}
-          variables={numberVars}
-          currentValue={String(padding)}
-          onValueFromVariable={(v) => onUpdate({ padding: parseInt(v) || 0 })}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <StepperBtn onClick={() => onUpdate({ padding: Math.max(0, padding - 1) })} disabled={padding <= 0}>‹</StepperBtn>
-            <StepperInput value={padding} onChange={(v) => onUpdate({ padding: Math.max(0, v || 0) })} />
-            <StepperBtn onClick={() => onUpdate({ padding: padding + 1 })}>›</StepperBtn>
-          </div>
-        </LinkedWrapper>
+        <PaddingControl value={padding} onChange={(v) => onUpdate({ padding: v })} />
         <LinkedField
           label="Background color"
           value={backgroundColor}
@@ -195,7 +405,7 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
           </div>
         </LinkedWrapper>
       </div>
-    </PanelSection>
+    </PropertyGroup>
   );
 }
 
@@ -244,41 +454,45 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
 
   if (tab === 'content') {
     return (
-      <>
-        <PanelSection title="Data Hydration">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <Select
-              label="Source"
-              options={[
-                { value: 'query', label: 'Query' },
-                { value: 'collection', label: 'Collection' },
-                { value: 'merchandised-title', label: 'Merchandised Title' },
-                { value: 'custom', label: 'Custom' },
-              ]}
-              value={section.hydration.source}
-              onChange={(v) => updateHydration({ source: v as SectionHydration['source'] })}
-            />
-            <Select
-              label="Content Type"
-              options={contentTypes}
-              value={section.hydration.contentType || ''}
-              onChange={(v) => updateHydration({ contentType: v })}
-            />
-            <Select
-              label="Intent"
-              options={intentOptions}
-              value={section.hydration.intent || ''}
-              onChange={(v) => updateHydration({ intent: v })}
-            />
-            <Select
-              label="Package Type"
-              options={packageTypes}
-              value={section.hydration.packageType || ''}
-              onChange={(v) => updateHydration({ packageType: v })}
-            />
-          </div>
-        </PanelSection>
-      </>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <SectionHeader title="Content" />
+          <PropertyGroup title="Data Hydration" defaultOpen preview={`${section.hydration.source} · ${section.hydration.contentType || 'Any'}`}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <Select
+                label="Source"
+                options={[
+                  { value: 'query', label: 'Query' },
+                  { value: 'collection', label: 'Collection' },
+                  { value: 'merchandised-title', label: 'Merchandised Title' },
+                  { value: 'custom', label: 'Custom' },
+                ]}
+                value={section.hydration.source}
+                onChange={(v) => updateHydration({ source: v as SectionHydration['source'] })}
+              />
+              <Select
+                label="Content Type"
+                options={contentTypes}
+                value={section.hydration.contentType || ''}
+                onChange={(v) => updateHydration({ contentType: v })}
+              />
+              <Select
+                label="Intent"
+                options={intentOptions}
+                value={section.hydration.intent || ''}
+                onChange={(v) => updateHydration({ intent: v })}
+              />
+              <Select
+                label="Package Type"
+                options={packageTypes}
+                value={section.hydration.packageType || ''}
+                onChange={(v) => updateHydration({ packageType: v })}
+              />
+            </div>
+          </PropertyGroup>
+        </div>
+        <AttachmentsSection target={section} targetType="section" />
+      </div>
     );
   }
 
@@ -286,8 +500,8 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
   const numberVars = themeVariables.filter((v) => v.valueType === 'number');
 
   return (
-    <>
-      <PanelSection title="Visual">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="Visual" defaultOpen preview={section.background.value !== 'transparent' ? section.background.value : 'Default'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedField
             label="Background color"
@@ -298,19 +512,7 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
             type="color"
             placeholder="transparent"
           />
-          <LinkedWrapper
-            label="Padding"
-            variables={numberVars}
-            onLink={() => {}}
-            currentValue={String(section.padding ?? 0)}
-            onValueFromVariable={(v) => updateSection(section.id, { padding: parseInt(v) || 0 })}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => updateSection(section.id, { padding: Math.max(0, (section.padding ?? 0) - 1) })} disabled={(section.padding ?? 0) <= 0}>‹</StepperBtn>
-              <StepperInput value={section.padding ?? 0} onChange={(v) => updateSection(section.id, { padding: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => updateSection(section.id, { padding: (section.padding ?? 0) + 1 })}>›</StepperBtn>
-            </div>
-          </LinkedWrapper>
+          <PaddingControl value={section.padding ?? 0} onChange={(v) => updateSection(section.id, { padding: v })} />
           <RadiusControl
             radii={section.backgroundRadius ?? [0, 0, 0, 0]}
             onChange={(r) => updateSection(section.id, { backgroundRadius: r })}
@@ -338,8 +540,8 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
             </div>
           </LinkedWrapper>
         </div>
-      </PanelSection>
-    </>
+      </PropertyGroup>
+    </div>
   );
 }
 
@@ -358,15 +560,9 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
     updateComponentSettings(sectionId, component.id, { type: 'text-block', settings: s });
 
 
-  const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link', callout: 'Callout' };
+  const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link' };
 
-  const fieldVarMap: Record<string, string> = { eyebrow: 'eyebrow', headline: 'headline', body: 'body', callout: 'callout' };
-  const calloutIconOptions: { value: CalloutIcon; label: string }[] = [
-    { value: 'horn', label: 'Horn' },
-    { value: 'info', label: 'Info' },
-    { value: 'star', label: 'Star' },
-    { value: 'alert', label: 'Alert' },
-  ];
+  const fieldVarMap: Record<string, string> = { eyebrow: 'eyebrow', headline: 'headline', body: 'body' };
   const textVars = entityVariables.filter((v) => v.valueType === 'text');
 
   const dragItem = useRef<number | null>(null);
@@ -401,21 +597,33 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
     return null;
   };
 
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+
   if (tab === 'content') {
     return (
-      <PanelSection title="Content">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {settings.order.map((key, idx) => {
-            const fieldKey = fieldVarMap[key] ?? key;
-            const isEnabled = (settings[key] as { enabled: boolean }).enabled;
-            const isDragging = dragIdx === idx;
-            const dropLine = getDropLine(idx);
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {settings.order.filter(k => k !== 'callout').map((key, idx) => {
+          const fieldKey = fieldVarMap[key] ?? key;
+          const isEnabled = (settings[key] as { enabled: boolean }).enabled;
+          const isDragging = dragIdx === idx;
+          const dropLine = getDropLine(idx);
+          const isExpanded = expandedKeys.has(key) && isEnabled;
 
-            return (
-              <div key={key} style={{ position: 'relative' }}>
-                {dropLine === 'above' && (
-                  <div style={{ position: 'absolute', top: -2, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
-                )}
+          return (
+            <div key={key} style={{ position: 'relative' }}>
+              {dropLine === 'above' && (
+                <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+              )}
+              <div
+                style={{
+                  background: 'var(--color-bg-tertiary)',
+                  border: '1px solid var(--color-border-default)',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  opacity: isDragging ? 0.4 : 1,
+                  transition: 'var(--transition-fast)',
+                }}
+              >
                 <div
                   draggable
                   onDragStart={() => handleDragStart(idx)}
@@ -423,44 +631,52 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                   onDragEnd={handleDragEnd}
                   onDragOver={(e) => e.preventDefault()}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
+                    display: 'flex', alignItems: 'center', gap: 8,
                     padding: '8px 10px',
-                    borderRadius: 8,
-                    background: isDragging ? 'var(--color-bg-tertiary)' : 'transparent',
-                    opacity: isDragging ? 0.4 : 1,
                     cursor: 'grab',
-                    transition: 'var(--transition-fast)',
                   }}
                 >
-                {dropLine === 'below' && (
-                  <div style={{ position: 'absolute', bottom: -2, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
-                )}
-                  <GripVertical size={14} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
-                  <span style={{
-                    flex: 1,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: isEnabled ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-                    fontFamily: 'var(--font-family)',
-                    userSelect: 'none',
-                  }}>
-                    {labels[key]}
-                  </span>
+                  <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                  <button
+                    type="button"
+                    onClick={() => { const next = new Set(expandedKeys); if (isExpanded) next.delete(key); else next.add(key); setExpandedKeys(next); }}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+                      background: 'none', border: 'none', cursor: isEnabled ? 'pointer' : 'default',
+                      padding: 0,
+                    }}
+                  >
+                    <span style={{
+                      fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                      color: isEnabled ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                      userSelect: 'none',
+                    }}>
+                      {labels[key]}
+                    </span>
+                    {isEnabled && (
+                      <ChevronRight size={11} style={{
+                        color: 'var(--color-text-muted)',
+                        transform: isExpanded ? 'rotate(90deg)' : 'none',
+                        transition: 'transform 0.15s ease',
+                      }} />
+                    )}
+                  </button>
                   <Toggle
                     label=""
                     size="sm"
                     checked={isEnabled}
                     onChange={(v) => {
                       if (key === 'link') update({ ...settings, link: { ...settings.link, enabled: v } });
-                      else if (key === 'callout') update({ ...settings, callout: { ...settings.callout, enabled: v } });
                       else update({ ...settings, [key]: { ...(settings[key] as { enabled: boolean; text: string }), enabled: v } });
                     }}
                   />
                 </div>
-                {isEnabled && key !== 'link' && key !== 'callout' && (
-                  <div style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 4, paddingBottom: 4 }}>
+                {isExpanded && key !== 'link' && (
+                  <div style={{
+                    padding: '0 10px 10px',
+                    borderTop: '1px solid var(--color-border-default)',
+                    paddingTop: 10,
+                  }}>
                     <LinkedField
                       value={(settings[key] as { text: string }).text}
                       linked={linked[fieldKey]}
@@ -471,27 +687,13 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                     />
                   </div>
                 )}
-                {key === 'callout' && settings.callout.enabled && (
-                  <div style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 4, paddingBottom: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <LinkedField
-                      label="Callout text"
-                      value={settings.callout.text}
-                      linked={linked['callout']}
-                      onChange={(v) => update({ ...settings, callout: { ...settings.callout, text: v } })}
-                      onLink={(lv) => setLinked('callout', lv)}
-                      variables={textVars}
-                      placeholder="Callout text"
-                    />
-                    <Select
-                      label="Icon"
-                      options={calloutIconOptions}
-                      value={settings.callout.icon}
-                      onChange={(v) => update({ ...settings, callout: { ...settings.callout, icon: v as CalloutIcon } })}
-                    />
-                  </div>
-                )}
-                {key === 'link' && settings.link.enabled && (
-                  <div style={{ paddingLeft: 32, paddingRight: 10, paddingTop: 4, paddingBottom: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {isExpanded && key === 'link' && (
+                  <div style={{
+                    padding: '0 10px 10px',
+                    borderTop: '1px solid var(--color-border-default)',
+                    paddingTop: 10,
+                    display: 'flex', flexDirection: 'column', gap: 8,
+                  }}>
                     <LinkedField
                       label="Link text"
                       value={settings.link.text}
@@ -513,16 +715,19 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                   </div>
                 )}
               </div>
-            );
-          })}
-        </div>
-      </PanelSection>
+              {dropLine === 'below' && (
+                <div style={{ position: 'absolute', bottom: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
     );
   }
 
   return (
-    <>
-      <PanelSection title="Layout">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="Layout" preview={`Align: ${settings.alignment ?? 'left'}`}>
         <div>
           <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
             Alignment
@@ -545,7 +750,7 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
             ))}
           </div>
         </div>
-      </PanelSection>
+      </PropertyGroup>
       <ComponentStyleControls
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
@@ -556,7 +761,7 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
         linked={linked}
         onLink={setLinked}
       />
-    </>
+    </div>
   );
 }
 
@@ -607,8 +812,8 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
 
   if (tab === 'content') {
     return (
-      <>
-        <PanelSection title="Text Structure">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <ContentCard title="Text Structure" defaultOpen>
           <div style={{ position: 'relative', marginBottom: 8 }}>
             <button
               type="button"
@@ -659,9 +864,9 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
               </div>
             )}
           </div>
-        </PanelSection>
+        </ContentCard>
 
-        <PanelSection title="Content Editing">
+        <ContentCard title="Content Editing" defaultOpen>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
               <Bold size={14} />
@@ -705,14 +910,14 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
               <RemoveFormatting size={14} />
             </button>
           </div>
-        </PanelSection>
-      </>
+        </ContentCard>
+      </div>
     );
   }
 
   return (
-    <>
-      <PanelSection title="Text Appearance">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="Text Appearance" preview={`${settings.alignment ?? 'left'} · ${settings.color}`}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
           <div style={{ position: 'relative' }}>
             <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
@@ -788,8 +993,8 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
             <AlignRight size={14} />
           </button>
         </div>
-      </PanelSection>
-      <PanelSection title="Typography">
+      </PropertyGroup>
+      <PropertyGroup title="Typography" preview={`${settings.fontSize}px · ${settings.lineHeight} lh`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
             label="Font size"
@@ -830,7 +1035,7 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
             placeholder="#ffffff"
           />
         </div>
-      </PanelSection>
+      </PropertyGroup>
       <ComponentStyleControls
         padding={settings.padding}
         backgroundColor={settings.backgroundColor}
@@ -841,7 +1046,7 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
         linked={linked}
         onLink={setLinked}
       />
-    </>
+    </div>
   );
 }
 
@@ -861,8 +1066,8 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
 
   if (tab === 'content') {
     return (
-      <>
-        <PanelSection title="Data">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <ContentCard title="Data" defaultOpen>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <LinkedField
               label="Source URL"
@@ -883,14 +1088,14 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
               placeholder="Optional custom URL"
             />
           </div>
-        </PanelSection>
-      </>
+        </ContentCard>
+      </div>
     );
   }
 
   return (
-    <>
-      <PanelSection title="Layout">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="Layout" preview={settings.format}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
             linked={linked['format']}
@@ -916,7 +1121,7 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
             />
           </LinkedWrapper>
         </div>
-      </PanelSection>
+      </PropertyGroup>
       <ComponentStyleControls
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
@@ -933,7 +1138,7 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
         marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
         onChange={(m) => update({ ...settings, marquee: m })}
       />
-    </>
+    </div>
   );
 }
 
@@ -979,75 +1184,116 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
     update({ ...settings, buttons: settings.buttons.filter((_, i) => i !== index) });
   };
 
+  const [expandedBtns, setExpandedBtns] = useState<Set<number>>(new Set([0]));
+
   if (tab === 'content') {
     return (
-      <PanelSection title="Elements">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {settings.buttons.map((btn, i) => (
-            <div key={i} style={{ padding: 12, background: 'var(--color-bg-tertiary)', borderRadius: 8 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)' }}>
-                  Button {i + 1}
-                </span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {settings.buttons.map((btn, i) => {
+          const isExpanded = expandedBtns.has(i);
+          return (
+            <div
+              key={i}
+              style={{
+                background: 'var(--color-bg-tertiary)',
+                border: '1px solid var(--color-border-default)',
+                borderRadius: 6,
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '8px 10px',
+              }}>
+                <button
+                  type="button"
+                    onClick={() => { const next = new Set(expandedBtns); if (isExpanded) next.delete(i); else next.add(i); setExpandedBtns(next); }}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  <span style={{
+                    fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                    color: 'var(--color-text-primary)',
+                    userSelect: 'none',
+                  }}>
+                    Button {i + 1}
+                  </span>
+                  <ChevronRight size={11} style={{
+                    color: 'var(--color-text-muted)',
+                    transform: isExpanded ? 'rotate(90deg)' : 'none',
+                    transition: 'transform 0.15s ease',
+                  }} />
+                </button>
                 {settings.buttons.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeButton(i)}
                     style={{
                       background: 'none', border: 'none', color: 'var(--color-text-muted)',
-                      cursor: 'pointer', fontSize: 16, padding: '0 4px', lineHeight: 1,
+                      cursor: 'pointer', fontSize: 14, padding: '0 4px', lineHeight: 1,
+                      flexShrink: 0,
                     }}
                     title="Remove button"
                   >×</button>
                 )}
               </div>
-              <LinkedField
-                label="Text"
-                value={btn.text}
-                linked={linked[`btn.${i}.text`]}
-                onChange={(v) => updateButton(i, { text: v })}
-                onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
-                variables={entityVariables.filter((v) => v.valueType === 'text')}
-                placeholder="Button text"
-              />
-              <div style={{ marginTop: 8 }}>
-                <LinkedField
-                  label="URL"
-                  value={btn.url}
-                  linked={linked[`btn.${i}.url`]}
-                  onChange={(v) => updateButton(i, { url: v })}
-                  onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
-                  variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
-                  placeholder="URL"
-                />
-              </div>
+              {isExpanded && (
+                <div style={{
+                  padding: '0 10px 10px',
+                  borderTop: '1px solid var(--color-border-default)',
+                  paddingTop: 10,
+                  display: 'flex', flexDirection: 'column', gap: 8,
+                }}>
+                  <LinkedField
+                    label="Text"
+                    value={btn.text}
+                    linked={linked[`btn.${i}.text`]}
+                    onChange={(v) => updateButton(i, { text: v })}
+                    onLink={(lv) => setLinked(`btn.${i}.text`, lv)}
+                    variables={entityVariables.filter((v) => v.valueType === 'text')}
+                    placeholder="Button text"
+                  />
+                  <LinkedField
+                    label="URL"
+                    value={btn.url}
+                    linked={linked[`btn.${i}.url`]}
+                    onChange={(v) => updateButton(i, { url: v })}
+                    onLink={(lv) => setLinked(`btn.${i}.url`, lv)}
+                    variables={entityVariables.filter((v) => v.valueType === 'url' || v.valueType === 'text')}
+                    placeholder="URL"
+                  />
+                </div>
+              )}
             </div>
-          ))}
-          {settings.buttons.length < 2 && (
-            <button
-              type="button"
-              onClick={addButton}
-              style={{
-                width: '100%', height: 36, borderRadius: 8,
-                border: '1px dashed var(--color-border-default)',
-                background: 'transparent', color: 'var(--color-text-secondary)',
-                fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
-                transition: 'var(--transition-fast)',
-              }}
-            >
-              + Add button
-            </button>
-          )}
-        </div>
-      </PanelSection>
+          );
+        })}
+        {settings.buttons.length < 2 && (
+          <button
+            type="button"
+            onClick={addButton}
+            style={{
+              width: '100%', height: 36, borderRadius: 8,
+              border: '1px dashed var(--color-border-default)',
+              background: 'transparent', color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
+              transition: 'var(--transition-fast)',
+            }}
+          >
+            + Add button
+          </button>
+        )}
+      </div>
     );
   }
 
   const labelStyle: React.CSSProperties = { display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 };
 
   return (
-    <>
-      <PanelSection title="Layout">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="Layout" preview={settings.layout === '2-side-by-side' ? 'Side by side' : 'Stacked'}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <label style={labelStyle}>Format</label>
@@ -1073,11 +1319,11 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
             </div>
           </div>
         </div>
-      </PanelSection>
-      <PanelSection title="Button Style">
+      </PropertyGroup>
+      <PropertyGroup title="Button Style" preview={`${settings.buttons.length} button${settings.buttons.length > 1 ? 's' : ''}`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {settings.buttons.map((btn, i) => (
-            <div key={i} style={{ padding: 12, background: 'var(--color-bg-tertiary)', borderRadius: 8 }}>
+            <div key={i} style={{ padding: 12, background: 'var(--color-bg-secondary)', borderRadius: 8 }}>
               <div style={{ marginBottom: 10 }}>
                 <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)' }}>
                   Button {i + 1}
@@ -1118,7 +1364,7 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
             </div>
           ))}
         </div>
-      </PanelSection>
+      </PropertyGroup>
       <ComponentStyleControls
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
@@ -1129,7 +1375,7 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
         linked={linked}
         onLink={setLinked}
       />
-    </>
+    </div>
   );
 }
 
@@ -1187,17 +1433,19 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
 
   if (tab === 'content') {
     return (
-      <PanelSection title="Grid Data">
-        <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
-          Grid cells are populated from entity data. Select cells on the canvas to configure individual content.
-        </p>
-      </PanelSection>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <ContentCard title="Grid Data" defaultOpen>
+          <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
+            Grid cells are populated from entity data. Select cells on the canvas to configure individual content.
+          </p>
+        </ContentCard>
+      </div>
     );
   }
 
   return (
-    <>
-      <PanelSection title="Grid Layout">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="Grid Layout" preview={`${mode} · ${mode === 'row' ? rows.length + ' rows' : cols.length + ' cols'}`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <label style={labelStyle}>Define by</label>
@@ -1263,8 +1511,8 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
             </>
           )}
         </div>
-      </PanelSection>
-      <PanelSection title="Spacing">
+      </PropertyGroup>
+      <PropertyGroup title="Spacing" preview={`Gap: ${settings.gap ?? 8}px`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div>
             <label style={labelStyle}>Gap</label>
@@ -1275,9 +1523,10 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
             </div>
           </div>
         </div>
-      </PanelSection>
+      </PropertyGroup>
       <GridCellStyleSection settings={settings} update={update} />
       <ComponentStyleControls
+        title="Grid Style"
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
         backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
@@ -1291,7 +1540,7 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
         marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
         onChange={(m) => update({ ...settings, marquee: m })}
       />
-    </>
+    </div>
   );
 }
 
@@ -1300,12 +1549,12 @@ function GridCellStyleSection({ settings, update }: { settings: GridSettings; up
   const wholeStyle: GridCellStyle = settings.cellStyle ?? defaultCellStyle;
 
   return (
-    <PanelSection title="Cell style">
+    <PropertyGroup title="Cell style" preview={`radius ${wholeStyle.imageRadius ?? 8}px`}>
       <ItemStyleControls
         style={wholeStyle}
         onChange={(s) => update({ ...settings, cellStyle: s as GridCellStyle })}
       />
-    </PanelSection>
+    </PropertyGroup>
   );
 }
 
@@ -1378,101 +1627,54 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
   const update = (s: ListSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'list', settings: s });
 
+  const listElements: { key: string; label: string; checked: boolean; onChange: (v: boolean) => void }[] = [
+    { key: 'thumbnail', label: 'Thumbnail', checked: settings.showThumbnail, onChange: (v) => update({ ...settings, showThumbnail: v }) },
+    { key: 'title', label: 'Title', checked: settings.showTitle ?? true, onChange: (v) => update({ ...settings, showTitle: v }) },
+    { key: 'subtitle', label: 'Subtitle', checked: settings.showSubtitle ?? true, onChange: (v) => update({ ...settings, showSubtitle: v }) },
+    { key: 'metadata', label: 'Metadata / CTA', checked: settings.showMetadata ?? true, onChange: (v) => update({ ...settings, showMetadata: v }) },
+  ];
+
   if (tab === 'content') {
     return (
-      <>
-        <PanelSection title="Elements">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Toggle
-              label="Thumbnail"
-              checked={settings.showThumbnail}
-              onChange={(v) => update({ ...settings, showThumbnail: v })}
-            />
-            <Toggle
-              label="Title"
-              checked={settings.showTitle ?? true}
-              onChange={(v) => update({ ...settings, showTitle: v })}
-            />
-            <Toggle
-              label="Subtitle"
-              checked={settings.showSubtitle ?? true}
-              onChange={(v) => update({ ...settings, showSubtitle: v })}
-            />
-            <Toggle
-              label="Metadata / CTA"
-              checked={settings.showMetadata ?? true}
-              onChange={(v) => update({ ...settings, showMetadata: v })}
-            />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {listElements.map((el) => (
+          <div
+            key={el.key}
+            style={{
+              background: 'var(--color-bg-tertiary)',
+              border: '1px solid var(--color-border-default)',
+              borderRadius: 6,
+              overflow: 'hidden',
+            }}
+          >
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '8px 10px',
+            }}>
+              <span style={{
+                flex: 1,
+                fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                color: el.checked ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                userSelect: 'none',
+              }}>
+                {el.label}
+              </span>
+              <Toggle
+                label=""
+                size="sm"
+                checked={el.checked}
+                onChange={el.onChange}
+              />
+            </div>
           </div>
-        </PanelSection>
-        <PanelSection title="Data">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <LinkedWrapper
-              label="Items"
-              linked={linked['itemCount']}
-              onLink={(lv) => setLinked('itemCount', lv)}
-              variables={entityVariables}
-              currentValue={String(settings.items.length)}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                <StepperBtn
-                  onClick={() => {
-                    if (settings.items.length > 1) {
-                      update({ ...settings, items: settings.items.slice(0, -1), itemCount: settings.items.length - 1 });
-                    }
-                  }}
-                  disabled={settings.items.length <= 1}
-                >‹</StepperBtn>
-                <input type="number" className="mep-input" min={1} value={settings.items.length}
-                  onChange={(e) => {
-                    const target = Math.max(1, parseInt(e.target.value, 10) || 1);
-                    if (target > settings.items.length) {
-                      const newItems = [...settings.items];
-                      const last = settings.items[settings.items.length - 1];
-                      for (let j = settings.items.length; j < target; j++) {
-                        const ni: ListItem = { title: `Episode ${j + 1}`, subtitle: last?.subtitle || 'Subtitle', metadata: last?.metadata || 'CTA' };
-                        if (settings.itemStyleMode === 'individual') {
-                          ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-                        }
-                        newItems.push(ni);
-                      }
-                      update({ ...settings, items: newItems, itemCount: target });
-                    } else if (target < settings.items.length) {
-                      update({ ...settings, items: settings.items.slice(0, target), itemCount: target });
-                    }
-                  }}
-                  style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)', transition: 'var(--transition-fast)' }}
-                />
-                <StepperBtn
-                  onClick={() => {
-                    const n = settings.items.length + 1;
-                    const last = settings.items[settings.items.length - 1];
-                    const ni: ListItem = {
-                      title: `Episode ${n}`,
-                      subtitle: last?.subtitle || 'Subtitle',
-                      metadata: last?.metadata || 'CTA',
-                    };
-                    if (settings.itemStyleMode === 'individual') {
-                      ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-                    }
-                    update({
-                      ...settings,
-                      items: [...settings.items, ni],
-                      itemCount: n,
-                    });
-                  }}
-                >›</StepperBtn>
-              </div>
-            </LinkedWrapper>
-          </div>
-        </PanelSection>
-      </>
+        ))}
+      </div>
     );
   }
 
   return (
-    <>
-      <PanelSection title="List Layout">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <PropertyGroup title="List Layout" preview={`${settings.layout} · ${settings.columns} col`}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <LinkedWrapper
             linked={linked['layout']}
@@ -1531,9 +1733,9 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
             />
           </LinkedWrapper>
         </div>
-      </PanelSection>
+      </PropertyGroup>
       {settings.showThumbnail && (
-        <PanelSection title="Thumbnail">
+        <PropertyGroup title="Thumbnail" preview={`radius ${settings.thumbnailRadius ?? 8}px`}>
           <LinkedWrapper
             label="Thumbnail radius"
             linked={linked['thumbnailRadius']}
@@ -1548,7 +1750,7 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
               <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
             </div>
           </LinkedWrapper>
-        </PanelSection>
+        </PropertyGroup>
       )}
       <ComponentStyleControls
         title="List style"
@@ -1562,7 +1764,7 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
         onLink={setLinked}
       />
       <ListItemStyleSection settings={settings} update={update} />
-    </>
+    </div>
   );
 }
 
@@ -1587,14 +1789,7 @@ function ItemStyleControls({ style, onChange, label }: {
           </div>
         </div>
       )}
-      <div>
-        <label style={labelStyle}>Padding</label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <StepperBtn onClick={() => onChange({ ...style, padding: Math.max(0, style.padding - 1) })} disabled={style.padding <= 0}>‹</StepperBtn>
-          <StepperInput value={style.padding} onChange={(v) => onChange({ ...style, padding: Math.max(0, v || 0) })} />
-          <StepperBtn onClick={() => onChange({ ...style, padding: style.padding + 1 })}>›</StepperBtn>
-        </div>
-      </div>
+      <PaddingControl value={style.padding} onChange={(v) => onChange({ ...style, padding: v })} />
       <div>
         <label style={labelStyle}>Background color</label>
         <div style={{
@@ -1695,7 +1890,7 @@ function ListItemStyleSection({ settings, update }: { settings: ListSettings; up
   };
 
   return (
-    <PanelSection title="Item style">
+    <PropertyGroup title="Item style" preview={mode === 'individual' ? `${settings.items.length} items` : 'Uniform'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           {(['whole', 'individual'] as const).map((m) => (
@@ -1735,13 +1930,13 @@ function ListItemStyleSection({ settings, update }: { settings: ListSettings; up
           ))
         )}
       </div>
-    </PanelSection>
+    </PropertyGroup>
   );
 }
 
 function MarqueeControls({ marquee, onChange }: { marquee: MarqueeConfig; onChange: (m: MarqueeConfig) => void }) {
   return (
-    <PanelSection title="Marquee">
+    <PropertyGroup title="Marquee" preview={marquee.enabled ? `"${marquee.text}" · ${marquee.position ?? 'below'}` : 'Off'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <Toggle
           label="Show marquee"
@@ -1794,9 +1989,525 @@ function MarqueeControls({ marquee, onChange }: { marquee: MarqueeConfig; onChan
           </>
         )}
       </div>
-    </PanelSection>
+    </PropertyGroup>
   );
 }
+
+// --------------- Inline Attachments Section ---------------
+
+const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
+
+const defaultCallout: ComponentCallout = {
+  enabled: false, text: 'Final Season Coming Nov 16', icon: 'horn', position: 'above',
+};
+const defaultMetadata: ComponentMetadata = {
+  enabled: false, items: ['Category', 'Genre', 'Year', 'Episodes', 'Rating'], position: 'below',
+};
+const defaultLiveBadge: ComponentLiveBadge = {
+  enabled: false, label: 'Live', value: '--', position: 'above',
+};
+const defaultCountdown: ComponentCountdown = {
+  enabled: false, variant: 'A', days: '21', hours: '3', minutes: '47', message: 'Starts in 3 days', imageUrl: '', position: 'above',
+};
+
+function HornIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M5 12.5C5 12.5 3 12 2 10.5C1 9 1.5 7 1.5 7L8 4L10.5 11L5 12.5Z" fill="url(#horn-pp1)" />
+      <path d="M8 4L14.5 1.5C15.5 1 16.5 1.5 17 2.5L18.5 7C19 8 18.5 9 17.5 9.5L10.5 11L8 4Z" fill="url(#horn-pp2)" />
+      <path d="M5 12.5L4 15C3.7 15.7 4 16.3 4.7 16.5C5.4 16.7 6 16.3 6.3 15.6L7 13.5L5 12.5Z" fill="#8B2F8B" />
+      <defs>
+        <linearGradient id="horn-pp1" x1="1" y1="10" x2="10" y2="7" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#4A1942" /><stop offset="1" stopColor="#8B2F6B" />
+        </linearGradient>
+        <linearGradient id="horn-pp2" x1="8" y1="8" x2="18" y2="4" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#C23074" /><stop offset="1" stopColor="#E84393" />
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
+function MetadataIcon({ size = 16 }: { size?: number }) {
+  const r = size / 18;
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="3" cy="9" r={1.5 * r} fill="currentColor" opacity="0.5" />
+      <circle cx="9" cy="9" r={1.5 * r} fill="currentColor" />
+      <circle cx="15" cy="9" r={1.5 * r} fill="currentColor" opacity="0.5" />
+      <rect x="5.5" y="8" width="1" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
+      <rect x="11.5" y="8" width="1" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
+    </svg>
+  );
+}
+
+function LiveBadgeIcon({ size = 16 }: { size?: number }) {
+  const s = size / 18;
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="5" width={9 * s} height={8 * s} rx={2 * s} fill="#e50914" />
+      <rect x={10 * s} y="5" width={7 * s} height={8 * s} rx={2 * s} fill="currentColor" opacity="0.8" />
+      <circle cx={4.5 * s} cy="9" r={1.2 * s} fill="white" />
+    </svg>
+  );
+}
+
+function CountdownIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="3" width="16" height="12" rx="3" fill="currentColor" opacity="0.15" />
+      <rect x="2" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
+      <rect x="7" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
+      <rect x="12" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
+      <circle cx="6.5" cy="7.5" r="0.75" fill="currentColor" />
+      <circle cx="6.5" cy="10.5" r="0.75" fill="currentColor" />
+      <circle cx="11.5" cy="7.5" r="0.75" fill="currentColor" />
+      <circle cx="11.5" cy="10.5" r="0.75" fill="currentColor" />
+    </svg>
+  );
+}
+
+const attachmentMeta: Record<AttachmentKey, { icon: React.ReactNode; label: string }> = {
+  callout: { icon: <HornIcon />, label: 'Callout' },
+  metadata: { icon: <MetadataIcon />, label: 'Metadata' },
+  liveBadge: { icon: <LiveBadgeIcon />, label: 'Live Badge' },
+  countdown: { icon: <CountdownIcon />, label: 'Countdown' },
+};
+
+const calloutIconOptions: { value: CalloutIcon; label: string }[] = [
+  { value: 'horn', label: 'Horn' },
+  { value: 'info', label: 'Info' },
+  { value: 'star', label: 'Star' },
+  { value: 'alert', label: 'Alert' },
+];
+
+function AttachmentsSection({ target, targetType, sectionId }: {
+  target: MessageComponent | Section;
+  targetType: 'component' | 'section';
+  sectionId?: string;
+}) {
+  const updateComponent = useMessageStore((s) => s.updateComponent);
+  const updateSection = useMessageStore((s) => s.updateSection);
+
+  const order: AttachmentKey[] = target.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
+  const callout: ComponentCallout = target.callout ?? defaultCallout;
+  const metadata: ComponentMetadata = target.metadata ?? defaultMetadata;
+  const liveBadge: ComponentLiveBadge = target.liveBadge ?? defaultLiveBadge;
+  const countdown: ComponentCountdown = target.countdown ?? defaultCountdown;
+
+  const [expandedAttachments, setExpandedAttachments] = useState<Set<AttachmentKey>>(new Set());
+
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const applyUpdate = (updates: Partial<MessageComponent> | Partial<Section>) => {
+    if (targetType === 'component' && sectionId) {
+      updateComponent(sectionId, target.id, updates as Partial<MessageComponent>);
+    } else {
+      updateSection(target.id, updates as Partial<Section>);
+    }
+  };
+
+  const isEnabled = (key: AttachmentKey) => {
+    if (key === 'callout') return callout.enabled;
+    if (key === 'metadata') return metadata.enabled;
+    if (key === 'liveBadge') return liveBadge.enabled;
+    if (key === 'countdown') return countdown.enabled;
+    return false;
+  };
+
+  const toggleAttachment = (key: AttachmentKey) => {
+    if (key === 'callout') applyUpdate({ callout: { ...callout, enabled: !callout.enabled } });
+    else if (key === 'metadata') applyUpdate({ metadata: { ...metadata, enabled: !metadata.enabled } });
+    else if (key === 'liveBadge') applyUpdate({ liveBadge: { ...liveBadge, enabled: !liveBadge.enabled } });
+    else if (key === 'countdown') applyUpdate({ countdown: { ...countdown, enabled: !countdown.enabled } });
+  };
+
+  const handleDragStart = (idx: number) => { dragItem.current = idx; setDragIdx(idx); };
+  const handleDragEnter = (idx: number) => { dragOverItem.current = idx; setDragOverIdx(idx); };
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const newOrder = [...order];
+      const [removed] = newOrder.splice(dragItem.current, 1);
+      newOrder.splice(dragOverItem.current, 0, removed);
+      applyUpdate({ attachmentOrder: newOrder });
+    }
+    dragItem.current = null; dragOverItem.current = null;
+    setDragIdx(null); setDragOverIdx(null);
+  };
+
+  const getDropLine = (idx: number): 'above' | 'below' | null => {
+    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) return null;
+    if (idx === dragOverIdx) return dragIdx < dragOverIdx ? 'below' : 'above';
+    return null;
+  };
+
+  const renderConfig = (key: AttachmentKey) => {
+    const positionButtons = (
+      currentPos: 'above' | 'below',
+      onChange: (pos: 'above' | 'below') => void,
+    ) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Position</label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['above', 'below'] as const).map((pos) => (
+            <button
+              key={pos}
+              type="button"
+              onClick={() => onChange(pos)}
+              style={{
+                flex: 1, height: 28, borderRadius: 6, fontSize: 11, fontWeight: 500,
+                fontFamily: 'var(--font-family)', cursor: 'pointer',
+                border: currentPos === pos ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                background: currentPos === pos ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                color: currentPos === pos ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                transition: 'var(--transition-fast)',
+              }}
+            >
+              {pos === 'above' ? 'Above' : 'Below'}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+
+    const fieldInput = (label: string, value: string, onChange: (v: string) => void, placeholder?: string) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>{label}</label>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="mep-input"
+          style={{
+            height: 30, borderRadius: 6,
+            border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+            color: 'var(--color-text-primary)', fontSize: 12, padding: '0 8px',
+            outline: 'none', fontFamily: 'var(--font-family)', width: '100%',
+          }}
+        />
+      </div>
+    );
+
+    if (key === 'callout') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fieldInput('Text', callout.text, (v) => applyUpdate({ callout: { ...callout, text: v } }), 'Callout text')}
+          <Select
+            label="Icon"
+            options={calloutIconOptions}
+            value={callout.icon}
+            onChange={(v) => applyUpdate({ callout: { ...callout, icon: v as CalloutIcon } })}
+          />
+          {positionButtons(callout.position, (p) => applyUpdate({ callout: { ...callout, position: p } }))}
+        </div>
+      );
+    }
+    if (key === 'metadata') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fieldInput('Items (comma-separated)', metadata.items.join(', '), (v) =>
+            applyUpdate({ metadata: { ...metadata, items: v.split(',').map((s) => s.trim()).filter(Boolean) } }),
+            'Category, Genre, Year',
+          )}
+          {positionButtons(metadata.position, (p) => applyUpdate({ metadata: { ...metadata, position: p } }))}
+        </div>
+      );
+    }
+    if (key === 'liveBadge') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fieldInput('Label', liveBadge.label, (v) => applyUpdate({ liveBadge: { ...liveBadge, label: v } }), 'Live')}
+          {fieldInput('Value', liveBadge.value, (v) => applyUpdate({ liveBadge: { ...liveBadge, value: v } }), '--')}
+          {positionButtons(liveBadge.position, (p) => applyUpdate({ liveBadge: { ...liveBadge, position: p } }))}
+        </div>
+      );
+    }
+    if (key === 'countdown') {
+      const currentVariant: CountdownVariant = countdown.variant || 'A';
+      const variantLabels: Record<CountdownVariant, string> = {
+        A: 'Full (D:H:M)',
+        B: 'Days & Hours',
+        C: 'Days + Image',
+        D: 'Image + Minutes',
+        E: 'Text Message',
+        F: 'Compact',
+      };
+      const showDays = ['A', 'B', 'C', 'F'].includes(currentVariant);
+      const showHours = ['A', 'B', 'F'].includes(currentVariant);
+      const showMinutes = ['A', 'D', 'F'].includes(currentVariant);
+      const showMessage = currentVariant === 'E';
+      const showImage = ['C', 'D'].includes(currentVariant);
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Variant</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+              {(['A', 'B', 'C', 'D', 'E', 'F'] as CountdownVariant[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => applyUpdate({ countdown: { ...countdown, variant: v } })}
+                  style={{
+                    height: 28, borderRadius: 6, fontSize: 10, fontWeight: 500,
+                    fontFamily: 'var(--font-family)', cursor: 'pointer',
+                    border: currentVariant === v ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                    background: currentVariant === v ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                    color: currentVariant === v ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                    transition: 'var(--transition-fast)',
+                    padding: '0 4px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {variantLabels[v]}
+                </button>
+              ))}
+            </div>
+          </div>
+          {(showDays || showHours || showMinutes) && (
+            <div style={{ display: 'grid', gridTemplateColumns: [showDays, showHours, showMinutes].filter(Boolean).length === 3 ? '1fr 1fr 1fr' : [showDays, showHours, showMinutes].filter(Boolean).length === 2 ? '1fr 1fr' : '1fr', gap: 6 }}>
+              {showDays && fieldInput('Days', countdown.days, (v) => applyUpdate({ countdown: { ...countdown, days: v } }))}
+              {showHours && fieldInput('Hours', countdown.hours, (v) => applyUpdate({ countdown: { ...countdown, hours: v } }))}
+              {showMinutes && fieldInput('Min', countdown.minutes, (v) => applyUpdate({ countdown: { ...countdown, minutes: v } }))}
+            </div>
+          )}
+          {showMessage && fieldInput('Message', countdown.message || '', (v) => applyUpdate({ countdown: { ...countdown, message: v } }), 'Starts in 3 days')}
+          {showImage && fieldInput('Image URL', countdown.imageUrl || '', (v) => applyUpdate({ countdown: { ...countdown, imageUrl: v } }), 'https://...')}
+          {positionButtons(countdown.position, (p) => applyUpdate({ countdown: { ...countdown, position: p } }))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <SectionHeader title="Attachments" />
+      {order.map((key, idx) => {
+        const meta = attachmentMeta[key];
+        const active = isEnabled(key);
+        const isDragging = dragIdx === idx;
+        const dropLine = getDropLine(idx);
+        const isExpanded = expandedAttachments.has(key) && active;
+
+        return (
+          <div key={key} style={{ position: 'relative' }}>
+            {dropLine === 'above' && (
+              <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+            )}
+            <div
+              style={{
+                background: 'var(--color-bg-tertiary)',
+                border: '1px solid var(--color-border-default)',
+                borderRadius: 6,
+                overflow: 'hidden',
+                opacity: isDragging ? 0.4 : 1,
+                transition: 'var(--transition-fast)',
+              }}
+            >
+              <div
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px',
+                  cursor: 'grab',
+                }}
+              >
+                <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                <div style={{
+                  width: 24, height: 24, borderRadius: 5,
+                  background: active ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: active ? '#fff' : 'var(--color-text-secondary)',
+                  flexShrink: 0, transition: 'var(--transition-fast)',
+                }}>
+                  {meta.icon}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { const next = new Set(expandedAttachments); if (isExpanded) next.delete(key); else next.add(key); setExpandedAttachments(next); }}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'none', border: 'none', cursor: active ? 'pointer' : 'default',
+                    padding: 0,
+                  }}
+                >
+                  <span style={{
+                    fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                    color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                    userSelect: 'none',
+                  }}>
+                    {meta.label}
+                  </span>
+                  {active && (
+                    <ChevronRight size={11} style={{
+                      color: 'var(--color-text-muted)',
+                      transform: isExpanded ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.15s ease',
+                    }} />
+                  )}
+                </button>
+                <Toggle
+                  label=""
+                  size="sm"
+                  checked={active}
+                  onChange={() => toggleAttachment(key)}
+                />
+              </div>
+              {isExpanded && (
+                <div style={{
+                  padding: '0 10px 10px',
+                  borderTop: '1px solid var(--color-border-default)',
+                  paddingTop: 10,
+                  animation: 'fadeIn 0.15s ease',
+                }}>
+                  {renderConfig(key)}
+                </div>
+              )}
+            </div>
+            {dropLine === 'below' && (
+              <div style={{ position: 'absolute', bottom: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ListDataSection({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
+  const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
+  const updateComponent = useMessageStore((s) => s.updateComponent);
+  const settings = component.settings.type === 'list' ? component.settings.settings : null;
+  if (!settings) return null;
+
+  const linked = component.linkedValues ?? {};
+  const setLinked = (fieldKey: string, lv: LinkedValue) => {
+    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
+  };
+
+  const update = (s: ListSettings) =>
+    updateComponentSettings(sectionId, component.id, { type: 'list', settings: s });
+
+  const [dataExpanded, setDataExpanded] = useState(true);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <SectionHeader title="Data" />
+      <div
+        style={{
+          background: 'var(--color-bg-tertiary)',
+          border: '1px solid var(--color-border-default)',
+          borderRadius: 6,
+          overflow: 'hidden',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setDataExpanded(!dataExpanded)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '8px 10px',
+            width: '100%',
+            background: 'none', border: 'none', cursor: 'pointer',
+            textAlign: 'left', fontFamily: 'inherit',
+          }}
+        >
+          <span style={{
+            flex: 1,
+            fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+            color: 'var(--color-text-primary)',
+            userSelect: 'none',
+          }}>
+            Items
+          </span>
+          <ChevronRight size={11} style={{
+            flexShrink: 0,
+            color: 'var(--color-text-muted)',
+            transform: dataExpanded ? 'rotate(90deg)' : 'none',
+            transition: 'transform 0.15s ease',
+          }} />
+        </button>
+        {dataExpanded && (
+          <div style={{
+            padding: '0 10px 10px',
+            borderTop: '1px solid var(--color-border-default)',
+            paddingTop: 10,
+          }}>
+            <LinkedWrapper
+              label="Count"
+              linked={linked['itemCount']}
+              onLink={(lv) => setLinked('itemCount', lv)}
+              variables={entityVariables}
+              currentValue={String(settings.items.length)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <StepperBtn
+                  onClick={() => {
+                    if (settings.items.length > 1) {
+                      update({ ...settings, items: settings.items.slice(0, -1), itemCount: settings.items.length - 1 });
+                    }
+                  }}
+                  disabled={settings.items.length <= 1}
+                >‹</StepperBtn>
+                <input type="number" className="mep-input" min={1} value={settings.items.length}
+                  onChange={(e) => {
+                    const target = Math.max(1, parseInt(e.target.value, 10) || 1);
+                    if (target > settings.items.length) {
+                      const newItems = [...settings.items];
+                      const last = settings.items[settings.items.length - 1];
+                      for (let j = settings.items.length; j < target; j++) {
+                        const ni: ListItem = { title: `Episode ${j + 1}`, subtitle: last?.subtitle || 'Subtitle', metadata: last?.metadata || 'CTA' };
+                        if (settings.itemStyleMode === 'individual') {
+                          ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
+                        }
+                        newItems.push(ni);
+                      }
+                      update({ ...settings, items: newItems, itemCount: target });
+                    } else if (target < settings.items.length) {
+                      update({ ...settings, items: settings.items.slice(0, target), itemCount: target });
+                    }
+                  }}
+                  style={{ width: 40, height: 36, borderRadius: 8, border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)', color: 'var(--color-text-primary)', fontSize: 14, textAlign: 'center', outline: 'none', fontFamily: 'var(--font-family)', transition: 'var(--transition-fast)' }}
+                />
+                <StepperBtn
+                  onClick={() => {
+                    const n = settings.items.length + 1;
+                    const last = settings.items[settings.items.length - 1];
+                    const ni: ListItem = {
+                      title: `Episode ${n}`,
+                      subtitle: last?.subtitle || 'Subtitle',
+                      metadata: last?.metadata || 'CTA',
+                    };
+                    if (settings.itemStyleMode === 'individual') {
+                      ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
+                    }
+                    update({
+                      ...settings,
+                      items: [...settings.items, ni],
+                      itemCount: n,
+                    });
+                  }}
+                >›</StepperBtn>
+              </div>
+            </LinkedWrapper>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --------------- Component Properties ---------------
 
 function ComponentProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   let typeSpecificContent: React.ReactNode = null;
@@ -1814,7 +2525,26 @@ function ComponentProperties({ component, sectionId, tab }: { component: Message
     typeSpecificContent = <ListProperties component={component} sectionId={sectionId} tab={tab} />;
   }
 
-  return <>{typeSpecificContent}</>;
+  if (tab === 'content') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <SectionHeader title="Content" />
+          {typeSpecificContent}
+        </div>
+        {component.settings.type === 'list' && (
+          <ListDataSection component={component} sectionId={sectionId} />
+        )}
+        <AttachmentsSection target={component} targetType="component" sectionId={sectionId} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {typeSpecificContent}
+    </div>
+  );
 }
 
 export function PropertiesPanel({ mode }: { mode?: 'section' | 'component' }) {

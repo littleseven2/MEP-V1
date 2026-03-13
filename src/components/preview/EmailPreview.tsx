@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Monitor, Smartphone, ArrowLeft, Sparkles, Info, Star, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig } from '../../types/message';
+import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey } from '../../types/message';
+import { paddingToCss, addPadding, parsePadding } from '../../types/message';
+
+const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 import { defaultTextStyles } from '../../data/defaults';
 
 function HornIcon({ size = 16 }: { size?: number }) {
@@ -245,11 +248,49 @@ function PreviewLiveBadge({ liveBadge }: { liveBadge: ComponentLiveBadge }) {
   );
 }
 
-function PreviewCountdownCell({ value, label }: { value: string; label: string }) {
+function PreviewCountdownCell({ value, label, compact }: { value: string; label: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div style={{
+        flex: 1,
+        background: 'rgba(255,255,255,0.02)',
+        borderRadius: 10,
+        padding: '8px 4px',
+        display: 'flex',
+        gap: 3,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 0,
+        whiteSpace: 'nowrap',
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-family)',
+          fontSize: 11,
+          fontWeight: 500,
+          lineHeight: 1,
+          color: '#fff',
+          letterSpacing: '-0.22px',
+          textTransform: 'uppercase',
+        }}>
+          {value}
+        </span>
+        <span style={{
+          fontFamily: 'var(--font-family)',
+          fontSize: 11,
+          fontWeight: 400,
+          lineHeight: 1,
+          color: 'rgba(255,255,255,0.7)',
+        }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       flex: 1,
-      background: 'rgba(255,255,255,0.04)',
+      background: 'rgba(255,255,255,0.02)',
       borderRadius: 12,
       paddingTop: 12,
       paddingBottom: 8,
@@ -282,37 +323,140 @@ function PreviewCountdownCell({ value, label }: { value: string; label: string }
   );
 }
 
-function PreviewCountdown({ countdown }: { countdown: ComponentCountdown }) {
+function PreviewCountdownSeparator({ compact }: { compact?: boolean }) {
+  const size = compact ? 3 : 4;
   return (
-    <div style={{
-      background: 'rgba(0,0,0,0.5)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 16,
-      padding: 8,
-      display: 'flex',
-      gap: 6,
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-    }}>
-      <PreviewCountdownCell value={countdown.days} label="Days" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-        <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-        <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-      </div>
-      <PreviewCountdownCell value={countdown.hours} label="Hours" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' }}>
-        <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-        <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-      </div>
-      <PreviewCountdownCell value={countdown.minutes} label="Minutes" />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: compact ? 3 : 4, alignItems: 'center' }}>
+      <span style={{ width: size, height: size, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
+      <span style={{ width: size, height: size, borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
     </div>
   );
 }
 
+function PreviewCountdown({ countdown }: { countdown: ComponentCountdown }) {
+  const variant = countdown.variant || 'A';
+  const containerBase: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.5)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    padding: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  };
+
+  if (variant === 'A') {
+    return (
+      <div style={{ ...containerBase, gap: 6 }}>
+        <PreviewCountdownCell value={countdown.days} label="Days" />
+        <PreviewCountdownSeparator />
+        <PreviewCountdownCell value={countdown.hours} label="Hours" />
+        <PreviewCountdownSeparator />
+        <PreviewCountdownCell value={countdown.minutes} label="Minutes" />
+      </div>
+    );
+  }
+
+  if (variant === 'B') {
+    return (
+      <div style={{ ...containerBase, gap: 6 }}>
+        <PreviewCountdownCell value={countdown.days} label="Days" />
+        <PreviewCountdownSeparator />
+        <PreviewCountdownCell value={countdown.hours} label="Hours" />
+      </div>
+    );
+  }
+
+  if (variant === 'C') {
+    return (
+      <div style={{ ...containerBase, gap: 6 }}>
+        <div style={{
+          flex: 1,
+          background: 'rgba(255,255,255,0.02)',
+          borderRadius: 12,
+          height: 50,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          paddingLeft: 12,
+          minWidth: 0,
+        }}>
+          <span style={{ fontFamily: 'var(--font-family)', fontSize: 40, fontWeight: 500, lineHeight: 1, color: '#fff', letterSpacing: '-0.8px', textTransform: 'uppercase' }}>
+            {countdown.days}
+          </span>
+          <span style={{ fontFamily: 'var(--font-family)', fontSize: 12, fontWeight: 400, color: 'rgba(255,255,255,0.7)' }}>
+            Days
+          </span>
+          <div style={{ position: 'absolute', right: 4, top: 4, width: 70, height: 42, borderRadius: 8, background: '#232323', backgroundImage: countdown.imageUrl ? `url(${countdown.imageUrl})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === 'D') {
+    return (
+      <div style={{ ...containerBase, gap: 6 }}>
+        <div style={{ width: 100, height: 64, borderRadius: 12, flexShrink: 0, background: '#232323', backgroundImage: countdown.imageUrl ? `url(${countdown.imageUrl})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <PreviewCountdownCell value={countdown.minutes} label="Minutes" />
+      </div>
+    );
+  }
+
+  if (variant === 'E') {
+    return (
+      <div style={{ ...containerBase }}>
+        <div style={{ flex: 1, background: 'rgba(255,255,255,0.02)', borderRadius: 12, padding: '12px 6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-family)', fontSize: 20, fontWeight: 700, lineHeight: '28px', color: '#fff', textAlign: 'center', whiteSpace: 'nowrap' }}>
+            {countdown.message || 'Starts in 3 days'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Variant F: Compact
+  return (
+    <div style={{ ...containerBase, gap: 4 }}>
+      <PreviewCountdownCell value={countdown.days} label="Days" compact />
+      <PreviewCountdownSeparator compact />
+      <PreviewCountdownCell value={countdown.hours} label="Hours" compact />
+      <PreviewCountdownSeparator compact />
+      <PreviewCountdownCell value={countdown.minutes} label="Minutes" compact />
+    </div>
+  );
+}
+
+function renderPreviewAttachment(section: Section, key: AttachmentKey, position: 'above' | 'below') {
+  const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
+  if (key === 'callout' && section.callout?.enabled && section.callout.position === position)
+    return <div key={`s-${key}-${position}`} style={spacing}><PreviewCalloutBadge callout={section.callout} /></div>;
+  if (key === 'metadata' && section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === position)
+    return <div key={`s-${key}-${position}`} style={spacing}><PreviewMetadataRow metadata={section.metadata} /></div>;
+  if (key === 'liveBadge' && section.liveBadge?.enabled && section.liveBadge.position === position)
+    return <div key={`s-${key}-${position}`} style={spacing}><PreviewLiveBadge liveBadge={section.liveBadge} /></div>;
+  if (key === 'countdown' && section.countdown?.enabled && section.countdown.position === position)
+    return <div key={`s-${key}-${position}`} style={spacing}><PreviewCountdown countdown={section.countdown} /></div>;
+  return null;
+}
+
+function renderPreviewCompAttachment(c: MessageComponent, key: AttachmentKey, position: 'above' | 'below') {
+  const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
+  if (key === 'callout' && c.callout?.enabled && c.callout.position === position)
+    return <div key={`c-${key}-${position}`} style={spacing}><PreviewCalloutBadge callout={c.callout} /></div>;
+  if (key === 'metadata' && c.metadata?.enabled && c.metadata.items.length > 0 && c.metadata.position === position)
+    return <div key={`c-${key}-${position}`} style={spacing}><PreviewMetadataRow metadata={c.metadata} /></div>;
+  if (key === 'liveBadge' && c.liveBadge?.enabled && c.liveBadge.position === position)
+    return <div key={`c-${key}-${position}`} style={spacing}><PreviewLiveBadge liveBadge={c.liveBadge} /></div>;
+  if (key === 'countdown' && c.countdown?.enabled && c.countdown.position === position)
+    return <div key={`c-${key}-${position}`} style={spacing}><PreviewCountdown countdown={c.countdown} /></div>;
+  return null;
+}
+
 function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<TextStyleKey, TextStyle>; theme: ThemeConfig }) {
-  const sectionPadding = 16 + (section.padding ?? 0) + (theme.sectionPadding ?? 0);
-  const componentPadding = theme.componentPadding ?? 0;
+  const sectionPadding = addPadding(section.padding, theme.sectionPadding);
+  const componentPadding = theme.componentPadding;
   return (
     <div style={{ background: section.background.value }}>
       {section.type === 'header' && (
@@ -325,18 +469,9 @@ function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<T
         </div>
       )}
       {section.type === 'content' && (
-        <div style={{ padding: sectionPadding }}>
-          {section.callout?.enabled && section.callout.position === 'above' && (
-            <div style={{ marginBottom: 8 }}><PreviewCalloutBadge callout={section.callout} /></div>
-          )}
-          {section.liveBadge?.enabled && section.liveBadge.position === 'above' && (
-            <div style={{ marginBottom: 8 }}><PreviewLiveBadge liveBadge={section.liveBadge} /></div>
-          )}
-          {section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === 'above' && (
-            <div style={{ marginBottom: 8 }}><PreviewMetadataRow metadata={section.metadata} /></div>
-          )}
-          {section.countdown?.enabled && section.countdown.position === 'above' && (
-            <div style={{ marginBottom: 8 }}><PreviewCountdown countdown={section.countdown} /></div>
+        <div style={{ padding: paddingToCss(sectionPadding) }}>
+          {(section.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER).map((key) =>
+            renderPreviewAttachment(section, key, 'above'),
           )}
           {section.components.length === 0 ? (
             <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
@@ -345,41 +480,19 @@ function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<T
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {section.components.sort((a, b) => a.order - b.order).map((c) => {
-                const co = c.callout;
-                const showCo = co?.enabled;
-                const md = c.metadata;
-                const showMd = md?.enabled && md.items.length > 0;
-                const lb = c.liveBadge;
-                const showLb = lb?.enabled;
-                const cd = c.countdown;
-                const showCd = cd?.enabled;
+                const compOrder: AttachmentKey[] = c.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
                 return (
-                  <div key={c.id} style={componentPadding ? { padding: componentPadding } : undefined}>
-                    {showCo && co.position === 'above' && <div style={{ marginBottom: 8 }}><PreviewCalloutBadge callout={co} /></div>}
-                    {showLb && lb.position === 'above' && <div style={{ marginBottom: 8 }}><PreviewLiveBadge liveBadge={lb} /></div>}
-                    {showMd && md.position === 'above' && <div style={{ marginBottom: 8 }}><PreviewMetadataRow metadata={md} /></div>}
-                    {showCd && cd.position === 'above' && <div style={{ marginBottom: 8 }}><PreviewCountdown countdown={cd} /></div>}
+                  <div key={c.id} style={parsePadding(componentPadding).some(v => v > 0) ? { padding: paddingToCss(componentPadding) } : undefined}>
+                    {compOrder.map((key) => renderPreviewCompAttachment(c, key, 'above'))}
                     <PreviewComponent component={c} ts={ts} />
-                    {showCd && cd.position === 'below' && <div style={{ marginTop: 8 }}><PreviewCountdown countdown={cd} /></div>}
-                    {showMd && md.position === 'below' && <div style={{ marginTop: 8 }}><PreviewMetadataRow metadata={md} /></div>}
-                    {showLb && lb.position === 'below' && <div style={{ marginTop: 8 }}><PreviewLiveBadge liveBadge={lb} /></div>}
-                    {showCo && co.position === 'below' && <div style={{ marginTop: 8 }}><PreviewCalloutBadge callout={co} /></div>}
+                    {compOrder.map((key) => renderPreviewCompAttachment(c, key, 'below'))}
                   </div>
                 );
               })}
             </div>
           )}
-          {section.countdown?.enabled && section.countdown.position === 'below' && (
-            <div style={{ marginTop: 8 }}><PreviewCountdown countdown={section.countdown} /></div>
-          )}
-          {section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === 'below' && (
-            <div style={{ marginTop: 8 }}><PreviewMetadataRow metadata={section.metadata} /></div>
-          )}
-          {section.liveBadge?.enabled && section.liveBadge.position === 'below' && (
-            <div style={{ marginTop: 8 }}><PreviewLiveBadge liveBadge={section.liveBadge} /></div>
-          )}
-          {section.callout?.enabled && section.callout.position === 'below' && (
-            <div style={{ marginTop: 8 }}><PreviewCalloutBadge callout={section.callout} /></div>
+          {(section.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER).map((key) =>
+            renderPreviewAttachment(section, key, 'below'),
           )}
         </div>
       )}
@@ -497,6 +610,7 @@ export function EmailPreview({ onClose }: EmailPreviewProps) {
             maxWidth: '100%',
             margin: '0 auto',
             background: message.theme.background.value,
+            padding: paddingToCss(message.theme.emailPadding),
             transition: 'width var(--transition-slow)',
           }}>
             {message.sections.map((section) => (

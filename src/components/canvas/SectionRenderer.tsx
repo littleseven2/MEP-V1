@@ -1,9 +1,48 @@
 import { useMessageStore } from '../../store/messageStore';
 import { ComponentRenderer, CalloutBadge, MetadataRow, LiveBadgeRow, CountdownBadge } from './ComponentRenderer';
-import type { Section } from '../../types/message';
+import type { Section, AttachmentKey } from '../../types/message';
+import { addPadding, paddingToCss } from '../../types/message';
+
+const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 
 interface SectionRendererProps {
   section: Section;
+}
+
+function renderSectionAttachment(section: Section, key: AttachmentKey, position: 'above' | 'below') {
+  const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
+  if (key === 'callout' && section.callout?.enabled && section.callout.position === position) {
+    return <div key={`${key}-${position}`} style={spacing}><CalloutBadge callout={section.callout} /></div>;
+  }
+  if (key === 'metadata' && section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === position) {
+    return <div key={`${key}-${position}`} style={spacing}><MetadataRow metadata={section.metadata} /></div>;
+  }
+  if (key === 'liveBadge' && section.liveBadge?.enabled && section.liveBadge.position === position) {
+    return <div key={`${key}-${position}`} style={spacing}><LiveBadgeRow liveBadge={section.liveBadge} /></div>;
+  }
+  if (key === 'countdown' && section.countdown?.enabled && section.countdown.position === position) {
+    return <div key={`${key}-${position}`} style={spacing}><CountdownBadge countdown={section.countdown} /></div>;
+  }
+  return null;
+}
+
+function SectionContentWithAttachments({ section }: { section: Section }) {
+  const order: AttachmentKey[] = section.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
+  return (
+    <>
+      {order.map((key) => renderSectionAttachment(section, key, 'above'))}
+      {section.components.length === 0 ? (
+        <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+          Empty section. Add components from the palette.
+        </div>
+      ) : (
+        section.components
+          .sort((a, b) => a.order - b.order)
+          .map((comp) => <ComponentRenderer key={comp.id} component={comp} sectionId={section.id} />)
+      )}
+      {order.map((key) => renderSectionAttachment(section, key, 'below'))}
+    </>
+  );
 }
 
 export function SectionRenderer({ section }: SectionRendererProps) {
@@ -14,7 +53,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
 
   const isActive = selectedSectionId === section.id;
   const isSectionOnly = isActive && !selectedComponentId;
-  const sectionPadding = (section.padding ?? 0) + (theme?.sectionPadding ?? 0);
+  const sectionPadding = addPadding(section.padding, theme?.sectionPadding);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,9 +65,9 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       data-section-id={section.id}
       onClick={handleClick}
       style={{
-        borderLeft: isActive ? '2px solid var(--color-brand)' : '2px solid transparent',
+        borderLeft: isActive ? '2px solid var(--color-brand)' : 'none',
         background: section.background.value,
-        padding: sectionPadding,
+        padding: paddingToCss(sectionPadding),
         borderRadius: section.backgroundRadius
           ? `${section.backgroundRadius[0]}px ${section.backgroundRadius[1]}px ${section.backgroundRadius[2]}px ${section.backgroundRadius[3]}px`
           : 0,
@@ -55,7 +94,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
         </div>
       )}
 
-      <div style={{ padding: 16 }}>
+      <div>
         {section.type === 'header' && (
           <div
             style={{
@@ -88,48 +127,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
         )}
 
         {section.type === 'content' && (
-          <>
-            {section.callout?.enabled && section.callout.position === 'above' && (
-              <div style={{ marginBottom: 8 }}><CalloutBadge callout={section.callout} /></div>
-            )}
-            {section.liveBadge?.enabled && section.liveBadge.position === 'above' && (
-              <div style={{ marginBottom: 8 }}><LiveBadgeRow liveBadge={section.liveBadge} /></div>
-            )}
-            {section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === 'above' && (
-              <div style={{ marginBottom: 8 }}><MetadataRow metadata={section.metadata} /></div>
-            )}
-            {section.countdown?.enabled && section.countdown.position === 'above' && (
-              <div style={{ marginBottom: 8 }}><CountdownBadge countdown={section.countdown} /></div>
-            )}
-            {section.components.length === 0 ? (
-              <div
-                style={{
-                  padding: 32,
-                  textAlign: 'center',
-                  color: 'rgba(255,255,255,0.3)',
-                  fontSize: 14,
-                }}
-              >
-                Empty section. Add components from the palette.
-              </div>
-            ) : (
-              section.components
-                .sort((a, b) => a.order - b.order)
-                .map((comp) => <ComponentRenderer key={comp.id} component={comp} sectionId={section.id} />)
-            )}
-            {section.countdown?.enabled && section.countdown.position === 'below' && (
-              <div style={{ marginTop: 8 }}><CountdownBadge countdown={section.countdown} /></div>
-            )}
-            {section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === 'below' && (
-              <div style={{ marginTop: 8 }}><MetadataRow metadata={section.metadata} /></div>
-            )}
-            {section.liveBadge?.enabled && section.liveBadge.position === 'below' && (
-              <div style={{ marginTop: 8 }}><LiveBadgeRow liveBadge={section.liveBadge} /></div>
-            )}
-            {section.callout?.enabled && section.callout.position === 'below' && (
-              <div style={{ marginTop: 8 }}><CalloutBadge callout={section.callout} /></div>
-            )}
-          </>
+          <SectionContentWithAttachments section={section} />
         )}
       </div>
     </div>

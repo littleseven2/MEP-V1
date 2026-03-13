@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, Plus, MoreVertical, Trash2, Copy, ChevronRight } from 'lucide-react';
+import { Check, Plus, MoreVertical, Trash2, Copy, ChevronRight, Link2, Unlink2 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { defaultThemes, defaultTextStyles } from '../../data/defaults';
-import type { ThemeConfig, TextStyleKey, TextStyle } from '../../types/message';
+import type { ThemeConfig, TextStyleKey, TextStyle, Padding } from '../../types/message';
+import { parsePadding, isUniformPadding, uniformPaddingValue } from '../../types/message';
 import { Select, Input } from '../../ui';
 
 let themeIdCounter = 100;
@@ -47,6 +48,7 @@ export function useThemeManager() {
         textStyles: { ...defaultTextStyles },
       },
       spacing: 'normal',
+      emailPadding: 0,
       sectionPadding: 0,
       componentPadding: 0,
       background: {
@@ -194,7 +196,7 @@ function StyleSection({
       style={{
         background: hovered && !open ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
         border: '1px solid var(--color-border-default)',
-        borderRadius: 12,
+        borderRadius: 6,
         overflow: 'hidden',
         transition: 'background 0.15s ease',
       }}
@@ -307,7 +309,7 @@ export function ThemePropertiesPanel({
       <div style={{
         background: 'var(--color-bg-tertiary)',
         border: '1px solid var(--color-border-default)',
-        borderRadius: 12,
+        borderRadius: 6,
         padding: '14px 16px',
       }}>
         <div style={{
@@ -493,7 +495,7 @@ export function ThemePropertiesPanel({
             </span>
             <span style={{ width: 1, height: 12, background: 'var(--color-border-default)' }} />
             <span style={{ fontSize: 12, color: 'var(--color-text-muted)', fontFamily: 'var(--font-family)' }}>
-              S:{theme.sectionPadding ?? 0} C:{theme.componentPadding ?? 0}
+              E:{uniformPaddingValue(theme.emailPadding)} S:{uniformPaddingValue(theme.sectionPadding)} C:{uniformPaddingValue(theme.componentPadding)}
             </span>
           </div>
         }
@@ -509,12 +511,17 @@ export function ThemePropertiesPanel({
             value={theme.spacing}
             onChange={(v) => onUpdate({ spacing: v as ThemeConfig['spacing'] })}
           />
-          <PaddingRow
+          <PaddingControl
+            label="Email padding"
+            value={theme.emailPadding ?? 0}
+            onChange={(v) => onUpdate({ emailPadding: v })}
+          />
+          <PaddingControl
             label="Section padding"
             value={theme.sectionPadding ?? 0}
             onChange={(v) => onUpdate({ sectionPadding: v })}
           />
-          <PaddingRow
+          <PaddingControl
             label="Component padding"
             value={theme.componentPadding ?? 0}
             onChange={(v) => onUpdate({ componentPadding: v })}
@@ -1043,23 +1050,83 @@ function ThemeStepperInput({ value, onChange }: { value: number; onChange: (v: n
   );
 }
 
-function PaddingRow({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+const SIDE_LABELS = ['T', 'R', 'B', 'L'] as const;
+
+function PaddingControl({ label, value, onChange }: { label: string; value: Padding; onChange: (v: Padding) => void }) {
+  const uniform = isUniformPadding(value);
+  const [expanded, setExpanded] = useState(!uniform);
+  const sides = parsePadding(value);
+
+  const toggleLink = () => {
+    if (expanded) {
+      onChange(sides[0]);
+      setExpanded(false);
+    } else {
+      setExpanded(true);
+      if (typeof value === 'number') onChange([value, value, value, value]);
+    }
+  };
+
+  const updateUniform = (v: number) => onChange(Math.max(0, v));
+
+  const updateSide = (idx: number, v: number) => {
+    const next: [number, number, number, number] = [...sides];
+    next[idx] = Math.max(0, v);
+    onChange(next);
+  };
+
   return (
     <div>
-      <label style={{
-        display: 'block',
-        fontSize: '0.75rem',
-        fontFamily: 'var(--font-display)',
-        color: 'var(--color-text-secondary)',
-        marginBottom: 4,
-      }}>
-        {label}
-      </label>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <ThemeStepperBtn onClick={() => onChange(Math.max(0, value - 1))} disabled={value <= 0}>‹</ThemeStepperBtn>
-        <ThemeStepperInput value={value} onChange={(v) => onChange(Math.max(0, v || 0))} />
-        <ThemeStepperBtn onClick={() => onChange(value + 1)}>›</ThemeStepperBtn>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <label style={{
+          fontSize: '0.75rem',
+          fontFamily: 'var(--font-display)',
+          color: 'var(--color-text-secondary)',
+        }}>
+          {label}
+        </label>
+        <button
+          type="button"
+          onClick={toggleLink}
+          title={expanded ? 'Link all sides' : 'Unlink sides'}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: expanded ? 'var(--color-brand)' : 'var(--color-text-muted)',
+            padding: 2, display: 'flex', alignItems: 'center',
+            transition: 'color var(--transition-fast)',
+          }}
+        >
+          {expanded ? <Unlink2 size={13} /> : <Link2 size={13} />}
+        </button>
       </div>
+      {!expanded ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ThemeStepperBtn onClick={() => updateUniform(uniformPaddingValue(value) - 1)} disabled={uniformPaddingValue(value) <= 0}>‹</ThemeStepperBtn>
+          <ThemeStepperInput value={uniformPaddingValue(value)} onChange={(v) => updateUniform(v || 0)} />
+          <ThemeStepperBtn onClick={() => updateUniform(uniformPaddingValue(value) + 1)}>›</ThemeStepperBtn>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          {SIDE_LABELS.map((lbl, i) => (
+            <div key={lbl} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--color-text-muted)', width: 12, textAlign: 'center', fontFamily: 'var(--font-family)' }}>{lbl}</span>
+              <input
+                type="number"
+                value={sides[i]}
+                onChange={(e) => updateSide(i, parseFloat(e.target.value) || 0)}
+                className="mep-input"
+                style={{
+                  width: '100%', height: 30, borderRadius: 6,
+                  border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+                  color: 'var(--color-text-primary)', fontSize: 12, textAlign: 'center',
+                  outline: 'none', fontFamily: 'var(--font-family)',
+                  transition: 'var(--transition-fast)',
+                }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

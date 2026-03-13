@@ -1,3 +1,35 @@
+// Padding: single number (uniform) or [top, right, bottom, left]
+export type Padding = number | [number, number, number, number];
+
+export function parsePadding(p: Padding | undefined): [number, number, number, number] {
+  if (p == null) return [0, 0, 0, 0];
+  if (typeof p === 'number') return [p, p, p, p];
+  return p;
+}
+
+export function paddingToCss(p: Padding | undefined): string | number {
+  if (p == null) return 0;
+  if (typeof p === 'number') return p;
+  return `${p[0]}px ${p[1]}px ${p[2]}px ${p[3]}px`;
+}
+
+export function addPadding(a: Padding | undefined, b: Padding | undefined): [number, number, number, number] {
+  const pa = parsePadding(a);
+  const pb = parsePadding(b);
+  return [pa[0] + pb[0], pa[1] + pb[1], pa[2] + pb[2], pa[3] + pb[3]];
+}
+
+export function isUniformPadding(p: Padding | undefined): boolean {
+  if (p == null || typeof p === 'number') return true;
+  return p[0] === p[1] && p[1] === p[2] && p[2] === p[3];
+}
+
+export function uniformPaddingValue(p: Padding | undefined): number {
+  if (p == null) return 0;
+  if (typeof p === 'number') return p;
+  return p[0];
+}
+
 // App view states
 export type AppView = 'home' | 'setup' | 'builder';
 
@@ -99,8 +131,9 @@ export interface ThemeConfig {
     textStyles: Record<TextStyleKey, TextStyle>;
   };
   spacing: 'compact' | 'normal' | 'relaxed';
-  sectionPadding: number;
-  componentPadding: number;
+  emailPadding: Padding;
+  sectionPadding: Padding;
+  componentPadding: Padding;
   background: BackgroundConfig;
 }
 
@@ -121,7 +154,7 @@ export interface Section {
   isPrimary: boolean;
   hydration: SectionHydration;
   background: BackgroundConfig;
-  padding: number;
+  padding: Padding;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
   strokeWidth: number;
@@ -131,8 +164,12 @@ export interface Section {
   metadata?: ComponentMetadata;
   liveBadge?: ComponentLiveBadge;
   countdown?: ComponentCountdown;
+  attachmentOrder?: AttachmentKey[];
   order: number;
 }
+
+// Attachment key type for ordering
+export type AttachmentKey = 'callout' | 'metadata' | 'liveBadge' | 'countdown';
 
 // Text block element keys
 export type TextBlockElement = 'eyebrow' | 'headline' | 'body' | 'link' | 'callout';
@@ -146,7 +183,7 @@ export interface TextBlockSettings {
   callout: { enabled: boolean; text: string; icon: CalloutIcon };
   order: TextBlockElement[];
   alignment: 'left' | 'center' | 'right';
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -161,7 +198,7 @@ export interface MediaSettings {
   alignment: 'left' | 'center' | 'right';
   isInteractive: boolean;
   mediaRadius: number;
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -184,7 +221,7 @@ export interface CTAButton {
 export interface CTASettings {
   layout: CTALayout;
   buttons: CTAButton[];
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -200,7 +237,7 @@ export interface MarqueeConfig {
 
 // Grid cell style
 export interface GridCellStyle {
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -229,7 +266,7 @@ export interface GridSettings {
   cellStyleMode: 'whole' | 'individual';
   cellStyle: GridCellStyle;
   cellStyles: GridCellStyle[];
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -242,7 +279,7 @@ export type ListColumns = 1 | 2 | 3;
 
 // List item
 export interface ListItemStyle {
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -270,7 +307,7 @@ export interface ListSettings {
   items: ListItem[];
   itemStyleMode: 'whole' | 'individual';
   itemStyle: ListItemStyle;
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -287,7 +324,7 @@ export interface RichTextSettings {
   fontSize: number;
   lineHeight: number;
   color: string;
-  padding: number;
+  padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
   strokeColor: string;
@@ -336,12 +373,18 @@ export interface ComponentLiveBadge {
   position: 'above' | 'below';
 }
 
+// Countdown variant controls the visual layout
+export type CountdownVariant = 'A' | 'B' | 'C' | 'D' | 'E' | 'F';
+
 // Component-level countdown timer (can be attached to any component or section)
 export interface ComponentCountdown {
   enabled: boolean;
+  variant: CountdownVariant;
   days: string;
   hours: string;
   minutes: string;
+  message: string;
+  imageUrl: string;
   position: 'above' | 'below';
 }
 
@@ -356,6 +399,7 @@ export interface MessageComponent {
   metadata?: ComponentMetadata;
   liveBadge?: ComponentLiveBadge;
   countdown?: ComponentCountdown;
+  attachmentOrder?: AttachmentKey[];
   order: number;
 }
 

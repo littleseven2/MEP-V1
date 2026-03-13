@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Plus, ChevronUp, ChevronDown, Copy, Trash2, Star } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
+import { paddingToCss } from '../../types/message';
 import { SectionRenderer } from './SectionRenderer';
 import { ControlButton } from './FloatingControls';
 
@@ -153,7 +154,7 @@ export const Canvas: React.FC = () => {
       }}>
         <div ref={scrollRef} className="animate-in" style={{
           flex: 1, overflowY: 'auto', overflowX: 'hidden',
-          scrollbarWidth: 'none', padding: '0 6px', borderRadius: 24, ...bgStyle,
+          scrollbarWidth: 'none', padding: paddingToCss(message.theme.emailPadding), borderRadius: 24, ...bgStyle,
         }}>
           {headerSection && <SectionRenderer section={headerSection} />}
           {contentSections.map((s) => <SectionRenderer key={s.id} section={s} />)}

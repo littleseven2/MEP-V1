@@ -1,9 +1,12 @@
 import { useRef, useEffect } from 'react';
 import { Info, Star, AlertTriangle } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig } from '../../types/message';
+import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding } from '../../types/message';
+import { paddingToCss, parsePadding, addPadding, uniformPaddingValue } from '../../types/message';
 import { posters } from '../../data/posters';
 import { defaultTextStyles } from '../../data/defaults';
+
+const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 
 function HornIcon({ size = 20 }: { size?: number }) {
   return (
@@ -95,7 +98,7 @@ function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius
   const imgRadius = settings.mediaRadius ?? 8;
   return (
     <div style={{
-      padding: settings.padding ?? 0,
+      padding: paddingToCss(settings.padding),
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -145,7 +148,7 @@ function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: bo
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 4,
       textAlign: align,
-      padding: settings.padding ?? 0,
+      padding: paddingToCss(settings.padding),
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -205,7 +208,7 @@ function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enab
       display: 'flex',
       flexDirection: isSideBySide ? 'row' : 'column',
       gap: 8,
-      padding: settings.padding ?? 0,
+      padding: paddingToCss(settings.padding),
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -237,11 +240,11 @@ function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellSty
   const cs = cellStyle;
   const csRadius = cs?.backgroundRadius ?? [0, 0, 0, 0];
   const imgRadius = cs?.imageRadius ?? radius;
-  const hasCs = cs && (cs.padding > 0 || cs.backgroundColor !== 'transparent' || csRadius.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0));
+  const hasCs = cs && (uniformPaddingValue(cs.padding) > 0 || cs.backgroundColor !== 'transparent' || csRadius.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0));
   if (hasCs) {
     return (
       <div style={{
-        padding: cs.padding,
+        padding: paddingToCss(cs.padding),
         background: cs.backgroundColor || 'transparent',
         borderRadius: `${csRadius[0]}px ${csRadius[1]}px ${csRadius[2]}px ${csRadius[3]}px`,
         ...strokeStyle(cs.strokeColor, cs.strokeWidth),
@@ -285,7 +288,7 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
   };
 
   const containerStyle: React.CSSProperties = {
-    padding: settings.padding ?? 0,
+    padding: paddingToCss(settings.padding),
     background: settings.backgroundColor || 'transparent',
     borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
     ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -302,12 +305,12 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
               const cs = getCellStyle(n - 1);
               const csR = cs.backgroundRadius;
               const imgR = ('imageRadius' in cs ? (cs as { imageRadius?: number }).imageRadius : undefined) ?? radius;
-              const hasCs = cs.padding > 0 || cs.backgroundColor !== 'transparent' || csR.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0);
+              const hasCs = uniformPaddingValue(cs.padding) > 0 || cs.backgroundColor !== 'transparent' || csR.some(v => v > 0) || (cs.strokeColor !== 'transparent' && cs.strokeWidth > 0);
               const poster = posters[(n - 1) % posters.length];
               return hasCs ? (
                 <div key={n} style={{
                   flex: 1, minHeight: 0,
-                  padding: cs.padding,
+                  padding: paddingToCss(cs.padding),
                   background: cs.backgroundColor || 'transparent',
                   borderRadius: `${csR[0]}px ${csR[1]}px ${csR[2]}px ${csR[3]}px`,
                   ...strokeStyle(cs.strokeColor, cs.strokeWidth),
@@ -411,7 +414,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
       display: 'grid',
       gridTemplateColumns: settings.columns === 1 ? '1fr' : settings.columns === 2 ? '1fr 1fr' : '1fr 1fr 1fr',
       gap: isStacked ? 12 : 16,
-      padding: settings.padding ?? 0,
+      padding: paddingToCss(settings.padding),
       background: bg,
       borderRadius: `${radii[0]}px ${radii[1]}px ${radii[2]}px ${radii[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -421,7 +424,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
         const iStyle = getItemStyle(item);
         const ir = iStyle.backgroundRadius;
         const itemWrap: React.CSSProperties = {
-          padding: iStyle.padding || undefined,
+          padding: paddingToCss(iStyle.padding) || undefined,
           background: iStyle.backgroundColor || undefined,
           borderRadius: (ir[0] || ir[1] || ir[2] || ir[3]) ? `${ir[0]}px ${ir[1]}px ${ir[2]}px ${ir[3]}px` : undefined,
           ...strokeStyle(iStyle.strokeColor, iStyle.strokeWidth),
@@ -432,7 +435,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
             <div key={i} style={{
               ...itemWrap,
               display: 'flex', flexDirection: 'column', gap: 8,
-              paddingBottom: iStyle.padding || (divider ? 12 : 0),
+              paddingBottom: uniformPaddingValue(iStyle.padding) || (divider ? 12 : 0),
               borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
             }}>
               {settings.showThumbnail && (
@@ -457,7 +460,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
             display: 'flex', gap: 12,
             justifyContent: isRightAligned ? 'space-between' : 'flex-start',
             alignItems: 'flex-start',
-            paddingBottom: iStyle.padding || (divider ? 16 : 0),
+            paddingBottom: uniformPaddingValue(iStyle.padding) || (divider ? 16 : 0),
             borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
           }}>
             {isRightAligned ? (
@@ -540,7 +543,7 @@ function RichTextPreview({ settings, componentId, sectionId }: { settings: RichT
       onKeyDown={handleKeyDown}
       style={{
         minHeight: 40,
-        padding: settings.padding,
+        padding: paddingToCss(settings.padding),
         fontSize: settings.fontSize,
         lineHeight: settings.lineHeight,
         color: settings.color,
@@ -676,11 +679,50 @@ export function MetadataRow({ metadata }: { metadata: ComponentMetadata }) {
   );
 }
 
-function CountdownCell({ value, label }: { value: string; label: string }) {
+function CountdownCell({ value, label, compact }: { value: string; label: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div style={{
+        flex: 1,
+        background: 'rgba(255,255,255,0.02)',
+        borderRadius: 16,
+        padding: '12px 6px',
+        display: 'flex',
+        gap: 4,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 0,
+        whiteSpace: 'nowrap',
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-family)',
+          fontSize: 16,
+          fontWeight: 500,
+          lineHeight: 1,
+          color: '#fff',
+          letterSpacing: '-0.32px',
+          textTransform: 'uppercase',
+        }}>
+          {value}
+        </span>
+        <span style={{
+          fontFamily: 'var(--font-family)',
+          fontSize: 16,
+          fontWeight: 400,
+          lineHeight: 1,
+          color: 'rgba(255,255,255,0.7)',
+          letterSpacing: '-0.08px',
+        }}>
+          {label}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       flex: 1,
-      background: 'rgba(255,255,255,0.04)',
+      background: 'rgba(255,255,255,0.02)',
       borderRadius: 16,
       paddingTop: 16,
       paddingBottom: 12,
@@ -721,7 +763,18 @@ function CountdownCell({ value, label }: { value: string; label: string }) {
   );
 }
 
-function CountdownSeparator() {
+function CountdownSeparator({ compact }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div style={{ flexShrink: 0, width: 2.2, height: 8, position: 'relative' }}>
+        <svg width="3" height="8" viewBox="0 0 3 8" fill="none">
+          <circle cx="1.1" cy="1.5" r="1.1" fill="rgba(255,255,255,0.5)" />
+          <circle cx="1.1" cy="6.5" r="1.1" fill="rgba(255,255,255,0.5)" />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       display: 'flex',
@@ -748,24 +801,169 @@ function CountdownSeparator() {
   );
 }
 
-export function CountdownBadge({ countdown }: { countdown: ComponentCountdown }) {
+function CountdownImagePlaceholder({ width, height }: { width: number; height: number }) {
   return (
     <div style={{
-      background: 'rgba(0,0,0,0.5)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: 24,
-      padding: 12,
-      display: 'flex',
-      gap: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-    }}>
-      <CountdownCell value={countdown.days} label="Days" />
-      <CountdownSeparator />
-      <CountdownCell value={countdown.hours} label="Hours" />
-      <CountdownSeparator />
-      <CountdownCell value={countdown.minutes} label="Minutes" />
+      width,
+      height,
+      borderRadius: 16,
+      background: '#232323',
+      flexShrink: 0,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }} />
+  );
+}
+
+function CountdownImageCell({ imageUrl, width, height }: { imageUrl: string; width: number; height: number }) {
+  if (!imageUrl) return <CountdownImagePlaceholder width={width} height={height} />;
+  return (
+    <div style={{
+      width,
+      height,
+      borderRadius: 16,
+      flexShrink: 0,
+      backgroundImage: `url(${imageUrl})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundColor: '#232323',
+    }} />
+  );
+}
+
+export function CountdownBadge({ countdown }: { countdown: ComponentCountdown }) {
+  const variant = countdown.variant || 'A';
+  const containerBase: React.CSSProperties = {
+    background: 'rgba(0,0,0,0.5)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 24,
+    padding: 12,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  };
+
+  // Variant A: Days : Hours : Minutes (full)
+  if (variant === 'A') {
+    return (
+      <div style={{ ...containerBase, gap: 10 }}>
+        <CountdownCell value={countdown.days} label="Days" />
+        <CountdownSeparator />
+        <CountdownCell value={countdown.hours} label="Hours" />
+        <CountdownSeparator />
+        <CountdownCell value={countdown.minutes} label="Minutes" />
+      </div>
+    );
+  }
+
+  // Variant B: Days : Hours
+  if (variant === 'B') {
+    return (
+      <div style={{ ...containerBase, gap: 10 }}>
+        <CountdownCell value={countdown.days} label="Days" />
+        <CountdownSeparator />
+        <CountdownCell value={countdown.hours} label="Hours" />
+      </div>
+    );
+  }
+
+  // Variant C: Days text + image on the right
+  if (variant === 'C') {
+    return (
+      <div style={{ ...containerBase, gap: 10 }}>
+        <div style={{
+          flex: 1,
+          background: 'rgba(255,255,255,0.02)',
+          borderRadius: 16,
+          height: 73,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          paddingLeft: 16,
+          paddingTop: 14,
+          minWidth: 0,
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-family)',
+            fontSize: 64,
+            fontWeight: 500,
+            lineHeight: 1,
+            color: '#fff',
+            letterSpacing: '-1.28px',
+            textTransform: 'uppercase',
+          }}>
+            {countdown.days}
+          </span>
+          <span style={{
+            fontFamily: 'var(--font-family)',
+            fontSize: 18,
+            fontWeight: 400,
+            color: 'rgba(255,255,255,0.7)',
+            letterSpacing: '-0.09px',
+          }}>
+            Days
+          </span>
+          <div style={{ position: 'absolute', right: 6, top: 6 }}>
+            <CountdownImageCell imageUrl={countdown.imageUrl} width={109} height={61} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Variant D: Image on the left + Minutes
+  if (variant === 'D') {
+    return (
+      <div style={{ ...containerBase, gap: 10 }}>
+        <CountdownImageCell imageUrl={countdown.imageUrl} width={151} height={96} />
+        <CountdownCell value={countdown.minutes} label="Minutes" />
+      </div>
+    );
+  }
+
+  // Variant E: Text message "Starts in 3 days"
+  if (variant === 'E') {
+    return (
+      <div style={{ ...containerBase }}>
+        <div style={{
+          flex: 1,
+          background: 'rgba(255,255,255,0.02)',
+          borderRadius: 16,
+          paddingTop: 16,
+          paddingBottom: 12,
+          paddingLeft: 6,
+          paddingRight: 6,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 0,
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-family)',
+            fontSize: 32,
+            fontWeight: 700,
+            lineHeight: '40px',
+            color: '#fff',
+            textAlign: 'center',
+            whiteSpace: 'nowrap',
+          }}>
+            {countdown.message || 'Starts in 3 days'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Variant F: Compact inline — Days : Hours : Minutes (small)
+  return (
+    <div style={{ ...containerBase, gap: 6 }}>
+      <CountdownCell value={countdown.days} label="Days" compact />
+      <CountdownSeparator compact />
+      <CountdownCell value={countdown.hours} label="Hours" compact />
+      <CountdownSeparator compact />
+      <CountdownCell value={countdown.minutes} label="Minutes" compact />
     </div>
   );
 }
@@ -806,15 +1004,26 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
     content = <ListPreview settings={component.settings.settings} />;
   }
 
-  const co = component.callout;
-  const showCo = co?.enabled;
-  const md = component.metadata;
-  const showMd = md?.enabled && md.items.length > 0;
-  const lb = component.liveBadge;
-  const showLb = lb?.enabled;
-  const cd = component.countdown;
-  const showCd = cd?.enabled;
-  const componentPadding = Math.max(2, (theme?.componentPadding ?? 0) + 2);
+  const cpSides = parsePadding(theme?.componentPadding);
+  const componentPadding = `${Math.max(2, cpSides[0] + 2)}px ${Math.max(2, cpSides[1] + 2)}px ${Math.max(2, cpSides[2] + 2)}px ${Math.max(2, cpSides[3] + 2)}px`;
+  const order: AttachmentKey[] = component.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
+
+  const renderAttachment = (key: AttachmentKey, position: 'above' | 'below') => {
+    const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
+    if (key === 'callout' && component.callout?.enabled && component.callout.position === position) {
+      return <div key={`${key}-${position}`} style={spacing}><CalloutBadge callout={component.callout} /></div>;
+    }
+    if (key === 'metadata' && component.metadata?.enabled && component.metadata.items.length > 0 && component.metadata.position === position) {
+      return <div key={`${key}-${position}`} style={spacing}><MetadataRow metadata={component.metadata} /></div>;
+    }
+    if (key === 'liveBadge' && component.liveBadge?.enabled && component.liveBadge.position === position) {
+      return <div key={`${key}-${position}`} style={spacing}><LiveBadgeRow liveBadge={component.liveBadge} /></div>;
+    }
+    if (key === 'countdown' && component.countdown?.enabled && component.countdown.position === position) {
+      return <div key={`${key}-${position}`} style={spacing}><CountdownBadge countdown={component.countdown} /></div>;
+    }
+    return null;
+  };
 
   return (
     <div
@@ -831,15 +1040,9 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         transition: 'outline var(--transition-fast), box-shadow var(--transition-fast)',
       }}
     >
-      {showCo && co.position === 'above' && <div style={{ marginBottom: 8 }}><CalloutBadge callout={co} /></div>}
-      {showLb && lb.position === 'above' && <div style={{ marginBottom: 8 }}><LiveBadgeRow liveBadge={lb} /></div>}
-      {showMd && md.position === 'above' && <div style={{ marginBottom: 8 }}><MetadataRow metadata={md} /></div>}
-      {showCd && cd.position === 'above' && <div style={{ marginBottom: 8 }}><CountdownBadge countdown={cd} /></div>}
+      {order.map((key) => renderAttachment(key, 'above'))}
       {content}
-      {showCd && cd.position === 'below' && <div style={{ marginTop: 8 }}><CountdownBadge countdown={cd} /></div>}
-      {showMd && md.position === 'below' && <div style={{ marginTop: 8 }}><MetadataRow metadata={md} /></div>}
-      {showLb && lb.position === 'below' && <div style={{ marginTop: 8 }}><LiveBadgeRow liveBadge={lb} /></div>}
-      {showCo && co.position === 'below' && <div style={{ marginTop: 8 }}><CalloutBadge callout={co} /></div>}
+      {order.map((key) => renderAttachment(key, 'below'))}
     </div>
   );
 }

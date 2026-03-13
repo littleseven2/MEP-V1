@@ -95,7 +95,8 @@ export const defaultThemes: ThemeConfig[] = [
       textStyles: { ...defaultTextStyles },
     },
     spacing: 'normal',
-    sectionPadding: 0,
+    emailPadding: 0,
+    sectionPadding: 16,
     componentPadding: 0,
     background: {
       type: 'solid',
@@ -119,7 +120,8 @@ export const defaultThemes: ThemeConfig[] = [
       textStyles: { ...defaultTextStyles },
     },
     spacing: 'relaxed',
-    sectionPadding: 8,
+    emailPadding: 4,
+    sectionPadding: 24,
     componentPadding: 4,
     background: {
       type: 'gradient',
@@ -143,7 +145,8 @@ export const defaultThemes: ThemeConfig[] = [
       textStyles: { ...defaultTextStyles },
     },
     spacing: 'compact',
-    sectionPadding: 0,
+    emailPadding: 0,
+    sectionPadding: 16,
     componentPadding: 0,
     background: {
       type: 'solid',
@@ -167,7 +170,8 @@ export const defaultThemes: ThemeConfig[] = [
       textStyles: { ...defaultTextStyles },
     },
     spacing: 'relaxed',
-    sectionPadding: 12,
+    emailPadding: 8,
+    sectionPadding: 28,
     componentPadding: 8,
     background: {
       type: 'gradient',

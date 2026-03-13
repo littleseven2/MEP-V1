@@ -28,7 +28,8 @@ const DEFAULT_THEME: ThemeConfig = {
     textStyles: { ...defaultTextStyles },
   },
   spacing: 'normal',
-  sectionPadding: 0,
+  emailPadding: 0,
+  sectionPadding: 16,
   componentPadding: 0,
   background: {
     type: 'solid',
