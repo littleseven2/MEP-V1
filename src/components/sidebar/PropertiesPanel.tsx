@@ -6,6 +6,9 @@ import {
   IndentDecrease, IndentIncrease, RemoveFormatting,
   Type, Highlighter, Baseline, ChevronDown,
   GripVertical, ChevronRight, Link2, Unlink2,
+  Megaphone, Tags, Radio, Timer,
+  Heading, PenLine, Database, Grid3X3,
+  Image, MousePointerClick, ToggleRight, Hash,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type {
@@ -56,19 +59,16 @@ function PropertyGroup({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  const [hovered, setHovered] = useState(false);
 
   return (
     <div
+      className={!open ? 'mep-card-hover' : undefined}
       style={{
-        background: hovered && !open ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        background: 'var(--color-bg-tertiary)',
         border: '1px solid var(--color-border-default)',
         borderRadius: 6,
         overflow: 'hidden',
-        transition: 'background 0.15s ease',
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <button
         type="button"
@@ -135,56 +135,72 @@ function PropertyGroup({
 
 function ContentCard({
   title,
+  icon,
   children,
   defaultOpen = false,
 }: {
   title: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div style={{
+    <div className={!open ? 'mep-card-hover' : undefined} style={{
       background: 'var(--color-bg-tertiary)',
       border: '1px solid var(--color-border-default)',
       borderRadius: 6,
       overflow: 'hidden',
     }}>
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
+      <div
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
           padding: '8px 10px',
-          width: '100%',
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          textAlign: 'left',
-          fontFamily: 'inherit',
         }}
       >
-        <span style={{
-          flex: 1,
-          fontSize: 12,
-          fontWeight: 500,
-          fontFamily: 'var(--font-family)',
-          color: 'var(--color-text-primary)',
-          userSelect: 'none',
-        }}>
-          {title}
-        </span>
-        <ChevronRight
-          size={11}
-          style={{
+        {icon && (
+          <div style={{
+            width: 24, height: 24, borderRadius: 5,
+            background: 'var(--color-bg-secondary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--color-text-secondary)',
             flexShrink: 0,
-            color: 'var(--color-text-muted)',
-            transform: open ? 'rotate(90deg)' : 'none',
-            transition: 'transform 0.15s ease',
+          }}>
+            {icon}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          style={{
+            flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: 0,
           }}
-        />
-      </button>
+        >
+          <span style={{
+            flex: 1,
+            fontSize: 12,
+            fontWeight: 500,
+            fontFamily: 'var(--font-family)',
+            color: 'var(--color-text-primary)',
+            userSelect: 'none',
+            textAlign: 'left',
+          }}>
+            {title}
+          </span>
+          <ChevronRight
+            size={11}
+            style={{
+              flexShrink: 0,
+              color: 'var(--color-text-muted)',
+              transform: open ? 'rotate(90deg)' : 'none',
+              transition: 'transform 0.15s ease',
+            }}
+          />
+        </button>
+      </div>
       {open && (
         <div style={{
           padding: '0 10px 10px',
@@ -561,6 +577,7 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
 
 
   const labels: Record<string, string> = { eyebrow: 'Eyebrow', headline: 'Headline', body: 'Body', link: 'CTA Link' };
+  const icons: Record<string, React.ReactNode> = { eyebrow: <Type size={14} />, headline: <Heading size={14} />, body: <AlignLeft size={14} />, link: <Link2 size={14} /> };
 
   const fieldVarMap: Record<string, string> = { eyebrow: 'eyebrow', headline: 'headline', body: 'body' };
   const textVars = entityVariables.filter((v) => v.valueType === 'text');
@@ -615,6 +632,7 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                 <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
               )}
               <div
+                className={!isExpanded ? 'mep-card-hover' : undefined}
                 style={{
                   background: 'var(--color-bg-tertiary)',
                   border: '1px solid var(--color-border-default)',
@@ -637,6 +655,15 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                   }}
                 >
                   <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                  <div style={{
+                    width: 24, height: 24, borderRadius: 5,
+                    background: isEnabled ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: isEnabled ? '#fff' : 'var(--color-text-secondary)',
+                    flexShrink: 0, transition: 'var(--transition-fast)',
+                  }}>
+                    {icons[key]}
+                  </div>
                   <button
                     type="button"
                     onClick={() => { const next = new Set(expandedKeys); if (isExpanded) next.delete(key); else next.add(key); setExpandedKeys(next); }}
@@ -813,7 +840,7 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
   if (tab === 'content') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <ContentCard title="Text Structure" defaultOpen>
+        <ContentCard title="Text Structure" icon={<Heading size={14} />} defaultOpen>
           <div style={{ position: 'relative', marginBottom: 8 }}>
             <button
               type="button"
@@ -866,7 +893,7 @@ function RichTextProperties({ component, sectionId, tab }: { component: MessageC
           </div>
         </ContentCard>
 
-        <ContentCard title="Content Editing" defaultOpen>
+        <ContentCard title="Content Editing" icon={<PenLine size={14} />} defaultOpen>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
               <Bold size={14} />
@@ -1067,7 +1094,7 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
   if (tab === 'content') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <ContentCard title="Data" defaultOpen>
+        <ContentCard title="Data" icon={<Database size={14} />} defaultOpen>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <LinkedField
               label="Source URL"
@@ -1194,6 +1221,7 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
           return (
             <div
               key={i}
+              className={!isExpanded ? 'mep-card-hover' : undefined}
               style={{
                 background: 'var(--color-bg-tertiary)',
                 border: '1px solid var(--color-border-default)',
@@ -1205,6 +1233,15 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '8px 10px',
               }}>
+                <div style={{
+                  width: 24, height: 24, borderRadius: 5,
+                  background: 'var(--color-bg-secondary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--color-text-secondary)',
+                  flexShrink: 0,
+                }}>
+                  <MousePointerClick size={14} />
+                </div>
                 <button
                   type="button"
                     onClick={() => { const next = new Set(expandedBtns); if (isExpanded) next.delete(i); else next.add(i); setExpandedBtns(next); }}
@@ -1434,7 +1471,7 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
   if (tab === 'content') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <ContentCard title="Grid Data" defaultOpen>
+        <ContentCard title="Grid Data" icon={<Grid3X3 size={14} />} defaultOpen>
           <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>
             Grid cells are populated from entity data. Select cells on the canvas to configure individual content.
           </p>
@@ -1627,11 +1664,11 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
   const update = (s: ListSettings) =>
     updateComponentSettings(sectionId, component.id, { type: 'list', settings: s });
 
-  const listElements: { key: string; label: string; checked: boolean; onChange: (v: boolean) => void }[] = [
-    { key: 'thumbnail', label: 'Thumbnail', checked: settings.showThumbnail, onChange: (v) => update({ ...settings, showThumbnail: v }) },
-    { key: 'title', label: 'Title', checked: settings.showTitle ?? true, onChange: (v) => update({ ...settings, showTitle: v }) },
-    { key: 'subtitle', label: 'Subtitle', checked: settings.showSubtitle ?? true, onChange: (v) => update({ ...settings, showSubtitle: v }) },
-    { key: 'metadata', label: 'Metadata / CTA', checked: settings.showMetadata ?? true, onChange: (v) => update({ ...settings, showMetadata: v }) },
+  const listElements: { key: string; label: string; icon: React.ReactNode; checked: boolean; onChange: (v: boolean) => void }[] = [
+    { key: 'thumbnail', label: 'Thumbnail', icon: <Image size={14} />, checked: settings.showThumbnail, onChange: (v) => update({ ...settings, showThumbnail: v }) },
+    { key: 'title', label: 'Title', icon: <Heading size={14} />, checked: settings.showTitle ?? true, onChange: (v) => update({ ...settings, showTitle: v }) },
+    { key: 'subtitle', label: 'Subtitle', icon: <Type size={14} />, checked: settings.showSubtitle ?? true, onChange: (v) => update({ ...settings, showSubtitle: v }) },
+    { key: 'metadata', label: 'Metadata / CTA', icon: <Tags size={14} />, checked: settings.showMetadata ?? true, onChange: (v) => update({ ...settings, showMetadata: v }) },
   ];
 
   if (tab === 'content') {
@@ -1640,6 +1677,7 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
         {listElements.map((el) => (
           <div
             key={el.key}
+            className="mep-card-hover"
             style={{
               background: 'var(--color-bg-tertiary)',
               border: '1px solid var(--color-border-default)',
@@ -1651,6 +1689,15 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '8px 10px',
             }}>
+              <div style={{
+                width: 24, height: 24, borderRadius: 5,
+                background: el.checked ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: el.checked ? '#fff' : 'var(--color-text-secondary)',
+                flexShrink: 0, transition: 'var(--transition-fast)',
+              }}>
+                {el.icon}
+              </div>
               <span style={{
                 flex: 1,
                 fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
@@ -2010,68 +2057,11 @@ const defaultCountdown: ComponentCountdown = {
   enabled: false, variant: 'A', days: '21', hours: '3', minutes: '47', message: 'Starts in 3 days', imageUrl: '', position: 'above',
 };
 
-function HornIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 12.5C5 12.5 3 12 2 10.5C1 9 1.5 7 1.5 7L8 4L10.5 11L5 12.5Z" fill="url(#horn-pp1)" />
-      <path d="M8 4L14.5 1.5C15.5 1 16.5 1.5 17 2.5L18.5 7C19 8 18.5 9 17.5 9.5L10.5 11L8 4Z" fill="url(#horn-pp2)" />
-      <path d="M5 12.5L4 15C3.7 15.7 4 16.3 4.7 16.5C5.4 16.7 6 16.3 6.3 15.6L7 13.5L5 12.5Z" fill="#8B2F8B" />
-      <defs>
-        <linearGradient id="horn-pp1" x1="1" y1="10" x2="10" y2="7" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4A1942" /><stop offset="1" stopColor="#8B2F6B" />
-        </linearGradient>
-        <linearGradient id="horn-pp2" x1="8" y1="8" x2="18" y2="4" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#C23074" /><stop offset="1" stopColor="#E84393" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-function MetadataIcon({ size = 16 }: { size?: number }) {
-  const r = size / 18;
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="3" cy="9" r={1.5 * r} fill="currentColor" opacity="0.5" />
-      <circle cx="9" cy="9" r={1.5 * r} fill="currentColor" />
-      <circle cx="15" cy="9" r={1.5 * r} fill="currentColor" opacity="0.5" />
-      <rect x="5.5" y="8" width="1" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
-      <rect x="11.5" y="8" width="1" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
-    </svg>
-  );
-}
-
-function LiveBadgeIcon({ size = 16 }: { size?: number }) {
-  const s = size / 18;
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="5" width={9 * s} height={8 * s} rx={2 * s} fill="#e50914" />
-      <rect x={10 * s} y="5" width={7 * s} height={8 * s} rx={2 * s} fill="currentColor" opacity="0.8" />
-      <circle cx={4.5 * s} cy="9" r={1.2 * s} fill="white" />
-    </svg>
-  );
-}
-
-function CountdownIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="3" width="16" height="12" rx="3" fill="currentColor" opacity="0.15" />
-      <rect x="2" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
-      <rect x="7" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
-      <rect x="12" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
-      <circle cx="6.5" cy="7.5" r="0.75" fill="currentColor" />
-      <circle cx="6.5" cy="10.5" r="0.75" fill="currentColor" />
-      <circle cx="11.5" cy="7.5" r="0.75" fill="currentColor" />
-      <circle cx="11.5" cy="10.5" r="0.75" fill="currentColor" />
-    </svg>
-  );
-}
-
 const attachmentMeta: Record<AttachmentKey, { icon: React.ReactNode; label: string }> = {
-  callout: { icon: <HornIcon />, label: 'Callout' },
-  metadata: { icon: <MetadataIcon />, label: 'Metadata' },
-  liveBadge: { icon: <LiveBadgeIcon />, label: 'Live Badge' },
-  countdown: { icon: <CountdownIcon />, label: 'Countdown' },
+  callout: { icon: <Megaphone size={16} />, label: 'Callout' },
+  metadata: { icon: <Tags size={16} />, label: 'Metadata' },
+  liveBadge: { icon: <Radio size={16} />, label: 'Live Badge' },
+  countdown: { icon: <Timer size={16} />, label: 'Countdown' },
 };
 
 const calloutIconOptions: { value: CalloutIcon; label: string }[] = [
@@ -2301,6 +2291,7 @@ function AttachmentsSection({ target, targetType, sectionId }: {
               <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
             )}
             <div
+              className={!isExpanded ? 'mep-card-hover' : undefined}
               style={{
                 background: 'var(--color-bg-tertiary)',
                 border: '1px solid var(--color-border-default)',
@@ -2404,6 +2395,7 @@ function ListDataSection({ component, sectionId }: { component: MessageComponent
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <SectionHeader title="Data" />
       <div
+        className={!dataExpanded ? 'mep-card-hover' : undefined}
         style={{
           background: 'var(--color-bg-tertiary)',
           border: '1px solid var(--color-border-default)',
@@ -2422,6 +2414,15 @@ function ListDataSection({ component, sectionId }: { component: MessageComponent
             textAlign: 'left', fontFamily: 'inherit',
           }}
         >
+          <div style={{
+            width: 24, height: 24, borderRadius: 5,
+            background: 'var(--color-bg-secondary)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--color-text-secondary)',
+            flexShrink: 0,
+          }}>
+            <Hash size={14} />
+          </div>
           <span style={{
             flex: 1,
             fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',

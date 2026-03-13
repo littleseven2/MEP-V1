@@ -59,8 +59,10 @@ export function SectionPanel() {
         {sectionTemplates.map((template) => (
           <div
             key={template.id}
+            className="mep-panel-item"
             role="button"
             tabIndex={0}
+            data-disabled={!message || undefined}
             onClick={() => handleAddTemplate(template)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleAddTemplate(template);
@@ -74,26 +76,6 @@ export function SectionPanel() {
               border: '1px solid transparent',
               cursor: !message ? 'not-allowed' : 'pointer',
               opacity: !message ? 0.25 : 1,
-              transition: 'var(--transition-fast)',
-            }}
-            onMouseEnter={(e) => {
-              if (!message) return;
-              e.currentTarget.style.transform = 'translateX(4px)';
-              e.currentTarget.style.borderColor = 'var(--color-border-default)';
-              const iconBox = e.currentTarget.querySelector('[data-icon-box]') as HTMLElement;
-              if (iconBox) {
-                iconBox.style.background = 'var(--color-brand)';
-                iconBox.style.color = 'white';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateX(0)';
-              e.currentTarget.style.borderColor = 'transparent';
-              const iconBox = e.currentTarget.querySelector('[data-icon-box]') as HTMLElement;
-              if (iconBox) {
-                iconBox.style.background = 'var(--color-bg-tertiary)';
-                iconBox.style.color = 'var(--color-text-secondary)';
-              }
             }}
           >
             <div

@@ -1,3 +1,4 @@
+import { Megaphone, Tags, Radio, Timer } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type { ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown } from '../../types/message';
 
@@ -32,26 +33,6 @@ const defaultCountdown: ComponentCountdown = {
   position: 'above',
 };
 
-function HornIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M5 12.5C5 12.5 3 12 2 10.5C1 9 1.5 7 1.5 7L8 4L10.5 11L5 12.5Z" fill="url(#horn-ap1)" />
-      <path d="M8 4L14.5 1.5C15.5 1 16.5 1.5 17 2.5L18.5 7C19 8 18.5 9 17.5 9.5L10.5 11L8 4Z" fill="url(#horn-ap2)" />
-      <path d="M5 12.5L4 15C3.7 15.7 4 16.3 4.7 16.5C5.4 16.7 6 16.3 6.3 15.6L7 13.5L5 12.5Z" fill="#8B2F8B" />
-      <defs>
-        <linearGradient id="horn-ap1" x1="1" y1="10" x2="10" y2="7" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#4A1942" />
-          <stop offset="1" stopColor="#8B2F6B" />
-        </linearGradient>
-        <linearGradient id="horn-ap2" x1="8" y1="8" x2="18" y2="4" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#C23074" />
-          <stop offset="1" stopColor="#E84393" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
 const componentLabels: Record<string, string> = {
   'text-block': 'Text Block',
   'rich-text': 'Rich Text',
@@ -67,50 +48,11 @@ const sectionLabels: Record<string, string> = {
   'footer': 'Footer',
 };
 
-function MetadataIcon({ size = 18 }: { size?: number }) {
-  const r = size / 18;
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="3" cy="9" r={1.5 * r} fill="currentColor" opacity="0.5" />
-      <circle cx="9" cy="9" r={1.5 * r} fill="currentColor" />
-      <circle cx="15" cy="9" r={1.5 * r} fill="currentColor" opacity="0.5" />
-      <rect x="5.5" y="8" width="1" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
-      <rect x="11.5" y="8" width="1" height="2" rx="0.5" fill="currentColor" opacity="0.35" />
-    </svg>
-  );
-}
-
-function LiveBadgeIcon({ size = 18 }: { size?: number }) {
-  const scale = size / 18;
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="5" width={9 * scale} height={8 * scale} rx={2 * scale} fill="#e50914" />
-      <rect x={10 * scale} y="5" width={7 * scale} height={8 * scale} rx={2 * scale} fill="currentColor" opacity="0.8" />
-      <circle cx={4.5 * scale} cy="9" r={1.2 * scale} fill="white" />
-    </svg>
-  );
-}
-
-function CountdownIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="3" width="16" height="12" rx="3" fill="currentColor" opacity="0.15" />
-      <rect x="2" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
-      <rect x="7" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
-      <rect x="12" y="4" width="4" height="10" rx="2" fill="currentColor" opacity="0.3" />
-      <circle cx="6.5" cy="7.5" r="0.75" fill="currentColor" />
-      <circle cx="6.5" cy="10.5" r="0.75" fill="currentColor" />
-      <circle cx="11.5" cy="7.5" r="0.75" fill="currentColor" />
-      <circle cx="11.5" cy="10.5" r="0.75" fill="currentColor" />
-    </svg>
-  );
-}
-
 const attachmentItems: { id: string; icon: React.ReactNode; label: string; description: string }[] = [
-  { id: 'callout', icon: <HornIcon size={18} />, label: 'Callout', description: 'Announcement banner' },
-  { id: 'metadata', icon: <MetadataIcon size={18} />, label: 'Metadata', description: 'Category · Genre · Year' },
-  { id: 'liveBadge', icon: <LiveBadgeIcon size={18} />, label: 'Live Badge', description: 'Live event indicator' },
-  { id: 'countdown', icon: <CountdownIcon size={18} />, label: 'Countdown', description: 'Days · Hours · Minutes' },
+  { id: 'callout', icon: <Megaphone size={18} />, label: 'Callout', description: 'Announcement banner' },
+  { id: 'metadata', icon: <Tags size={18} />, label: 'Metadata', description: 'Category · Genre · Year' },
+  { id: 'liveBadge', icon: <Radio size={18} />, label: 'Live Badge', description: 'Live event indicator' },
+  { id: 'countdown', icon: <Timer size={18} />, label: 'Countdown', description: 'Days · Hours · Minutes' },
 ];
 
 export function AttachmentPanel() {
@@ -250,8 +192,11 @@ export function AttachmentPanel() {
           return (
             <div
               key={item.id}
+              className="mep-panel-item"
               role="button"
               tabIndex={0}
+              data-disabled={!hasTarget || undefined}
+              data-active={isActive || undefined}
               onClick={() => handleClick(item.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleClick(item.id);
@@ -266,26 +211,6 @@ export function AttachmentPanel() {
                 background: isActive ? 'var(--color-brand-subtle)' : 'transparent',
                 cursor: !hasTarget ? 'not-allowed' : 'pointer',
                 opacity: !hasTarget ? 0.25 : 1,
-                transition: 'var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => {
-                if (!hasTarget) return;
-                e.currentTarget.style.transform = 'translateX(4px)';
-                if (!isActive) e.currentTarget.style.borderColor = 'var(--color-border-default)';
-                const iconBox = e.currentTarget.querySelector('[data-icon-box]') as HTMLElement;
-                if (iconBox) {
-                  iconBox.style.background = 'var(--color-brand)';
-                  iconBox.style.color = 'white';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateX(0)';
-                if (!isActive) e.currentTarget.style.borderColor = 'transparent';
-                const iconBox = e.currentTarget.querySelector('[data-icon-box]') as HTMLElement;
-                if (iconBox) {
-                  iconBox.style.background = isActive ? 'var(--color-brand)' : 'var(--color-bg-tertiary)';
-                  iconBox.style.color = isActive ? 'white' : 'var(--color-text-secondary)';
-                }
               }}
             >
               <div

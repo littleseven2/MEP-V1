@@ -78,6 +78,22 @@ a {
   color: var(--color-text-primary) !important;
 }
 
+.mep-card-hover {
+  transition: background 0.15s ease;
+}
+
+.mep-card-hover:hover {
+  background: var(--color-bg-hover) !important;
+}
+
+.mep-panel-item {
+  transition: background 0.15s ease;
+}
+
+.mep-panel-item:not([data-disabled]):hover {
+  background: var(--color-bg-hover) !important;
+}
+
 .mep-color-picker {
   -webkit-appearance: none;
   width: 36px;

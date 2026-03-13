@@ -189,19 +189,16 @@ function StyleSection({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen ?? false);
-  const [hovered, setHovered] = useState(false);
 
   return (
     <div
+      className={!open ? 'mep-card-hover' : undefined}
       style={{
-        background: hovered && !open ? 'var(--color-bg-hover)' : 'var(--color-bg-tertiary)',
+        background: 'var(--color-bg-tertiary)',
         border: '1px solid var(--color-border-default)',
         borderRadius: 6,
         overflow: 'hidden',
-        transition: 'background 0.15s ease',
       }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
     >
       <button
         type="button"
@@ -868,7 +865,6 @@ function ThemeCard({
   onDelete?: () => void;
   onDuplicate: () => void;
 }) {
-  const [hovered, setHovered] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -885,21 +881,18 @@ function ThemeCard({
 
   return (
     <div
+      className="mep-panel-item"
+      data-active={isActive || undefined}
       onClick={onSelect}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: 12,
         padding: 12,
-        background: isActive ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-        border: `1px solid ${isActive ? 'var(--color-brand)' : 'var(--color-border-default)'}`,
-        borderRadius: 'var(--radius-lg)',
+        background: isActive ? 'var(--color-brand-subtle)' : 'transparent',
+        border: isActive ? '1px solid var(--color-brand)' : '1px solid transparent',
+        borderRadius: 12,
         cursor: 'pointer',
-        transition: 'all var(--transition-fast)',
-        transform: hovered ? 'translateX(4px)' : 'none',
-        boxShadow: isActive ? '0 0 0 1px var(--color-brand)' : 'none',
       }}
     >
       <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
@@ -911,9 +904,7 @@ function ThemeCard({
         <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {theme.name}
         </div>
-        {isActive && (
-          <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>Active</div>
-        )}
+        <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)', visibility: isActive ? 'visible' : 'hidden' }}>Active</div>
       </div>
       {isActive && <Check size={16} color="var(--color-brand)" style={{ flexShrink: 0 }} />}
 
