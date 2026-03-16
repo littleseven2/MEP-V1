@@ -178,7 +178,7 @@ export const BuilderLayout: React.FC = () => {
           <VerticalNavItem icon={<Palette size={18} />} label="Theme" active={leftNav === 'theme'} onClick={() => handleLeftNavChange('theme')} />
           <VerticalNavItem icon={<Layers size={18} />} label="Section" active={leftNav === 'section'} onClick={() => handleLeftNavChange('section')} />
           <VerticalNavItem icon={<Component size={18} />} label="Component" active={leftNav === 'component'} onClick={() => handleLeftNavChange('component')} />
-          <VerticalNavItem icon={<Paperclip size={18} />} label="Attach" active={leftNav === 'attachment'} onClick={() => handleLeftNavChange('attachment')} />
+          <VerticalNavItem icon={<Paperclip size={18} />} label="Attachment" active={leftNav === 'attachment'} onClick={() => handleLeftNavChange('attachment')} />
           <div style={{ flex: 1 }} />
           <VerticalNavItem icon={<Settings size={18} />} label="Settings" active={false} onClick={() => {}} />
         </div>
