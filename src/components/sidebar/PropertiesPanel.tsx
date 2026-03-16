@@ -15,6 +15,7 @@ import {
   User, Users, Globe, MapPin, Compass, Navigation,
   Download, Share2, ExternalLink, Eye, Search,
   CheckCircle, Info, AlertCircle, Shield, Lock, Unlock,
+  Trash2,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type {
@@ -42,9 +43,10 @@ import type {
   ComponentCountdown,
   CountdownVariant,
   AttachmentKey,
+  ComponentType,
   Padding,
 } from '../../types/message';
-import { parsePadding, isUniformPadding, uniformPaddingValue } from '../../types/message';
+import { parsePadding, isUniformPadding, uniformPaddingValue, computeSectionItemOrder, computeComponentItemOrder, isAttachmentKey, ATTACHMENT_KEYS, CONTENT_ITEM_KEY } from '../../types/message';
 import {
   contentTypes,
   intentOptions,
@@ -614,7 +616,11 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <SectionHeader title="Content" />
+          <SectionHeader title="Section Items" />
+          <SectionItemsList section={section} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <SectionHeader title="Data" />
           <PropertyGroup title="Data Hydration" defaultOpen preview={`${section.hydration.source} · ${section.hydration.contentType || 'Any'}`}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <Select
@@ -649,7 +655,6 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
             </div>
           </PropertyGroup>
         </div>
-        <AttachmentsSection target={section} targetType="section" />
       </div>
     );
   }
@@ -2365,6 +2370,789 @@ const calloutVariantDescriptions: Record<string, string> = {
   D: 'Stacked lg',
 };
 
+const componentTypeMeta: Record<ComponentType, { icon: React.ReactNode; label: string }> = {
+  'media': { icon: <Image size={14} />, label: 'Media' },
+  'text-block': { icon: <Type size={14} />, label: 'Text Block' },
+  'rich-text': { icon: <PenLine size={14} />, label: 'Rich Text' },
+  'cta': { icon: <MousePointerClick size={14} />, label: 'CTA' },
+  'grid': { icon: <Grid3X3 size={14} />, label: 'Grid' },
+  'list': { icon: <List size={14} />, label: 'List' },
+};
+
+function SectionItemsList({ section }: { section: Section }) {
+  const updateSection = useMessageStore((s) => s.updateSection);
+  const selectComponent = useMessageStore((s) => s.selectComponent);
+  const removeComponent = useMessageStore((s) => s.removeComponent);
+  const reorderSectionItems = useMessageStore((s) => s.reorderSectionItems);
+  const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
+
+  const itemOrder = computeSectionItemOrder(section);
+  const callout: ComponentCallout = section.callout ?? defaultCallout;
+  const metadata: ComponentMetadata = section.metadata ?? defaultMetadata;
+  const liveBadge: ComponentLiveBadge = section.liveBadge ?? defaultLiveBadge;
+  const countdown: ComponentCountdown = section.countdown ?? defaultCountdown;
+
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const applyAttachmentUpdate = (updates: Partial<Section>) => {
+    updateSection(section.id, updates);
+  };
+
+  const deleteAttachment = (key: AttachmentKey) => {
+    const updates: Partial<Section> = {};
+    if (key === 'callout') updates.callout = { ...callout, enabled: false };
+    else if (key === 'metadata') updates.metadata = { ...metadata, enabled: false };
+    else if (key === 'liveBadge') updates.liveBadge = { ...liveBadge, enabled: false };
+    else if (key === 'countdown') updates.countdown = { ...countdown, enabled: false };
+    applyAttachmentUpdate(updates);
+    const currentOrder = (section.sectionItemOrder ?? computeSectionItemOrder(section)).filter((id) => id !== key);
+    reorderSectionItems(section.id, currentOrder);
+  };
+
+  const deleteComponent = (compId: string) => {
+    removeComponent(section.id, compId);
+  };
+
+  const handleDragStart = (idx: number) => { dragItem.current = idx; setDragIdx(idx); };
+  const handleDragEnter = (idx: number) => { dragOverItem.current = idx; setDragOverIdx(idx); };
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const newOrder = [...itemOrder];
+      const [removed] = newOrder.splice(dragItem.current, 1);
+      newOrder.splice(dragOverItem.current, 0, removed);
+      reorderSectionItems(section.id, newOrder);
+    }
+    dragItem.current = null; dragOverItem.current = null;
+    setDragIdx(null); setDragOverIdx(null);
+  };
+
+  const getDropLine = (idx: number): 'above' | 'below' | null => {
+    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) return null;
+    if (idx === dragOverIdx) return dragIdx < dragOverIdx ? 'below' : 'above';
+    return null;
+  };
+
+  const compMap = new Map(section.components.map((c) => [c.id, c]));
+
+  const allItems: string[] = [...itemOrder];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {allItems.map((id, idx) => {
+        const isAtt = isAttachmentKey(id);
+        const comp = isAtt ? null : compMap.get(id);
+
+        if (isAtt) {
+          const key = id as AttachmentKey;
+          const meta = attachmentMeta[key];
+          const isDragging = dragIdx === idx;
+          const dropLine = getDropLine(idx);
+          const isExpanded = expandedItem === id;
+
+          return (
+            <div key={id} style={{ position: 'relative' }}>
+              {dropLine === 'above' && (
+                <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+              )}
+              <div
+                className={!isExpanded ? 'mep-card-hover' : undefined}
+                style={{
+                  background: 'var(--color-bg-tertiary)',
+                  border: '1px solid var(--color-border-default)',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  opacity: isDragging ? 0.4 : 1,
+                  transition: 'var(--transition-fast)',
+                  borderLeft: '3px solid var(--color-text-muted)',
+                }}
+              >
+                <div
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '7px 10px',
+                    cursor: 'grab',
+                  }}
+                >
+                  <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                  <div style={{
+                    width: 22, height: 22, borderRadius: 4,
+                    background: 'rgba(255,255,255,0.08)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--color-text-secondary)',
+                    flexShrink: 0,
+                  }}>
+                    {meta.icon}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedItem(isExpanded ? null : id)}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    <span style={{
+                      fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                      color: 'var(--color-text-primary)',
+                      userSelect: 'none',
+                    }}>
+                      {meta.label}
+                    </span>
+                    <ChevronRight size={11} style={{
+                      color: 'var(--color-text-muted)',
+                      transform: isExpanded ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.15s ease',
+                    }} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); deleteAttachment(key); }}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--color-text-muted)', flexShrink: 0,
+                      borderRadius: 4, transition: 'color var(--transition-fast)',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-brand)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+                    title="Remove"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div style={{
+                    padding: '0 10px 10px',
+                    borderTop: '1px solid var(--color-border-default)',
+                    paddingTop: 10,
+                    animation: 'fadeIn 0.15s ease',
+                  }}>
+                    <SectionAttachmentConfig
+                      section={section}
+                      attachmentKey={key}
+                      callout={callout}
+                      metadata={metadata}
+                      liveBadge={liveBadge}
+                      countdown={countdown}
+                      applyUpdate={applyAttachmentUpdate}
+                    />
+                  </div>
+                )}
+              </div>
+              {dropLine === 'below' && (
+                <div style={{ position: 'absolute', bottom: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+              )}
+            </div>
+          );
+        }
+
+        if (!comp) return null;
+
+        const meta = componentTypeMeta[comp.type];
+        const isDragging = dragIdx === idx;
+        const dropLine = getDropLine(idx);
+        const isSelected = selectedComponentId === comp.id;
+
+        return (
+          <div key={id} style={{ position: 'relative' }}>
+            {dropLine === 'above' && (
+              <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+            )}
+            <div
+              className="mep-card-hover"
+              onClick={() => selectComponent(comp.id, section.id)}
+              style={{
+                background: isSelected ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                border: isSelected ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                borderRadius: 6,
+                overflow: 'hidden',
+                opacity: isDragging ? 0.4 : 1,
+                transition: 'var(--transition-fast)',
+                cursor: 'pointer',
+              }}
+            >
+              <div
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '7px 10px',
+                  cursor: 'grab',
+                }}
+              >
+                <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                <div style={{
+                  width: 22, height: 22, borderRadius: 4,
+                  background: 'var(--color-brand)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff',
+                  flexShrink: 0,
+                }}>
+                  {meta.icon}
+                </div>
+                <span style={{
+                  flex: 1,
+                  fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                  color: 'var(--color-text-primary)',
+                  userSelect: 'none',
+                }}>
+                  {meta.label}
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); deleteComponent(comp.id); }}
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'var(--color-text-muted)', flexShrink: 0,
+                    borderRadius: 4, transition: 'color var(--transition-fast)',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--color-brand)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--color-text-muted)')}
+                  title="Delete"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+            {dropLine === 'below' && (
+              <div style={{ position: 'absolute', bottom: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SectionAttachmentConfig({ section, attachmentKey, callout, metadata, liveBadge, countdown, applyUpdate }: {
+  section: Section;
+  attachmentKey: AttachmentKey;
+  callout: ComponentCallout;
+  metadata: ComponentMetadata;
+  liveBadge: ComponentLiveBadge;
+  countdown: ComponentCountdown;
+  applyUpdate: (updates: Partial<Section>) => void;
+}) {
+  const fieldInput = (label: string, value: string, onChange: (v: string) => void, placeholder?: string) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>{label}</label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="mep-input"
+        style={{
+          height: 30, borderRadius: 6,
+          border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+          color: 'var(--color-text-primary)', fontSize: 12, padding: '0 8px',
+          outline: 'none', fontFamily: 'var(--font-family)', width: '100%',
+        }}
+      />
+    </div>
+  );
+
+  if (attachmentKey === 'callout') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div>
+          <label style={{ display: 'block', fontSize: 11, fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>Variant</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+            {(['A', 'B', 'C', 'D'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => applyUpdate({ callout: { ...callout, variant: v } })}
+                style={{
+                  height: 28, borderRadius: 6,
+                  border: callout.variant === v ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                  background: callout.variant === v ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                  color: callout.variant === v ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                  fontSize: 11, fontFamily: 'var(--font-family)', fontWeight: 500,
+                  cursor: 'pointer', transition: 'all var(--transition-fast)',
+                }}
+              >
+                {v} · {calloutVariantDescriptions[v]}
+              </button>
+            ))}
+          </div>
+        </div>
+        {fieldInput('Text', callout.text, (v) => applyUpdate({ callout: { ...callout, text: v } }), 'Callout text')}
+      </div>
+    );
+  }
+  if (attachmentKey === 'metadata') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {fieldInput('Items (comma-separated)', metadata.items.join(', '), (v) =>
+          applyUpdate({ metadata: { ...metadata, items: v.split(',').map((s) => s.trim()).filter(Boolean) } }),
+          'Category, Genre, Year',
+        )}
+      </div>
+    );
+  }
+  if (attachmentKey === 'liveBadge') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {fieldInput('Label', liveBadge.label, (v) => applyUpdate({ liveBadge: { ...liveBadge, label: v } }), 'Live')}
+        {fieldInput('Value', liveBadge.value, (v) => applyUpdate({ liveBadge: { ...liveBadge, value: v } }), '--')}
+      </div>
+    );
+  }
+  if (attachmentKey === 'countdown') {
+    const currentVariant: CountdownVariant = countdown.variant || 'A';
+    const variantLabels: Record<CountdownVariant, string> = {
+      A: 'Full (D:H:M)', B: 'Days & Hours', C: 'Days + Image',
+      D: 'Image + Minutes', E: 'Text Message', F: 'Compact',
+    };
+    const showDays = ['A', 'B', 'C', 'F'].includes(currentVariant);
+    const showHours = ['A', 'B', 'F'].includes(currentVariant);
+    const showMinutes = ['A', 'D', 'F'].includes(currentVariant);
+    const showMessage = currentVariant === 'E';
+    const showImage = ['C', 'D'].includes(currentVariant);
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Variant</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+            {(['A', 'B', 'C', 'D', 'E', 'F'] as CountdownVariant[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => applyUpdate({ countdown: { ...countdown, variant: v } })}
+                style={{
+                  height: 28, borderRadius: 6, fontSize: 10, fontWeight: 500,
+                  fontFamily: 'var(--font-family)', cursor: 'pointer',
+                  border: currentVariant === v ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                  background: currentVariant === v ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                  color: currentVariant === v ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                  transition: 'var(--transition-fast)',
+                  padding: '0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}
+              >
+                {variantLabels[v]}
+              </button>
+            ))}
+          </div>
+        </div>
+        {(showDays || showHours || showMinutes) && (
+          <div style={{ display: 'grid', gridTemplateColumns: [showDays, showHours, showMinutes].filter(Boolean).length === 3 ? '1fr 1fr 1fr' : [showDays, showHours, showMinutes].filter(Boolean).length === 2 ? '1fr 1fr' : '1fr', gap: 6 }}>
+            {showDays && fieldInput('Days', countdown.days, (v) => applyUpdate({ countdown: { ...countdown, days: v } }))}
+            {showHours && fieldInput('Hours', countdown.hours, (v) => applyUpdate({ countdown: { ...countdown, hours: v } }))}
+            {showMinutes && fieldInput('Min', countdown.minutes, (v) => applyUpdate({ countdown: { ...countdown, minutes: v } }))}
+          </div>
+        )}
+        {showMessage && fieldInput('Message', countdown.message || '', (v) => applyUpdate({ countdown: { ...countdown, message: v } }), 'Starts in 3 days')}
+        {showImage && fieldInput('Image URL', countdown.imageUrl || '', (v) => applyUpdate({ countdown: { ...countdown, imageUrl: v } }), 'https://...')}
+      </div>
+    );
+  }
+  return null;
+}
+
+// --------------- Unified Component Content + Attachments List ---------------
+
+function ComponentContentList({ component, sectionId, typeSpecificContent, listDataContent }: {
+  component: MessageComponent;
+  sectionId: string;
+  typeSpecificContent: React.ReactNode;
+  listDataContent?: React.ReactNode;
+}) {
+  const updateComponent = useMessageStore((s) => s.updateComponent);
+  const reorderComponentItems = useMessageStore((s) => s.reorderComponentItems);
+
+  const itemOrder = computeComponentItemOrder(component);
+  const callout: ComponentCallout = component.callout ?? defaultCallout;
+  const metadata: ComponentMetadata = component.metadata ?? defaultMetadata;
+  const liveBadge: ComponentLiveBadge = component.liveBadge ?? defaultLiveBadge;
+  const countdown: ComponentCountdown = component.countdown ?? defaultCountdown;
+
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
+
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
+
+  const applyUpdate = (updates: Partial<MessageComponent>) => {
+    updateComponent(sectionId, component.id, updates);
+  };
+
+  const isEnabled = (key: AttachmentKey) => {
+    if (key === 'callout') return callout.enabled;
+    if (key === 'metadata') return metadata.enabled;
+    if (key === 'liveBadge') return liveBadge.enabled;
+    if (key === 'countdown') return countdown.enabled;
+    return false;
+  };
+
+  const toggleAttachment = (key: AttachmentKey) => {
+    if (key === 'callout') applyUpdate({ callout: { ...callout, enabled: !callout.enabled } });
+    else if (key === 'metadata') applyUpdate({ metadata: { ...metadata, enabled: !metadata.enabled } });
+    else if (key === 'liveBadge') applyUpdate({ liveBadge: { ...liveBadge, enabled: !liveBadge.enabled } });
+    else if (key === 'countdown') applyUpdate({ countdown: { ...countdown, enabled: !countdown.enabled } });
+  };
+
+  const handleDragStart = (idx: number) => { dragItem.current = idx; setDragIdx(idx); };
+  const handleDragEnter = (idx: number) => { dragOverItem.current = idx; setDragOverIdx(idx); };
+  const handleDragEnd = () => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+      const newOrder = [...itemOrder];
+      const [removed] = newOrder.splice(dragItem.current, 1);
+      newOrder.splice(dragOverItem.current, 0, removed);
+      reorderComponentItems(sectionId, component.id, newOrder);
+    }
+    dragItem.current = null; dragOverItem.current = null;
+    setDragIdx(null); setDragOverIdx(null);
+  };
+
+  const getDropLine = (idx: number): 'above' | 'below' | null => {
+    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) return null;
+    if (idx === dragOverIdx) return dragIdx < dragOverIdx ? 'below' : 'above';
+    return null;
+  };
+
+  const renderAttachmentConfig = (key: AttachmentKey) => {
+    const positionButtons = (
+      currentPos: 'above' | 'below',
+      onChange: (pos: 'above' | 'below') => void,
+    ) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Position</label>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {(['above', 'below'] as const).map((pos) => (
+            <button
+              key={pos}
+              type="button"
+              onClick={() => onChange(pos)}
+              style={{
+                flex: 1, height: 28, borderRadius: 6, fontSize: 11, fontWeight: 500,
+                fontFamily: 'var(--font-family)', cursor: 'pointer',
+                border: currentPos === pos ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                background: currentPos === pos ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                color: currentPos === pos ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                transition: 'var(--transition-fast)',
+              }}
+            >
+              {pos === 'above' ? 'Above' : 'Below'}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+
+    const fieldInput = (label: string, value: string, onChange: (v: string) => void, placeholder?: string) => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>{label}</label>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="mep-input"
+          style={{
+            height: 30, borderRadius: 6,
+            border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
+            color: 'var(--color-text-primary)', fontSize: 12, padding: '0 8px',
+            outline: 'none', fontFamily: 'var(--font-family)', width: '100%',
+          }}
+        />
+      </div>
+    );
+
+    if (key === 'callout') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>Variant</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {(['A', 'B', 'C', 'D'] as const).map((v) => (
+                <button key={v} type="button" onClick={() => applyUpdate({ callout: { ...callout, variant: v } })}
+                  style={{
+                    height: 28, borderRadius: 6,
+                    border: callout.variant === v ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                    background: callout.variant === v ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                    color: callout.variant === v ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                    fontSize: 11, fontFamily: 'var(--font-family)', fontWeight: 500,
+                    cursor: 'pointer', transition: 'all var(--transition-fast)',
+                  }}
+                >{v} · {calloutVariantDescriptions[v]}</button>
+              ))}
+            </div>
+          </div>
+          {fieldInput('Text', callout.text, (v) => applyUpdate({ callout: { ...callout, text: v } }), 'Callout text')}
+          {positionButtons(callout.position, (p) => applyUpdate({ callout: { ...callout, position: p } }))}
+        </div>
+      );
+    }
+    if (key === 'metadata') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fieldInput('Items (comma-separated)', metadata.items.join(', '), (v) =>
+            applyUpdate({ metadata: { ...metadata, items: v.split(',').map((s) => s.trim()).filter(Boolean) } }),
+            'Category, Genre, Year',
+          )}
+          {positionButtons(metadata.position, (p) => applyUpdate({ metadata: { ...metadata, position: p } }))}
+        </div>
+      );
+    }
+    if (key === 'liveBadge') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {fieldInput('Label', liveBadge.label, (v) => applyUpdate({ liveBadge: { ...liveBadge, label: v } }), 'Live')}
+          {fieldInput('Value', liveBadge.value, (v) => applyUpdate({ liveBadge: { ...liveBadge, value: v } }), '--')}
+          {positionButtons(liveBadge.position, (p) => applyUpdate({ liveBadge: { ...liveBadge, position: p } }))}
+        </div>
+      );
+    }
+    if (key === 'countdown') {
+      const currentVariant: CountdownVariant = countdown.variant || 'A';
+      const variantLabels: Record<CountdownVariant, string> = {
+        A: 'Full (D:H:M)', B: 'Days & Hours', C: 'Days + Image',
+        D: 'Image + Minutes', E: 'Text Message', F: 'Compact',
+      };
+      const showDays = ['A', 'B', 'C', 'F'].includes(currentVariant);
+      const showHours = ['A', 'B', 'F'].includes(currentVariant);
+      const showMinutes = ['A', 'D', 'F'].includes(currentVariant);
+      const showMessage = currentVariant === 'E';
+      const showImage = ['C', 'D'].includes(currentVariant);
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <label style={{ fontSize: 11, color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-family)' }}>Variant</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 4 }}>
+              {(['A', 'B', 'C', 'D', 'E', 'F'] as CountdownVariant[]).map((v) => (
+                <button key={v} type="button" onClick={() => applyUpdate({ countdown: { ...countdown, variant: v } })}
+                  style={{
+                    height: 28, borderRadius: 6, fontSize: 10, fontWeight: 500,
+                    fontFamily: 'var(--font-family)', cursor: 'pointer',
+                    border: currentVariant === v ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                    background: currentVariant === v ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                    color: currentVariant === v ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                    transition: 'var(--transition-fast)',
+                    padding: '0 4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}
+                >{variantLabels[v]}</button>
+              ))}
+            </div>
+          </div>
+          {(showDays || showHours || showMinutes) && (
+            <div style={{ display: 'grid', gridTemplateColumns: [showDays, showHours, showMinutes].filter(Boolean).length === 3 ? '1fr 1fr 1fr' : [showDays, showHours, showMinutes].filter(Boolean).length === 2 ? '1fr 1fr' : '1fr', gap: 6 }}>
+              {showDays && fieldInput('Days', countdown.days, (v) => applyUpdate({ countdown: { ...countdown, days: v } }))}
+              {showHours && fieldInput('Hours', countdown.hours, (v) => applyUpdate({ countdown: { ...countdown, hours: v } }))}
+              {showMinutes && fieldInput('Min', countdown.minutes, (v) => applyUpdate({ countdown: { ...countdown, minutes: v } }))}
+            </div>
+          )}
+          {showMessage && fieldInput('Message', countdown.message || '', (v) => applyUpdate({ countdown: { ...countdown, message: v } }), 'Starts in 3 days')}
+          {showImage && fieldInput('Image URL', countdown.imageUrl || '', (v) => applyUpdate({ countdown: { ...countdown, imageUrl: v } }), 'https://...')}
+          {positionButtons(countdown.position, (p) => applyUpdate({ countdown: { ...countdown, position: p } }))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const compMeta = componentTypeMeta[component.type];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {itemOrder.map((id, idx) => {
+        const isDragging = dragIdx === idx;
+        const dropLine = getDropLine(idx);
+
+        if (id === CONTENT_ITEM_KEY) {
+          const isExpanded = expandedItem === CONTENT_ITEM_KEY;
+          return (
+            <div key={id} style={{ position: 'relative' }}>
+              {dropLine === 'above' && (
+                <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+              )}
+              <div
+                className={!isExpanded ? 'mep-card-hover' : undefined}
+                style={{
+                  background: 'var(--color-bg-tertiary)',
+                  border: '1px solid var(--color-border-default)',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                  opacity: isDragging ? 0.4 : 1,
+                  transition: 'var(--transition-fast)',
+                }}
+              >
+                <div
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragEnter={() => handleDragEnter(idx)}
+                  onDragEnd={handleDragEnd}
+                  onDragOver={(e) => e.preventDefault()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '7px 10px',
+                    cursor: 'grab',
+                  }}
+                >
+                  <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                  <div style={{
+                    width: 22, height: 22, borderRadius: 4,
+                    background: 'var(--color-brand)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#fff',
+                    flexShrink: 0,
+                  }}>
+                    {compMeta.icon}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedItem(isExpanded ? null : CONTENT_ITEM_KEY)}
+                    style={{
+                      flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
+                    <span style={{
+                      fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                      color: 'var(--color-text-primary)',
+                      userSelect: 'none',
+                    }}>
+                      {compMeta.label}
+                    </span>
+                    <ChevronRight size={11} style={{
+                      color: 'var(--color-text-muted)',
+                      transform: isExpanded ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.15s ease',
+                    }} />
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div style={{
+                    padding: '0 10px 10px',
+                    borderTop: '1px solid var(--color-border-default)',
+                    paddingTop: 10,
+                    animation: 'fadeIn 0.15s ease',
+                  }}>
+                    {typeSpecificContent}
+                    {listDataContent}
+                  </div>
+                )}
+              </div>
+              {dropLine === 'below' && (
+                <div style={{ position: 'absolute', bottom: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+              )}
+            </div>
+          );
+        }
+
+        const key = id as AttachmentKey;
+        const meta = attachmentMeta[key];
+        if (!meta) return null;
+        const active = isEnabled(key);
+        const isExpanded = expandedItem === id && active;
+
+        return (
+          <div key={id} style={{ position: 'relative' }}>
+            {dropLine === 'above' && (
+              <div style={{ position: 'absolute', top: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+            )}
+            <div
+              className={!isExpanded ? 'mep-card-hover' : undefined}
+              style={{
+                background: 'var(--color-bg-tertiary)',
+                border: '1px solid var(--color-border-default)',
+                borderRadius: 6,
+                overflow: 'hidden',
+                opacity: isDragging ? 0.4 : 1,
+                transition: 'var(--transition-fast)',
+                borderLeft: '3px solid var(--color-text-muted)',
+              }}
+            >
+              <div
+                draggable
+                onDragStart={() => handleDragStart(idx)}
+                onDragEnter={() => handleDragEnter(idx)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '7px 10px',
+                  cursor: 'grab',
+                }}
+              >
+                <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                <div style={{
+                  width: 22, height: 22, borderRadius: 4,
+                  background: 'rgba(255,255,255,0.08)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--color-text-secondary)',
+                  flexShrink: 0,
+                }}>
+                  {meta.icon}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExpandedItem(isExpanded ? null : id)}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', gap: 4,
+                    background: 'none', border: 'none', cursor: active ? 'pointer' : 'default',
+                    padding: 0,
+                  }}
+                >
+                  <span style={{
+                    fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                    color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+                    userSelect: 'none',
+                  }}>
+                    {meta.label}
+                  </span>
+                  {active && (
+                    <ChevronRight size={11} style={{
+                      color: 'var(--color-text-muted)',
+                      transform: isExpanded ? 'rotate(90deg)' : 'none',
+                      transition: 'transform 0.15s ease',
+                    }} />
+                  )}
+                </button>
+                <Toggle
+                  label=""
+                  size="sm"
+                  checked={active}
+                  onChange={() => toggleAttachment(key)}
+                />
+              </div>
+              {isExpanded && (
+                <div style={{
+                  padding: '0 10px 10px',
+                  borderTop: '1px solid var(--color-border-default)',
+                  paddingTop: 10,
+                  animation: 'fadeIn 0.15s ease',
+                }}>
+                  {renderAttachmentConfig(key)}
+                </div>
+              )}
+            </div>
+            {dropLine === 'below' && (
+              <div style={{ position: 'absolute', bottom: -1, left: 10, right: 10, height: 2, background: 'var(--color-brand)', borderRadius: 1, zIndex: 2 }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function AttachmentsSection({ target, targetType, sectionId }: {
   target: MessageComponent | Section;
   targetType: 'component' | 'section';
@@ -2609,6 +3397,7 @@ function AttachmentsSection({ target, targetType, sectionId }: {
                 overflow: 'hidden',
                 opacity: isDragging ? 0.4 : 1,
                 transition: 'var(--transition-fast)',
+                borderLeft: '3px solid var(--color-text-muted)',
               }}
             >
               <div
@@ -2619,17 +3408,17 @@ function AttachmentsSection({ target, targetType, sectionId }: {
                 onDragOver={(e) => e.preventDefault()}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 10px',
+                  padding: '7px 10px',
                   cursor: 'grab',
                 }}
               >
                 <GripVertical size={12} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
                 <div style={{
-                  width: 24, height: 24, borderRadius: 5,
-                  background: active ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
+                  width: 22, height: 22, borderRadius: 4,
+                  background: 'rgba(255,255,255,0.08)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: active ? '#fff' : 'var(--color-text-secondary)',
-                  flexShrink: 0, transition: 'var(--transition-fast)',
+                  color: 'var(--color-text-secondary)',
+                  flexShrink: 0,
                 }}>
                   {meta.icon}
                 </div>
@@ -2837,16 +3626,18 @@ function ComponentProperties({ component, sectionId, tab }: { component: Message
   }
 
   if (tab === 'content') {
+    const listDataContent = component.settings.type === 'list'
+      ? <ListDataSection component={component} sectionId={sectionId} />
+      : undefined;
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <SectionHeader title="Content" />
-          {typeSpecificContent}
-        </div>
-        {component.settings.type === 'list' && (
-          <ListDataSection component={component} sectionId={sectionId} />
-        )}
-        <AttachmentsSection target={component} targetType="component" sectionId={sectionId} />
+        <SectionHeader title="Content" />
+        <ComponentContentList
+          component={component}
+          sectionId={sectionId}
+          typeSpecificContent={typeSpecificContent}
+          listDataContent={listDataContent}
+        />
       </div>
     );
   }

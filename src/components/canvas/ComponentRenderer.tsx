@@ -11,11 +11,9 @@ import {
 import type { ListThumbnailIcon } from '../../types/message';
 import { useMessageStore } from '../../store/messageStore';
 import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding } from '../../types/message';
-import { paddingToCss, parsePadding, uniformPaddingValue } from '../../types/message';
+import { paddingToCss, parsePadding, uniformPaddingValue, computeComponentItemOrder, CONTENT_ITEM_KEY } from '../../types/message';
 import { posters } from '../../data/posters';
 import { defaultTextStyles } from '../../data/defaults';
-
-const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 
 function HornIcon({ size = 20 }: { size?: number }) {
   return (
@@ -1106,21 +1104,20 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
   const cpSides = parsePadding(theme?.componentPadding);
   const settingsPadding = parsePadding(component.settings.settings.padding);
   const componentPadding = `${Math.max(2, cpSides[0] + settingsPadding[0] + 2)}px ${Math.max(2, cpSides[1] + settingsPadding[1] + 2)}px ${Math.max(2, cpSides[2] + settingsPadding[2] + 2)}px ${Math.max(2, cpSides[3] + settingsPadding[3] + 2)}px`;
-  const order: AttachmentKey[] = component.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
+  const contentOrder = computeComponentItemOrder(component);
 
-  const renderAttachment = (key: AttachmentKey, position: 'above' | 'below') => {
-    const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
-    if (key === 'callout' && component.callout?.enabled && component.callout.position === position) {
-      return <div key={`${key}-${position}`} style={spacing}><CalloutBadge callout={component.callout} /></div>;
+  const renderAttachment = (key: AttachmentKey) => {
+    if (key === 'callout' && component.callout?.enabled) {
+      return <div key={key} style={{ marginTop: 8, marginBottom: 8 }}><CalloutBadge callout={component.callout} /></div>;
     }
-    if (key === 'metadata' && component.metadata?.enabled && component.metadata.items.length > 0 && component.metadata.position === position) {
-      return <div key={`${key}-${position}`} style={spacing}><MetadataRow metadata={component.metadata} /></div>;
+    if (key === 'metadata' && component.metadata?.enabled && component.metadata.items.length > 0) {
+      return <div key={key} style={{ marginTop: 8, marginBottom: 8 }}><MetadataRow metadata={component.metadata} /></div>;
     }
-    if (key === 'liveBadge' && component.liveBadge?.enabled && component.liveBadge.position === position) {
-      return <div key={`${key}-${position}`} style={spacing}><LiveBadgeRow liveBadge={component.liveBadge} /></div>;
+    if (key === 'liveBadge' && component.liveBadge?.enabled) {
+      return <div key={key} style={{ marginTop: 8, marginBottom: 8 }}><LiveBadgeRow liveBadge={component.liveBadge} /></div>;
     }
-    if (key === 'countdown' && component.countdown?.enabled && component.countdown.position === position) {
-      return <div key={`${key}-${position}`} style={spacing}><CountdownBadge countdown={component.countdown} /></div>;
+    if (key === 'countdown' && component.countdown?.enabled) {
+      return <div key={key} style={{ marginTop: 8, marginBottom: 8 }}><CountdownBadge countdown={component.countdown} /></div>;
     }
     return null;
   };
@@ -1140,9 +1137,11 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         transition: 'outline var(--transition-fast), box-shadow var(--transition-fast)',
       }}
     >
-      {order.map((key) => renderAttachment(key, 'above'))}
-      {content}
-      {order.map((key) => renderAttachment(key, 'below'))}
+      {contentOrder.map((id) =>
+        id === CONTENT_ITEM_KEY
+          ? <div key={CONTENT_ITEM_KEY}>{content}</div>
+          : renderAttachment(id as AttachmentKey)
+      )}
     </div>
   );
 }

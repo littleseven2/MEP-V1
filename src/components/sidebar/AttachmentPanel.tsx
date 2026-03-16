@@ -1,6 +1,7 @@
 import { Megaphone, Tags, Radio, Timer } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown } from '../../types/message';
+import type { ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, AttachmentKey } from '../../types/message';
+import { computeSectionItemOrder } from '../../types/message';
 
 const defaultCallout: ComponentCallout = {
   enabled: false,
@@ -132,25 +133,41 @@ export function AttachmentPanel() {
         });
       }
     } else if (targetMode === 'section' && section) {
+      const key = itemId as AttachmentKey;
+      const currentOrder = computeSectionItemOrder(section);
+      const isInOrder = currentOrder.includes(key);
+
       if (itemId === 'callout') {
         const current = section.callout ?? defaultCallout;
+        const enabling = !current.enabled;
         updateSection(section.id, {
-          callout: { ...current, enabled: !current.enabled },
+          callout: { ...current, enabled: enabling },
+          ...(!isInOrder && enabling ? { sectionItemOrder: [...currentOrder, key] } : {}),
+          ...(isInOrder && !enabling ? { sectionItemOrder: currentOrder.filter((id) => id !== key) } : {}),
         });
       } else if (itemId === 'metadata') {
         const current = section.metadata ?? defaultMetadata;
+        const enabling = !current.enabled;
         updateSection(section.id, {
-          metadata: { ...current, enabled: !current.enabled },
+          metadata: { ...current, enabled: enabling },
+          ...(!isInOrder && enabling ? { sectionItemOrder: [...currentOrder, key] } : {}),
+          ...(isInOrder && !enabling ? { sectionItemOrder: currentOrder.filter((id) => id !== key) } : {}),
         });
       } else if (itemId === 'liveBadge') {
         const current = section.liveBadge ?? defaultLiveBadge;
+        const enabling = !current.enabled;
         updateSection(section.id, {
-          liveBadge: { ...current, enabled: !current.enabled },
+          liveBadge: { ...current, enabled: enabling },
+          ...(!isInOrder && enabling ? { sectionItemOrder: [...currentOrder, key] } : {}),
+          ...(isInOrder && !enabling ? { sectionItemOrder: currentOrder.filter((id) => id !== key) } : {}),
         });
       } else if (itemId === 'countdown') {
         const current = section.countdown ?? defaultCountdown;
+        const enabling = !current.enabled;
         updateSection(section.id, {
-          countdown: { ...current, enabled: !current.enabled },
+          countdown: { ...current, enabled: enabling },
+          ...(!isInOrder && enabling ? { sectionItemOrder: [...currentOrder, key] } : {}),
+          ...(isInOrder && !enabling ? { sectionItemOrder: currentOrder.filter((id) => id !== key) } : {}),
         });
       }
     }

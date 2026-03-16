@@ -177,11 +177,42 @@ export interface Section {
   liveBadge?: ComponentLiveBadge;
   countdown?: ComponentCountdown;
   attachmentOrder?: AttachmentKey[];
+  sectionItemOrder?: string[];
   order: number;
 }
 
 // Attachment key type for ordering
 export type AttachmentKey = 'callout' | 'metadata' | 'liveBadge' | 'countdown';
+
+export const ATTACHMENT_KEYS: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
+
+export function isAttachmentKey(key: string): key is AttachmentKey {
+  return ATTACHMENT_KEYS.includes(key as AttachmentKey);
+}
+
+export function computeSectionItemOrder(section: Section): string[] {
+  if (section.sectionItemOrder) return section.sectionItemOrder;
+  const order: AttachmentKey[] = section.attachmentOrder ?? ATTACHMENT_KEYS;
+  const above: string[] = [];
+  const below: string[] = [];
+  for (const key of order) {
+    const att = section[key];
+    if (att?.enabled) {
+      if (att.position === 'above') above.push(key);
+      else below.push(key);
+    }
+  }
+  const compIds = [...section.components]
+    .sort((a, b) => a.order - b.order)
+    .map((c) => c.id);
+  return [...above, ...compIds, ...below];
+}
+
+export function computeComponentItemOrder(component: MessageComponent): string[] {
+  if (component.contentItemOrder) return component.contentItemOrder;
+  const attOrder: AttachmentKey[] = component.attachmentOrder ?? ATTACHMENT_KEYS;
+  return [CONTENT_ITEM_KEY, ...attOrder];
+}
 
 // Text block element keys
 export type TextBlockElement = 'eyebrow' | 'headline' | 'body' | 'link' | 'callout';
@@ -409,6 +440,8 @@ export interface ComponentCountdown {
   position: 'above' | 'below';
 }
 
+export const CONTENT_ITEM_KEY = 'content';
+
 // Message component
 export interface MessageComponent {
   id: string;
@@ -421,6 +454,7 @@ export interface MessageComponent {
   liveBadge?: ComponentLiveBadge;
   countdown?: ComponentCountdown;
   attachmentOrder?: AttachmentKey[];
+  contentItemOrder?: string[];
   order: number;
 }
 

@@ -2,46 +2,58 @@ import React, { useState } from 'react';
 import { useMessageStore } from '../../store/messageStore';
 import { ComponentRenderer, CalloutBadge, MetadataRow, LiveBadgeRow, CountdownBadge } from './ComponentRenderer';
 import type { Section, AttachmentKey } from '../../types/message';
-import { addPadding, paddingToCss } from '../../types/message';
-
-const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
+import { addPadding, paddingToCss, computeSectionItemOrder, isAttachmentKey } from '../../types/message';
 
 interface SectionRendererProps {
   section: Section;
 }
 
-function renderSectionAttachment(section: Section, key: AttachmentKey, position: 'above' | 'below') {
-  const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
-  if (key === 'callout' && section.callout?.enabled && section.callout.position === position) {
-    return <div key={`${key}-${position}`} style={spacing}><CalloutBadge callout={section.callout} /></div>;
+function renderSectionAttachment(section: Section, key: AttachmentKey) {
+  if (key === 'callout' && section.callout?.enabled) {
+    return <div key={key} style={{ marginTop: 4, marginBottom: 4 }}><CalloutBadge callout={section.callout} /></div>;
   }
-  if (key === 'metadata' && section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === position) {
-    return <div key={`${key}-${position}`} style={spacing}><MetadataRow metadata={section.metadata} /></div>;
+  if (key === 'metadata' && section.metadata?.enabled && section.metadata.items.length > 0) {
+    return <div key={key} style={{ marginTop: 4, marginBottom: 4 }}><MetadataRow metadata={section.metadata} /></div>;
   }
-  if (key === 'liveBadge' && section.liveBadge?.enabled && section.liveBadge.position === position) {
-    return <div key={`${key}-${position}`} style={spacing}><LiveBadgeRow liveBadge={section.liveBadge} /></div>;
+  if (key === 'liveBadge' && section.liveBadge?.enabled) {
+    return <div key={key} style={{ marginTop: 4, marginBottom: 4 }}><LiveBadgeRow liveBadge={section.liveBadge} /></div>;
   }
-  if (key === 'countdown' && section.countdown?.enabled && section.countdown.position === position) {
-    return <div key={`${key}-${position}`} style={spacing}><CountdownBadge countdown={section.countdown} /></div>;
+  if (key === 'countdown' && section.countdown?.enabled) {
+    return <div key={key} style={{ marginTop: 4, marginBottom: 4 }}><CountdownBadge countdown={section.countdown} /></div>;
   }
   return null;
 }
 
 function SectionContentWithAttachments({ section }: { section: Section }) {
-  const order: AttachmentKey[] = section.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
+  const itemOrder = computeSectionItemOrder(section);
+  const compMap = new Map(section.components.map((c) => [c.id, c]));
+
+  const hasVisibleItems = itemOrder.some((id) => {
+    if (isAttachmentKey(id)) {
+      const att = section[id as AttachmentKey];
+      return att?.enabled;
+    }
+    return compMap.has(id);
+  });
+
+  if (!hasVisibleItems && section.components.length === 0) {
+    return (
+      <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
+        Empty section. Add components from the palette.
+      </div>
+    );
+  }
+
   return (
     <>
-      {order.map((key) => renderSectionAttachment(section, key, 'above'))}
-      {section.components.length === 0 ? (
-        <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: 14 }}>
-          Empty section. Add components from the palette.
-        </div>
-      ) : (
-        section.components
-          .sort((a, b) => a.order - b.order)
-          .map((comp) => <ComponentRenderer key={comp.id} component={comp} sectionId={section.id} />)
-      )}
-      {order.map((key) => renderSectionAttachment(section, key, 'below'))}
+      {itemOrder.map((id) => {
+        if (isAttachmentKey(id)) {
+          return renderSectionAttachment(section, id as AttachmentKey);
+        }
+        const comp = compMap.get(id);
+        if (!comp) return null;
+        return <ComponentRenderer key={comp.id} component={comp} sectionId={section.id} />;
+      })}
     </>
   );
 }

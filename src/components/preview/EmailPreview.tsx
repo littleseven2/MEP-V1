@@ -10,10 +10,8 @@ import {
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey, ListThumbnailIcon } from '../../types/message';
-import { paddingToCss, addPadding, parsePadding } from '../../types/message';
+import { paddingToCss, addPadding, parsePadding, computeSectionItemOrder, computeComponentItemOrder, isAttachmentKey, CONTENT_ITEM_KEY } from '../../types/message';
 import { posters } from '../../data/posters';
-
-const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 import { defaultTextStyles } from '../../data/defaults';
 
 const PREVIEW_ICON_MAP: Record<ListThumbnailIcon, React.ComponentType<{ size?: number }>> = {
@@ -528,29 +526,29 @@ function PreviewCountdown({ countdown }: { countdown: ComponentCountdown }) {
   );
 }
 
-function renderPreviewAttachment(section: Section, key: AttachmentKey, position: 'above' | 'below') {
-  const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
-  if (key === 'callout' && section.callout?.enabled && section.callout.position === position)
-    return <div key={`s-${key}-${position}`} style={spacing}><PreviewCalloutBadge callout={section.callout} /></div>;
-  if (key === 'metadata' && section.metadata?.enabled && section.metadata.items.length > 0 && section.metadata.position === position)
-    return <div key={`s-${key}-${position}`} style={spacing}><PreviewMetadataRow metadata={section.metadata} /></div>;
-  if (key === 'liveBadge' && section.liveBadge?.enabled && section.liveBadge.position === position)
-    return <div key={`s-${key}-${position}`} style={spacing}><PreviewLiveBadge liveBadge={section.liveBadge} /></div>;
-  if (key === 'countdown' && section.countdown?.enabled && section.countdown.position === position)
-    return <div key={`s-${key}-${position}`} style={spacing}><PreviewCountdown countdown={section.countdown} /></div>;
+function renderPreviewSectionAttachment(section: Section, key: AttachmentKey) {
+  const spacing = { marginTop: 4, marginBottom: 4 };
+  if (key === 'callout' && section.callout?.enabled)
+    return <div key={`s-${key}`} style={spacing}><PreviewCalloutBadge callout={section.callout} /></div>;
+  if (key === 'metadata' && section.metadata?.enabled && section.metadata.items.length > 0)
+    return <div key={`s-${key}`} style={spacing}><PreviewMetadataRow metadata={section.metadata} /></div>;
+  if (key === 'liveBadge' && section.liveBadge?.enabled)
+    return <div key={`s-${key}`} style={spacing}><PreviewLiveBadge liveBadge={section.liveBadge} /></div>;
+  if (key === 'countdown' && section.countdown?.enabled)
+    return <div key={`s-${key}`} style={spacing}><PreviewCountdown countdown={section.countdown} /></div>;
   return null;
 }
 
-function renderPreviewCompAttachment(c: MessageComponent, key: AttachmentKey, position: 'above' | 'below') {
-  const spacing = position === 'above' ? { marginBottom: 8 } : { marginTop: 8 };
-  if (key === 'callout' && c.callout?.enabled && c.callout.position === position)
-    return <div key={`c-${key}-${position}`} style={spacing}><PreviewCalloutBadge callout={c.callout} /></div>;
-  if (key === 'metadata' && c.metadata?.enabled && c.metadata.items.length > 0 && c.metadata.position === position)
-    return <div key={`c-${key}-${position}`} style={spacing}><PreviewMetadataRow metadata={c.metadata} /></div>;
-  if (key === 'liveBadge' && c.liveBadge?.enabled && c.liveBadge.position === position)
-    return <div key={`c-${key}-${position}`} style={spacing}><PreviewLiveBadge liveBadge={c.liveBadge} /></div>;
-  if (key === 'countdown' && c.countdown?.enabled && c.countdown.position === position)
-    return <div key={`c-${key}-${position}`} style={spacing}><PreviewCountdown countdown={c.countdown} /></div>;
+function renderPreviewCompAttachment(c: MessageComponent, key: AttachmentKey) {
+  const spacing = { marginTop: 4, marginBottom: 4 };
+  if (key === 'callout' && c.callout?.enabled)
+    return <div key={`c-${key}`} style={spacing}><PreviewCalloutBadge callout={c.callout} /></div>;
+  if (key === 'metadata' && c.metadata?.enabled && c.metadata.items.length > 0)
+    return <div key={`c-${key}`} style={spacing}><PreviewMetadataRow metadata={c.metadata} /></div>;
+  if (key === 'liveBadge' && c.liveBadge?.enabled)
+    return <div key={`c-${key}`} style={spacing}><PreviewLiveBadge liveBadge={c.liveBadge} /></div>;
+  if (key === 'countdown' && c.countdown?.enabled)
+    return <div key={`c-${key}`} style={spacing}><PreviewCountdown countdown={c.countdown} /></div>;
   return null;
 }
 
@@ -569,31 +567,42 @@ function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<T
       )}
       {section.type === 'content' && (
         <div style={{ padding: paddingToCss(sectionPadding) }}>
-          {(section.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER).map((key) =>
-            renderPreviewAttachment(section, key, 'above'),
-          )}
-          {section.components.length === 0 ? (
-            <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
-              Empty section
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {section.components.sort((a, b) => a.order - b.order).map((c) => {
-                const compOrder: AttachmentKey[] = c.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
-                const totalCompPadding = addPadding(componentPadding, c.settings.settings.padding);
-                return (
-                  <div key={c.id} style={parsePadding(totalCompPadding).some(v => v > 0) ? { padding: paddingToCss(totalCompPadding) } : undefined}>
-                    {compOrder.map((key) => renderPreviewCompAttachment(c, key, 'above'))}
-                    <PreviewComponent component={c} ts={ts} />
-                    {compOrder.map((key) => renderPreviewCompAttachment(c, key, 'below'))}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {(section.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER).map((key) =>
-            renderPreviewAttachment(section, key, 'below'),
-          )}
+          {(() => {
+            const itemOrder = computeSectionItemOrder(section);
+            const compMap = new Map(section.components.map((c) => [c.id, c]));
+            const hasItems = itemOrder.some((id) =>
+              isAttachmentKey(id) ? section[id as AttachmentKey]?.enabled : compMap.has(id)
+            );
+            if (!hasItems && section.components.length === 0) {
+              return (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-tertiary)', fontSize: 13 }}>
+                  Empty section
+                </div>
+              );
+            }
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {itemOrder.map((id) => {
+                  if (isAttachmentKey(id)) {
+                    return renderPreviewSectionAttachment(section, id as AttachmentKey);
+                  }
+                  const c = compMap.get(id);
+                  if (!c) return null;
+                  const compContentOrder = computeComponentItemOrder(c);
+                  const totalCompPadding = addPadding(componentPadding, c.settings.settings.padding);
+                  return (
+                    <div key={c.id} style={parsePadding(totalCompPadding).some(v => v > 0) ? { padding: paddingToCss(totalCompPadding) } : undefined}>
+                      {compContentOrder.map((itemId) =>
+                        itemId === CONTENT_ITEM_KEY
+                          ? <PreviewComponent key={CONTENT_ITEM_KEY} component={c} ts={ts} />
+                          : renderPreviewCompAttachment(c, itemId as AttachmentKey)
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
       {section.type === 'footer' && (

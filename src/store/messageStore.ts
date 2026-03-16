@@ -9,7 +9,9 @@ import type {
   ComponentType,
   ThemeConfig,
   ComponentSettings,
+  AttachmentKey,
 } from '../types/message';
+import { computeSectionItemOrder, isAttachmentKey } from '../types/message';
 import { getDefaultComponentSettings, defaultTextStyles } from '../data/defaults';
 
 const DEFAULT_THEME: ThemeConfig = {
@@ -120,6 +122,8 @@ interface MessageStore {
   updateComponentSettings: (sectionId: string, componentId: string, settings: ComponentSettings) => void;
   removeComponent: (sectionId: string, componentId: string) => void;
   reorderComponents: (sectionId: string, fromIndex: number, toIndex: number) => void;
+  reorderSectionItems: (sectionId: string, newOrder: string[]) => void;
+  reorderComponentItems: (sectionId: string, componentId: string, newOrder: string[]) => void;
   selectComponent: (componentId: string | null, sectionId?: string) => void;
   moveComponentUp: (sectionId: string, componentId: string) => void;
   moveComponentDown: (sectionId: string, componentId: string) => void;
@@ -334,13 +338,20 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
           const sections = [...state.message.sections];
           const originalIndex = sections.findIndex((s) => s.id === sectionId);
           const insertIndex = originalIndex + 1;
+          const idMap = new Map<string, string>();
+          const newComponents = section.components.map((c) => {
+            const newId = uuid();
+            idMap.set(c.id, newId);
+            return { ...JSON.parse(JSON.stringify(c)), id: newId };
+          });
+          const newItemOrder = section.sectionItemOrder
+            ? section.sectionItemOrder.map((id) => idMap.get(id) ?? id)
+            : undefined;
           const newSection: Section = {
             ...JSON.parse(JSON.stringify(section)),
             id: uuid(),
-            components: section.components.map((c) => ({
-              ...JSON.parse(JSON.stringify(c)),
-              id: uuid(),
-            })),
+            components: newComponents,
+            sectionItemOrder: newItemOrder,
             order: insertIndex,
           };
           sections.splice(insertIndex, 0, newSection);
@@ -366,9 +377,11 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
               attachments: [],
               order: s.components.length,
             };
+            const currentOrder = computeSectionItemOrder(s);
             return {
               ...s,
               components: [...s.components, newComponent],
+              sectionItemOrder: [...currentOrder, newComponent.id],
             };
           });
           const section = sections.find((s) => s.id === sectionId);
@@ -416,7 +429,9 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
             if (s.id !== sectionId) return s;
             const components = s.components.filter((c) => c.id !== componentId);
             components.forEach((c, i) => (c.order = i));
-            return { ...s, components };
+            const sectionItemOrder = (s.sectionItemOrder ?? computeSectionItemOrder(s))
+              .filter((id) => id !== componentId);
+            return { ...s, components, sectionItemOrder };
           });
           return {
             message: { ...state.message, sections },
@@ -438,6 +453,36 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
           return { message: { ...state.message, sections } };
         }),
 
+      reorderSectionItems: (sectionId, newOrder) =>
+        set((state) => {
+          if (!state.message) return {};
+          const sections = state.message.sections.map((s) => {
+            if (s.id !== sectionId) return s;
+            const compIds = newOrder.filter((id) => !isAttachmentKey(id));
+            const components = [...s.components];
+            compIds.forEach((id, i) => {
+              const comp = components.find((c) => c.id === id);
+              if (comp) comp.order = i;
+            });
+            return { ...s, sectionItemOrder: newOrder, components };
+          });
+          return { message: { ...state.message, sections } };
+        }),
+
+      reorderComponentItems: (sectionId, componentId, newOrder) =>
+        set((state) => {
+          if (!state.message) return {};
+          const sections = state.message.sections.map((s) => {
+            if (s.id !== sectionId) return s;
+            const components = s.components.map((c) => {
+              if (c.id !== componentId) return c;
+              return { ...c, contentItemOrder: newOrder };
+            });
+            return { ...s, components };
+          });
+          return { message: { ...state.message, sections } };
+        }),
+
       selectComponent: (componentId, sectionId) =>
         set((state) => ({
           selectedComponentId: componentId,
@@ -449,14 +494,20 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
           if (!state.message) return {};
           const section = state.message.sections.find((s) => s.id === sectionId);
           if (!section) return {};
-          const idx = section.components.findIndex((c) => c.id === componentId);
-          if (idx <= 0) return {};
+          const currentOrder = computeSectionItemOrder(section);
+          const orderIdx = currentOrder.indexOf(componentId);
+          if (orderIdx <= 0) return {};
+          const newOrder = [...currentOrder];
+          [newOrder[orderIdx - 1], newOrder[orderIdx]] = [newOrder[orderIdx], newOrder[orderIdx - 1]];
           const sections = state.message.sections.map((s) => {
             if (s.id !== sectionId) return s;
+            const compIds = newOrder.filter((id) => !isAttachmentKey(id));
             const components = [...s.components];
-            [components[idx - 1], components[idx]] = [components[idx], components[idx - 1]];
-            components.forEach((c, i) => (c.order = i));
-            return { ...s, components };
+            compIds.forEach((id, i) => {
+              const comp = components.find((c) => c.id === id);
+              if (comp) comp.order = i;
+            });
+            return { ...s, components, sectionItemOrder: newOrder };
           });
           return { message: { ...state.message, sections } };
         }),
@@ -466,14 +517,20 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
           if (!state.message) return {};
           const section = state.message.sections.find((s) => s.id === sectionId);
           if (!section) return {};
-          const idx = section.components.findIndex((c) => c.id === componentId);
-          if (idx < 0 || idx >= section.components.length - 1) return {};
+          const currentOrder = computeSectionItemOrder(section);
+          const orderIdx = currentOrder.indexOf(componentId);
+          if (orderIdx < 0 || orderIdx >= currentOrder.length - 1) return {};
+          const newOrder = [...currentOrder];
+          [newOrder[orderIdx], newOrder[orderIdx + 1]] = [newOrder[orderIdx + 1], newOrder[orderIdx]];
           const sections = state.message.sections.map((s) => {
             if (s.id !== sectionId) return s;
+            const compIds = newOrder.filter((id) => !isAttachmentKey(id));
             const components = [...s.components];
-            [components[idx], components[idx + 1]] = [components[idx + 1], components[idx]];
-            components.forEach((c, i) => (c.order = i));
-            return { ...s, components };
+            compIds.forEach((id, i) => {
+              const comp = components.find((c) => c.id === id);
+              if (comp) comp.order = i;
+            });
+            return { ...s, components, sectionItemOrder: newOrder };
           });
           return { message: { ...state.message, sections } };
         }),
@@ -496,7 +553,11 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
             const components = [...s.components];
             components.splice(compIndex + 1, 0, newComp);
             components.forEach((c, i) => (c.order = i));
-            return { ...s, components };
+            const currentOrder = computeSectionItemOrder(s);
+            const orderIdx = currentOrder.indexOf(componentId);
+            const newItemOrder = [...currentOrder];
+            newItemOrder.splice(orderIdx + 1, 0, newComp.id);
+            return { ...s, components, sectionItemOrder: newItemOrder };
           });
           return {
             message: { ...state.message, sections },
