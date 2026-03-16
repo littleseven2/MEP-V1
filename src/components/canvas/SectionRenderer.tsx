@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { useMessageStore } from '../../store/messageStore';
 import { ComponentRenderer, CalloutBadge, MetadataRow, LiveBadgeRow, CountdownBadge } from './ComponentRenderer';
 import type { Section, AttachmentKey } from '../../types/message';
@@ -50,10 +51,13 @@ export function SectionRenderer({ section }: SectionRendererProps) {
   const selectedComponentId = useMessageStore((s) => s.selectedComponentId);
   const selectSection = useMessageStore((s) => s.selectSection);
   const theme = useMessageStore((s) => s.message?.theme);
+  const [hovered, setHovered] = useState(false);
 
   const isActive = selectedSectionId === section.id;
   const isSectionOnly = isActive && !selectedComponentId;
   const sectionPadding = addPadding(section.padding, theme?.sectionPadding);
+  const isContent = section.type === 'content';
+  const showBars = isContent && (isActive || hovered);
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -64,6 +68,8 @@ export function SectionRenderer({ section }: SectionRendererProps) {
     <div
       data-section-id={section.id}
       onClick={handleClick}
+      onMouseEnter={isContent ? () => setHovered(true) : undefined}
+      onMouseLeave={isContent ? () => setHovered(false) : undefined}
       style={{
         position: 'relative',
         background: section.background.value,
@@ -71,12 +77,13 @@ export function SectionRenderer({ section }: SectionRendererProps) {
         borderRadius: section.backgroundRadius
           ? `${section.backgroundRadius[0]}px ${section.backgroundRadius[1]}px ${section.backgroundRadius[2]}px ${section.backgroundRadius[3]}px`
           : 0,
+        outline: showBars ? '2px solid var(--color-brand)' : '2px solid transparent',
+        outlineOffset: -2,
         boxShadow: [
-          isActive ? 'inset 2px 0 0 0 var(--color-brand)' : '',
           section.strokeWidth && section.strokeColor && section.strokeColor !== 'transparent'
             ? `inset 0 0 0 ${section.strokeWidth}px ${section.strokeColor}` : '',
         ].filter(Boolean).join(', ') || undefined,
-        transition: 'box-shadow var(--transition-fast)',
+        transition: 'outline-color var(--transition-fast), box-shadow var(--transition-fast)',
         fontFamily: 'var(--font-family)',
       }}
     >

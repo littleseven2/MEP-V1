@@ -481,7 +481,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
                 const IconComp = THUMBNAIL_ICON_MAP[tIcon] ?? Play;
                 const circleBg = settings.iconCircleBackground;
                 const circleCol = settings.iconCircleColor ?? '#E50914';
-                const circleSize = 60;
+                const circleSize = circleBg && settings.columns === 1 ? 120 : 60;
                 return (
                   <div style={{
                     width: '100%', aspectRatio: '16/9',
@@ -494,7 +494,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
                       background: circleBg ? circleCol : undefined,
                       color: circleBg ? '#fff' : undefined,
                     }}>
-                      <IconComp size={Math.round(circleSize * 0.45)} />
+                      <IconComp size={27} />
                     </div>
                   </div>
                 );

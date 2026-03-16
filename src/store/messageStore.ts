@@ -106,7 +106,7 @@ interface MessageStore {
   updateAttributes: (attrs: Partial<MessageAttributes>) => void;
   setTheme: (theme: ThemeConfig) => void;
 
-  addSection: (type?: SectionType) => void;
+  addSection: (type?: SectionType, insertAtIndex?: number) => void;
   updateSection: (sectionId: string, updates: Partial<Section>) => void;
   removeSection: (sectionId: string) => void;
   reorderSections: (fromIndex: number, toIndex: number) => void;
@@ -234,12 +234,17 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
           };
         }),
 
-      addSection: (type = 'content') =>
+      addSection: (type = 'content', insertAtIndex?: number) =>
         set((state) => {
           if (!state.message) return {};
           const sections = [...state.message.sections];
-          const footerIndex = sections.findIndex((s) => s.type === 'footer');
-          const insertIndex = footerIndex >= 0 ? footerIndex : sections.length;
+          let insertIndex: number;
+          if (insertAtIndex !== undefined) {
+            insertIndex = insertAtIndex;
+          } else {
+            const footerIndex = sections.findIndex((s) => s.type === 'footer');
+            insertIndex = footerIndex >= 0 ? footerIndex : sections.length;
+          }
           const newSection = createEmptySection(type, insertIndex);
           const alreadyHasPrimary = sections.some((s) => s.type === 'content' && s.isPrimary);
           if (alreadyHasPrimary) newSection.isPrimary = false;

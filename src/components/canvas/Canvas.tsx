@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Plus, ChevronUp, ChevronDown, Copy, Trash2, Star } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { paddingToCss } from '../../types/message';
+import type { Section } from '../../types/message';
 import { SectionRenderer } from './SectionRenderer';
 import { ControlButton } from './FloatingControls';
 
@@ -157,21 +158,36 @@ export const Canvas: React.FC = () => {
           scrollbarWidth: 'none', padding: paddingToCss(message.theme.emailPadding), borderRadius: 24, ...bgStyle,
         }}>
           {headerSection && <SectionRenderer section={headerSection} />}
-          {contentSections.map((s) => <SectionRenderer key={s.id} section={s} />)}
-          <button onClick={() => addSection()} style={{
-            margin: '8px 12px', padding: '32px 16px', background: 'transparent',
-            border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 'var(--radius-lg)',
-            color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)',
-            cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 'var(--space-2)', fontFamily: 'var(--font-family)',
-            transition: 'all var(--transition-normal)', width: 'calc(100% - 24px)',
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(229,77,77,0.4)'; e.currentTarget.style.color = 'var(--color-text-brand)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
-          >
-            <Plus size={18} strokeWidth={1.5} />
-            <span style={{ fontWeight: 500 }}>Add Section</span>
-          </button>
+          {contentSections.map((s) => (
+            <SectionWithInsert
+              key={s.id}
+              section={s}
+              onInsertAbove={() => {
+                const idx = message.sections.indexOf(s);
+                addSection('content', idx);
+              }}
+              onInsertBelow={() => {
+                const idx = message.sections.indexOf(s) + 1;
+                addSection('content', idx);
+              }}
+            />
+          ))}
+          {contentSections.length === 0 && (
+            <button onClick={() => addSection()} style={{
+              margin: '8px 12px', padding: '32px 16px', background: 'transparent',
+              border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 'var(--radius-lg)',
+              color: 'var(--color-text-tertiary)', fontSize: 'var(--font-size-sm)',
+              cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 'var(--space-2)', fontFamily: 'var(--font-family)',
+              transition: 'all var(--transition-normal)', width: 'calc(100% - 24px)',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(229,77,77,0.4)'; e.currentTarget.style.color = 'var(--color-text-brand)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--color-text-tertiary)'; }}
+            >
+              <Plus size={18} strokeWidth={1.5} />
+              <span style={{ fontWeight: 500 }}>Add Section</span>
+            </button>
+          )}
           {footerSection && <SectionRenderer section={footerSection} />}
         </div>
       </div>
@@ -196,6 +212,80 @@ export const Canvas: React.FC = () => {
           />
         )}
       </div>
+    </div>
+  );
+};
+
+const SectionWithInsert: React.FC<{
+  section: Section;
+  onInsertAbove: () => void;
+  onInsertBelow: () => void;
+}> = ({ section, onInsertAbove, onInsertBelow }) => {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{ position: 'relative' }}
+    >
+      {hovered && <AddSectionBtn position="top" onClick={onInsertAbove} />}
+      <SectionRenderer section={section} />
+      {hovered && <AddSectionBtn position="bottom" onClick={onInsertBelow} />}
+    </div>
+  );
+};
+
+const AddSectionBtn: React.FC<{ position: 'top' | 'bottom'; onClick: () => void }> = ({ position, onClick }) => {
+  const [btnHovered, setBtnHovered] = useState(false);
+  return (
+    <div style={{
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      [position === 'top' ? 'top' : 'bottom']: 0,
+      transform: position === 'top' ? 'translateY(-50%)' : 'translateY(50%)',
+      zIndex: 10,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      pointerEvents: 'none',
+    }}>
+      <div style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        height: 2,
+        borderRadius: 1,
+        background: 'var(--color-brand)',
+        transition: 'opacity 0.15s ease',
+        opacity: btnHovered ? 1 : 0.6,
+      }} />
+      <button
+        onMouseEnter={() => setBtnHovered(true)}
+        onMouseLeave={() => setBtnHovered(false)}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        style={{
+          position: 'relative',
+          pointerEvents: 'auto',
+          padding: '8px 16px',
+          borderRadius: 'var(--radius-md)',
+          fontSize: 'var(--font-size-md)',
+          fontWeight: 500,
+          cursor: 'pointer',
+          transition: 'all var(--transition-fast)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          border: 'none',
+          fontFamily: 'var(--font-family)',
+          background: btnHovered ? 'var(--color-brand-hover)' : 'var(--color-brand)',
+          color: '#fff',
+          boxShadow: btnHovered ? 'var(--shadow-brand)' : 'none',
+        }}
+      >
+        <Plus size={14} strokeWidth={2} />
+        Add Section
+      </button>
     </div>
   );
 };

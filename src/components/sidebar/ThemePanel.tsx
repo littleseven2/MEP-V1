@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Check, Plus, MoreVertical, Trash2, Copy, ChevronRight, Link2, Unlink2 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import { defaultThemes, defaultTextStyles } from '../../data/defaults';
+import { defaultThemes, defaultTextStyles, gradientPresets } from '../../data/defaults';
 import type { ThemeConfig, TextStyleKey, TextStyle, Padding } from '../../types/message';
+import type { BackgroundConfig } from '../../types/message';
 import { parsePadding, isUniformPadding, uniformPaddingValue } from '../../types/message';
 import { Select, Input } from '../../ui';
 
@@ -474,6 +475,23 @@ export function ThemePropertiesPanel({
           <ColorRow label="Text" value={theme.colors.text} onChange={(v) => updateColor('text', v)} />
           <ColorRow label="Secondary text" value={theme.colors.secondary} onChange={(v) => updateColor('secondary', v)} />
         </div>
+      </StyleSection>
+
+      {/* Email Background */}
+      <StyleSection
+        title="Email Background"
+        preview={
+          <div style={{
+            width: 32, height: 32, borderRadius: 6,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: theme.background.value,
+          }} />
+        }
+      >
+        <EmailBackgroundControl
+          value={theme.background}
+          onChange={(bg) => onUpdate({ background: bg })}
+        />
       </StyleSection>
 
       {/* Spacing */}
@@ -1121,6 +1139,100 @@ function ColorRow({ label, value, onChange }: { label: string; value: string; on
           }}
         />
       </div>
+    </div>
+  );
+}
+
+function isGradientValue(v: string) {
+  return v.startsWith('linear-gradient(') || v.startsWith('radial-gradient(');
+}
+
+const bgTabStyle = (active: boolean): React.CSSProperties => ({
+  flex: 1,
+  padding: '5px 0',
+  fontSize: 11,
+  fontWeight: 600,
+  fontFamily: 'var(--font-family)',
+  border: 'none',
+  borderRadius: 5,
+  cursor: 'pointer',
+  background: active ? 'var(--color-bg-hover)' : 'transparent',
+  color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+  transition: 'var(--transition-fast)',
+});
+
+function EmailBackgroundControl({ value, onChange }: {
+  value: BackgroundConfig;
+  onChange: (bg: BackgroundConfig) => void;
+}) {
+  const isGrad = isGradientValue(value.value);
+  const mode: 'solid' | 'gradient' = isGrad ? 'gradient' : 'solid';
+
+  const switchMode = (m: 'solid' | 'gradient') => {
+    if (m === mode) return;
+    if (m === 'gradient') {
+      onChange({ type: 'gradient', value: gradientPresets[0].value });
+    } else {
+      onChange({ type: 'solid', value: '#000000' });
+    }
+  };
+
+  const activePreset = isGrad ? gradientPresets.find((p) => p.value === value.value) : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--color-bg-tertiary)', borderRadius: 7, border: '1px solid var(--color-border-default)' }}>
+        <button type="button" onClick={() => switchMode('solid')} style={bgTabStyle(mode === 'solid')}>Solid</button>
+        <button type="button" onClick={() => switchMode('gradient')} style={bgTabStyle(mode === 'gradient')}>Gradient</button>
+      </div>
+      {mode === 'solid' ? (
+        <ColorRow
+          label="Color"
+          value={value.value}
+          onChange={(v) => onChange({ type: 'solid', value: v })}
+        />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{
+            height: 48, borderRadius: 6, border: '1px solid var(--color-border-default)',
+            background: value.value,
+          }} />
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, 1fr)',
+            gap: 6,
+          }}>
+            {gradientPresets.map((preset) => {
+              const isActive = preset.value === value.value;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  title={preset.name}
+                  onClick={() => onChange({ type: 'gradient', value: preset.value })}
+                  style={{
+                    width: '100%',
+                    aspectRatio: '1',
+                    borderRadius: 6,
+                    border: isActive ? '2px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                    background: preset.value,
+                    cursor: 'pointer',
+                    padding: 0,
+                    outline: isActive ? '1px solid var(--color-brand)' : 'none',
+                    outlineOffset: 1,
+                    transition: 'var(--transition-fast)',
+                  }}
+                />
+              );
+            })}
+          </div>
+          {activePreset && (
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-family)', textAlign: 'center' }}>
+              {activePreset.name}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

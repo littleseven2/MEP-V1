@@ -11,6 +11,7 @@ import {
 import { useMessageStore } from '../../store/messageStore';
 import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey, ListThumbnailIcon } from '../../types/message';
 import { paddingToCss, addPadding, parsePadding } from '../../types/message';
+import { posters } from '../../data/posters';
 
 const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 import { defaultTextStyles } from '../../data/defaults';
@@ -93,11 +94,11 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
   if (component.settings.type === 'media') {
     return (
       <div style={{
-        width: '100%', aspectRatio: '16/9',
-        background: 'linear-gradient(135deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 100%)',
-        borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '100%',
+        borderRadius: 8, overflow: 'hidden',
+        background: 'rgba(255,255,255,0.08)',
       }}>
-        <span style={{ color: 'var(--color-text-tertiary)', fontSize: 12 }}>Media</span>
+        <img src={posters[0].image} alt={posters[0].title} style={{ width: '100%', height: 'auto', display: 'block' }} />
       </div>
     );
   }
@@ -147,17 +148,23 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
     const gapPx = s.gap ?? 8;
     const fallbackRadius = s.cellStyle?.imageRadius ?? s.itemRadius ?? 8;
     const mode = s.splitMode ?? 'row';
-    const cellStyle = { aspectRatio: '1', background: 'var(--color-bg-tertiary)', borderRadius: fallbackRadius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: 'var(--color-text-tertiary)' } as React.CSSProperties;
     let n = 0;
     if (mode === 'column') {
       const cols = s.cols ?? [2, 2, 2];
       const maxRows = Math.max(...cols);
-      const colCellStyle = { ...cellStyle, flex: 1, minHeight: 0, aspectRatio: undefined } as React.CSSProperties;
       return (
         <div style={{ display: 'flex', gap: gapPx, alignItems: 'stretch', height: maxRows * 60 + (maxRows - 1) * gapPx }}>
           {cols.map((rowCount, ci) => (
             <div key={ci} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: gapPx }}>
-              {Array.from({ length: rowCount }).map(() => { n++; return <div key={n} style={colCellStyle}>{n}</div>; })}
+              {Array.from({ length: rowCount }).map(() => {
+                n++;
+                const poster = posters[(n - 1) % posters.length];
+                return (
+                  <div key={n} style={{ flex: 1, minHeight: 0, borderRadius: fallbackRadius, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}>
+                    <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
@@ -168,7 +175,15 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
       <div style={{ display: 'flex', flexDirection: 'column', gap: gapPx }}>
         {rows.map((colCount, ri) => (
           <div key={ri} style={{ display: 'grid', gridTemplateColumns: `repeat(${colCount}, 1fr)`, gap: gapPx }}>
-            {Array.from({ length: colCount }).map(() => { n++; return <div key={n} style={cellStyle}>{n}</div>; })}
+            {Array.from({ length: colCount }).map(() => {
+              n++;
+              const poster = posters[(n - 1) % posters.length];
+              return (
+                <div key={n} style={{ aspectRatio: '2/3', borderRadius: fallbackRadius, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}>
+                  <img src={poster.image} alt={poster.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
@@ -199,13 +214,40 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
                 const IC = PREVIEW_ICON_MAP[item.thumbnailIcon ?? s.thumbnailIcon ?? 'play'] ?? Play;
                 const circleBg = s.iconCircleBackground;
                 const circleCol = s.iconCircleColor ?? '#E50914';
+                if (isStacked) {
+                  const circleSize = circleBg && s.columns === 1 ? 120 : 60;
+                  return (
+                    <div style={{ width: '100%', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{
+                        width: circleSize, height: circleSize,
+                        borderRadius: circleBg ? '50%' : 8,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: circleBg ? circleCol : undefined,
+                        color: circleBg ? '#fff' : 'var(--color-text-secondary)',
+                      }}>
+                        <IC size={27} />
+                      </div>
+                    </div>
+                  );
+                }
                 return (
-                  <div style={{ width: isStacked ? '100%' : 48, height: isStacked ? undefined : 48, aspectRatio: isStacked ? '16/9' : undefined, borderRadius: circleBg ? '50%' : 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: circleBg ? '#fff' : 'var(--color-text-secondary)', background: circleBg ? circleCol : undefined }}>
+                  <div style={{ width: 48, height: 48, borderRadius: circleBg ? '50%' : 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: circleBg ? '#fff' : 'var(--color-text-secondary)', background: circleBg ? circleCol : undefined }}>
                     <IC size={20} />
                   </div>
                 );
               }
-              return <div style={{ width: isStacked ? '100%' : 48, height: isStacked ? undefined : 48, aspectRatio: isStacked ? '16/9' : undefined, background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0 }} />;
+              if (isStacked) {
+                return (
+                  <div style={{ width: '100%', aspectRatio: '16/9', background: 'var(--color-bg-tertiary)', borderRadius: 8, overflow: 'hidden' }}>
+                    <img src={posters[i % posters.length].image} alt={posters[i % posters.length].title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  </div>
+                );
+              }
+              return (
+                <div style={{ width: 48, height: 48, background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0, overflow: 'hidden' }}>
+                  <img src={posters[i % posters.length].image} alt={posters[i % posters.length].title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                </div>
+              );
             })()}
             <div style={{ textAlign: isStacked ? align : undefined }}>
               {(s.showTitle ?? true) && <div style={{ fontWeight: 500, fontSize: 14 }}>{item.title}</div>}
@@ -588,6 +630,7 @@ export function EmailPreview({ onClose }: EmailPreviewProps) {
 
   const outerWidth = device === 'desktop' ? 680 : 400;
   const innerWidth = device === 'desktop' ? 600 : 375;
+  const emailBodyPadding = (outerWidth - innerWidth) / 2;
   const ts = message.theme.typography.textStyles ?? defaultTextStyles;
 
   return (
@@ -681,11 +724,8 @@ export function EmailPreview({ onClose }: EmailPreviewProps) {
           </div>
 
           <div style={{
-            width: innerWidth,
-            maxWidth: '100%',
-            margin: '0 auto',
             background: message.theme.background.value,
-            padding: paddingToCss(message.theme.emailPadding),
+            padding: `${emailBodyPadding}px`,
             transition: 'width var(--transition-slow)',
           }}>
             {message.sections.map((section) => (
