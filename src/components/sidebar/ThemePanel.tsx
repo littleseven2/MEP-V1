@@ -16,7 +16,13 @@ function loadSavedThemes(): ThemeConfig[] | null {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as ThemeConfig[];
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map((t) => {
+        if (t.id === 'default-dark') return { ...t, id: 'default', name: 'Default' };
+        if (t.id === 'netflix-red') return { ...t, id: 'valentines-day', name: "Valentine's Day" };
+        return t;
+      });
+    }
   } catch { /* ignore corrupt data */ }
   return null;
 }
@@ -80,6 +86,7 @@ export function useThemeManager() {
         textStyles: { ...defaultTextStyles },
       },
       spacing: 'normal',
+      alignment: 'left',
       emailPadding: 0,
       sectionPadding: 0,
       componentPadding: 0,
@@ -401,9 +408,9 @@ export function ThemePropertiesPanel({
         </div>
       </div>
 
-      {/* Fonts */}
+      {/* Typography */}
       <StyleSection
-        title="Fonts"
+        title="Typography"
         preview={
           <div>
             <div style={{
@@ -525,9 +532,31 @@ export function ThemePropertiesPanel({
         />
       </StyleSection>
 
-      {/* Spacing */}
+      {/* Alignment */}
       <StyleSection
-        title="Spacing"
+        title="Alignment"
+        defaultOpen
+        preview={
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)', textTransform: 'capitalize' }}>
+            {theme.alignment ?? 'left'}
+          </span>
+        }
+      >
+        <Select
+          label="Content alignment"
+          options={[
+            { value: 'left', label: 'Left' },
+            { value: 'center', label: 'Center' },
+            { value: 'right', label: 'Right' },
+          ]}
+          value={theme.alignment ?? 'left'}
+          onChange={(v) => onUpdate({ alignment: v as ThemeConfig['alignment'] })}
+        />
+      </StyleSection>
+
+      {/* Padding */}
+      <StyleSection
+        title="Padding"
         preview={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <span style={{
@@ -570,28 +599,6 @@ export function ThemePropertiesPanel({
             label="Component padding"
             value={theme.componentPadding ?? 0}
             onChange={(v) => onUpdate({ componentPadding: v })}
-          />
-        </div>
-      </StyleSection>
-
-      {/* Image Block */}
-      <StyleSection
-        title="Image Block"
-        preview={
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-              {theme.radius} radius
-            </span>
-          </div>
-        }
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Input
-            label="Image radius"
-            fullWidth
-            value={theme.radius}
-            onChange={(e) => onUpdate({ radius: e.target.value })}
-            placeholder="e.g. 8px"
           />
         </div>
       </StyleSection>

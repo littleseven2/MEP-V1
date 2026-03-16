@@ -1081,6 +1081,8 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
   const s = component.settings.settings;
   const bgColor = s.backgroundColor ?? 'transparent';
   const bgRadius = s.backgroundRadius ?? [0, 0, 0, 0];
+  const compType = component.settings.type;
+  const themeAlign = (compType === 'text-block' || compType === 'list') ? (theme?.alignment ?? 'left') : undefined;
 
   const renderAttachment = (key: AttachmentKey) => {
     if (key === 'callout' && component.callout?.enabled) {
@@ -1108,6 +1110,7 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
         borderRadius: `${bgRadius[0]}px ${bgRadius[1]}px ${bgRadius[2]}px ${bgRadius[3]}px`,
         background: bgColor,
         ...strokeStyle(s.strokeColor, s.strokeWidth),
+        textAlign: themeAlign,
         fontFamily: 'var(--font-family)',
         outline: isSelected ? '2px solid rgba(229,77,77,0.4)' : '2px solid transparent',
         boxShadow: isSelected ? '0 0 0 4px rgba(229,77,77,0.2)' : 'none',

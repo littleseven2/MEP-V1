@@ -145,6 +145,7 @@ export interface ThemeConfig {
     textStyles: Record<TextStyleKey, TextStyle>;
   };
   spacing: 'compact' | 'normal' | 'relaxed';
+  alignment: 'left' | 'center' | 'right';
   emailPadding: Padding;
   sectionPadding: Padding;
   componentPadding: Padding;

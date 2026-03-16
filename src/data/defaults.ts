@@ -117,8 +117,8 @@ export const packageTypes: SelectOption[] = [
 // Default themes
 export const defaultThemes: ThemeConfig[] = [
   {
-    id: 'default-dark',
-    name: 'Default Dark',
+    id: 'default',
+    name: 'Default',
     radius: '8px',
     colors: {
       primary: '#E50914',
@@ -132,6 +132,7 @@ export const defaultThemes: ThemeConfig[] = [
       textStyles: { ...defaultTextStyles },
     },
     spacing: 'normal',
+    alignment: 'left',
     emailPadding: 0,
     sectionPadding: 16,
     componentPadding: 0,
@@ -142,8 +143,8 @@ export const defaultThemes: ThemeConfig[] = [
     },
   },
   {
-    id: 'netflix-red',
-    name: 'Netflix Red',
+    id: 'valentines-day',
+    name: "Valentine's Day",
     radius: '4px',
     colors: {
       primary: '#E50914',
@@ -157,6 +158,7 @@ export const defaultThemes: ThemeConfig[] = [
       textStyles: { ...defaultTextStyles },
     },
     spacing: 'compact',
+    alignment: 'center',
     emailPadding: 0,
     sectionPadding: 16,
     componentPadding: 0,
