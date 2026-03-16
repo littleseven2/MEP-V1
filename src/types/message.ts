@@ -76,6 +76,18 @@ export type GridLayout =
 // List layout options
 export type ListLayout = 'chapters' | 'episodes' | 'schedules';
 
+// List thumbnail type
+export type ListThumbnailType = 'image' | 'icon';
+
+// Available icons for list thumbnails
+export type ListThumbnailIcon =
+  | 'play' | 'film' | 'tv' | 'music' | 'gamepad-2' | 'clapperboard'
+  | 'star' | 'heart' | 'bookmark' | 'award' | 'trophy' | 'gem'
+  | 'clock' | 'calendar' | 'bell' | 'zap' | 'flame' | 'sparkles'
+  | 'user' | 'users' | 'globe' | 'map-pin' | 'compass' | 'navigation'
+  | 'download' | 'share-2' | 'external-link' | 'link' | 'eye' | 'search'
+  | 'check-circle' | 'info' | 'alert-circle' | 'shield' | 'lock' | 'unlock';
+
 // Background configuration
 export interface BackgroundConfig {
   type: 'solid' | 'gradient' | 'blur' | 'image';
@@ -290,6 +302,7 @@ export interface ListItem {
   title: string;
   subtitle?: string;
   metadata?: string;
+  thumbnailIcon?: ListThumbnailIcon;
   style?: ListItemStyle;
 }
 
@@ -302,9 +315,14 @@ export interface ListSettings {
   showMetadata: boolean;
   showThumbnail: boolean;
   showDivider: boolean;
+  thumbnailType: ListThumbnailType;
+  thumbnailIcon: ListThumbnailIcon;
   thumbnailRadius: number;
+  iconCircleBackground: boolean;
+  iconCircleColor: string;
   itemCount: 'all' | number;
   items: ListItem[];
+  textAlign: 'left' | 'center' | 'right';
   itemStyleMode: 'whole' | 'individual';
   itemStyle: ListItemStyle;
   padding: Padding;
@@ -314,8 +332,11 @@ export interface ListSettings {
   strokeWidth: number;
 }
 
-// Callout icon options
+// Callout icon options (legacy, kept for text-block callout field)
 export type CalloutIcon = 'horn' | 'info' | 'star' | 'alert';
+
+// Callout attachment variant
+export type CalloutVariant = 'A' | 'B' | 'C' | 'D';
 
 // Rich text settings
 export interface RichTextSettings {
@@ -354,7 +375,7 @@ export type LinkedValues = Record<string, LinkedValue>;
 export interface ComponentCallout {
   enabled: boolean;
   text: string;
-  icon: CalloutIcon;
+  variant: CalloutVariant;
   position: 'above' | 'below';
 }
 

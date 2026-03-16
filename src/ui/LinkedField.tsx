@@ -387,11 +387,13 @@ export function LinkedWrapper({
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       {label && <label style={labelStyle}>{label}</label>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           {children}
         </div>
-        <LinkButton onClick={() => setPickerOpen(true)} />
+        <div style={{ height: 36, display: 'flex', alignItems: 'center' }}>
+          <LinkButton onClick={() => setPickerOpen(true)} />
+        </div>
       </div>
       {pickerOpen && <VariablePicker groups={groups} onSelect={handleSelect} activeKey={linked?.variableKey} />}
     </div>

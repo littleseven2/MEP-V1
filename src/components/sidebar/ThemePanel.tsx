@@ -320,13 +320,13 @@ export function ThemePropertiesPanel({
           Themes
         </div>
         <div style={{
-          background: theme.colors.background,
+          background: 'transparent',
           borderRadius: parseInt(theme.radius) || 8,
           padding: '12px 14px',
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
-          border: '1px solid rgba(255,255,255,0.06)',
+          justifyContent: 'space-between',
+          border: 'none',
           overflow: 'hidden',
         }}>
           <span style={{
@@ -340,7 +340,7 @@ export function ThemePropertiesPanel({
           }}>
             Aa
           </span>
-          <div style={{ display: 'flex', gap: 2, flexShrink: 0 }}>
+          <div style={{ display: 'flex', flexShrink: 0 }}>
             {[theme.colors.secondary, theme.colors.background, theme.colors.text].map((c, i) => (
               <div key={i} style={{
                 width: 24,
@@ -351,7 +351,6 @@ export function ThemePropertiesPanel({
               }} />
             ))}
           </div>
-          <div style={{ flex: 1 }} />
           <div style={{
             background: theme.colors.primary,
             color: theme.colors.text,
@@ -447,7 +446,7 @@ export function ThemePropertiesPanel({
       <StyleSection
         title="Colors"
         preview={
-          <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'flex' }}>
             {([
               { c: theme.colors.primary, label: 'Primary' },
               { c: theme.colors.secondary, label: 'Secondary' },
@@ -531,22 +530,6 @@ export function ThemePropertiesPanel({
         title="Image Block"
         preview={
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{
-              width: 40,
-              height: 28,
-              borderRadius: Math.min(6, parseInt(theme.radius) || 8),
-              background: `linear-gradient(135deg, ${theme.colors.primary}44, ${theme.colors.primary}22)`,
-              border: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <path d="m21 15-5-5L5 21" />
-              </svg>
-            </div>
             <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
               {theme.radius} radius
             </span>
@@ -568,17 +551,9 @@ export function ThemePropertiesPanel({
       <StyleSection
         title="Radius"
         preview={
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <div style={{
-              width: 24,
-              height: 24,
-              borderRadius: parseInt(theme.radius) || 8,
-              border: '2px solid var(--color-text-secondary)',
-            }} />
-            <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
-              {theme.radius}
-            </span>
-          </div>
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'var(--font-family)' }}>
+            {theme.radius}
+          </span>
         }
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -607,11 +582,6 @@ const bodyStyleEntries: [TextStyleKey, string][] = [
   ['body', 'Body'],
   ['label', 'Label'],
   ['legal', 'Legal'],
-];
-
-const textStyleEntries: [TextStyleKey, string][] = [
-  ...headingStyleEntries,
-  ...bodyStyleEntries,
 ];
 
 function TypeScaleGroup({

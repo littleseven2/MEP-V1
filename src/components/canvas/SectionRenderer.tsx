@@ -65,29 +65,37 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       data-section-id={section.id}
       onClick={handleClick}
       style={{
-        borderLeft: isActive ? '2px solid var(--color-brand)' : 'none',
+        position: 'relative',
         background: section.background.value,
         padding: paddingToCss(sectionPadding),
         borderRadius: section.backgroundRadius
           ? `${section.backgroundRadius[0]}px ${section.backgroundRadius[1]}px ${section.backgroundRadius[2]}px ${section.backgroundRadius[3]}px`
           : 0,
-        ...(section.strokeWidth && section.strokeColor && section.strokeColor !== 'transparent'
-          ? { boxShadow: `inset 0 0 0 ${section.strokeWidth}px ${section.strokeColor}` }
-          : {}),
-        transition: 'border-color var(--transition-fast)',
+        boxShadow: [
+          isActive ? 'inset 2px 0 0 0 var(--color-brand)' : '',
+          section.strokeWidth && section.strokeColor && section.strokeColor !== 'transparent'
+            ? `inset 0 0 0 ${section.strokeWidth}px ${section.strokeColor}` : '',
+        ].filter(Boolean).join(', ') || undefined,
+        transition: 'box-shadow var(--transition-fast)',
         fontFamily: 'var(--font-family)',
       }}
     >
       {isActive && (
         <div
           style={{
-            padding: '6px 12px',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            transform: 'translateY(-100%)',
+            padding: '4px 12px',
             background: 'linear-gradient(90deg, var(--color-brand-subtle) 0%, transparent 100%)',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             fontSize: 12,
             color: isSectionOnly ? 'var(--color-text-secondary)' : 'rgba(255,255,255,0.35)',
+            pointerEvents: 'none',
           }}
         >
           <span style={{ textTransform: 'capitalize' }}>Section</span>
@@ -99,30 +107,35 @@ export function SectionRenderer({ section }: SectionRendererProps) {
           <div
             style={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              padding: '12px 0',
-              borderBottom: '1px solid rgba(255,255,255,0.15)',
+              justifyContent: 'center',
+              padding: '16px 0',
             }}
           >
-            <span style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>
-              Netflix
-            </span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>
-              View in Browser
-            </span>
+            <img src="/n-symbol.png" alt="N" style={{ width: 28, height: 51, objectFit: 'contain', display: 'block' }} />
           </div>
         )}
 
         {section.type === 'footer' && (
-          <div
-            style={{
-              padding: '12px 0',
-              fontSize: 11,
-              color: 'rgba(255,255,255,0.4)',
-            }}
-          >
-            Unsubscribe · Privacy · Help Center
+          <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', justifyContent: 'center' }}>
+            <img src="/n-symbol.png" alt="N" style={{ width: 17, height: 30, objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'var(--font-family)', fontSize: 12, lineHeight: '18px' }}>
+              <div>
+                <p style={{ margin: 0, color: '#fff' }}>Call 1-866-579-7172</p>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)' }}>100 Winchester Circle</p>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)' }}>Los Gatos, California</p>
+                <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)' }}>95032, U.S.A.</p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: 12, lineHeight: '18px' }}>Unsubscribe</a>
+                <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: 12, lineHeight: '18px' }}>Terms of Use</a>
+                <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: 12, lineHeight: '18px' }}>Privacy</a>
+                <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: 12, lineHeight: '18px' }}>Help Center</a>
+              </div>
+              <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)', fontSize: 12, lineHeight: '18px' }}>
+                This message was mailed to you by Netflix as part of your Netflix membership.
+              </p>
+            </div>
           </div>
         )}
 

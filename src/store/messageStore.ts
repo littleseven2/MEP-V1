@@ -88,7 +88,11 @@ function createMessageWithDefaults(attributes: Partial<MessageAttributes>): Mess
 
 interface MessageStore {
   view: AppView;
+  viewHistory: AppView[];
+  viewFuture: AppView[];
   setView: (view: AppView) => void;
+  goBack: () => void;
+  goForward: () => void;
   message: Message | null;
   selectedSectionId: string | null;
   selectedComponentId: string | null;
@@ -124,18 +128,38 @@ import { create } from 'zustand';
 export const useMessageStore = create<MessageStore>((set) =>
     ({
       view: 'home' as AppView,
-      setView: (view) => set(() => ({ view })),
+      viewHistory: [] as AppView[],
+      viewFuture: [] as AppView[],
+      setView: (view) => set((state) => ({
+        viewHistory: [...state.viewHistory, state.view],
+        viewFuture: [],
+        view,
+      })),
+      goBack: () => set((state) => {
+        if (state.viewHistory.length === 0) return {};
+        const history = [...state.viewHistory];
+        const prev = history.pop()!;
+        return { view: prev, viewHistory: history, viewFuture: [state.view, ...state.viewFuture] };
+      }),
+      goForward: () => set((state) => {
+        if (state.viewFuture.length === 0) return {};
+        const future = [...state.viewFuture];
+        const next = future.shift()!;
+        return { view: next, viewHistory: [...state.viewHistory, state.view], viewFuture: future };
+      }),
 
       message: null,
       selectedSectionId: null,
       selectedComponentId: null,
 
       createMessage: (attributes = {}) =>
-        set(() => {
+        set((state) => {
           const message = createMessageWithDefaults(attributes);
           return {
             message,
             view: 'builder' as AppView,
+            viewHistory: [...state.viewHistory, state.view],
+            viewFuture: [],
             selectedSectionId: null,
             selectedComponentId: null,
           };
@@ -431,7 +455,7 @@ export const useMessageStore = create<MessageStore>((set) =>
         }),
 
       duplicateMessage: (message) =>
-        set(() => {
+        set((state) => {
           const dup: Message = {
             ...JSON.parse(JSON.stringify(message)),
             id: uuid(),
@@ -449,6 +473,8 @@ export const useMessageStore = create<MessageStore>((set) =>
           return {
             message: dup,
             view: 'builder' as AppView,
+            viewHistory: [...state.viewHistory, state.view],
+            viewFuture: [],
             selectedSectionId: null,
             selectedComponentId: null,
           };

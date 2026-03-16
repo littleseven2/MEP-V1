@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56" fill="none">
+  <!-- Bottom left leaf -->
+  <svg x="0" y="30.856" width="28" height="15.512" viewBox="0 0 28 15.512" overflow="visible">
+    <g filter="url(#f7)">
+      <path d="M15.904 4.48C14.5623 3.08129 12.9548 1.96455 11.1758 1.19526C9.39679 0.425961 7.4821 0.0196011 5.544 0H0C1.12 8.932 8.008 15.512 16.128 15.512H28L15.904 4.424V4.48Z" fill="url(#gr7)"/>
+    </g>
+    <defs>
+      <filter id="f7" x="0" y="-2.8" width="30.8" height="18.312" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="2.8" dy="-2.8"/><feGaussianBlur stdDeviation="2.8"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+      <radialGradient id="gr7" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(34.2329 33.8666) rotate(-122.3) scale(61.1223 126.329)">
+        <stop offset="0.18" stop-color="#C14D1C"/><stop offset="0.71" stop-color="#FFCE84"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Left outer leaf -->
+  <svg x="0.924" y="10.696" width="17.556" height="27.692" viewBox="0 0 17.5544 27.692" overflow="visible">
+    <g filter="url(#f6)">
+      <path d="M13.3544 12.516C12.289 8.64137 9.82485 5.29933 6.43841 3.136L1.48241 0C-0.194143 3.79232 -0.457969 8.05947 0.738667 12.0294C1.9353 15.9994 4.51336 19.4099 8.00641 21.644L17.5544 27.692L13.4104 12.516H13.3544Z" fill="url(#gr6)"/>
+    </g>
+    <defs>
+      <filter id="f6" x="0" y="-2.8" width="20.3544" height="30.492" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="2.8" dy="-2.8"/><feGaussianBlur stdDeviation="2.8"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+      <radialGradient id="gr6" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(17.7504 45.304) rotate(-90) scale(46.6668 44.1039)">
+        <stop stop-color="#C14D1C"/><stop offset="0.88" stop-color="#FFCE84"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Left inner leaf -->
+  <svg x="10.657" y="0" width="9.991" height="28.224" viewBox="0 0 9.99123 28.224" overflow="visible">
+    <g filter="url(#f5)">
+      <path d="M9.10923 16.156C10.2852 13.076 10.2852 9.66 9.10923 6.552L6.42123 0C0.345227 3.444 -1.41877 12.992 1.12923 19.544L4.29323 28.224L9.10923 16.184V16.156Z" fill="url(#gr5)"/>
+    </g>
+    <defs>
+      <filter id="f5" x="0" y="-2.8" width="12.7912" height="31.024" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="2.8" dy="-2.8"/><feGaussianBlur stdDeviation="2.8"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+      <radialGradient id="gr5" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(0.233227 28) rotate(-90) scale(42 44.6281)">
+        <stop stop-color="#A9572B"/><stop offset="0.42" stop-color="#F4C57F"/><stop offset="1" stop-color="white"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Bottom right leaf -->
+  <svg x="28" y="30.856" width="28" height="15.512" viewBox="0 0 28 15.512" overflow="visible">
+    <g filter="url(#f4)">
+      <path d="M12.096 4.48C13.4377 3.08129 15.0452 1.96455 16.8242 1.19526C18.6032 0.425961 20.5179 0.0196011 22.456 0H28C26.88 8.932 19.992 15.512 11.872 15.512H0L12.096 4.424V4.48Z" fill="url(#gr4)"/>
+    </g>
+    <defs>
+      <filter id="f4" x="0" y="-2.8" width="30.8" height="18.312" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="2.8" dy="-2.8"/><feGaussianBlur stdDeviation="2.8"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+      <radialGradient id="gr4" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-6.2375 33.8481) rotate(-57.7) scale(61.1223 126.329)">
+        <stop offset="0.18" stop-color="#C14D1C"/><stop offset="0.71" stop-color="#FFCE84"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Right outer leaf -->
+  <svg x="37.52" y="10.696" width="17.573" height="27.692" viewBox="0 0 17.5733 27.692" overflow="visible">
+    <g filter="url(#f3)">
+      <path d="M4.2 12.516C5.26544 8.64137 7.72957 5.29933 11.116 3.136L16.072 0C19.572 7.84 16.772 17.08 9.548 21.644L0 27.692L4.144 12.516H4.2Z" fill="url(#gr3)"/>
+    </g>
+    <defs>
+      <filter id="f3" x="0" y="-2.8" width="20.3733" height="30.492" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="2.8" dy="-2.8"/><feGaussianBlur stdDeviation="2.8"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+      <radialGradient id="gr3" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(-0.195998 45.304) rotate(-90) scale(46.6668 44.1039)">
+        <stop stop-color="#C14D1C"/><stop offset="0.88" stop-color="#FFCE84"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Right inner leaf -->
+  <svg x="35.347" y="0" width="10.023" height="28.224" viewBox="0 0 10.0236 28.224" overflow="visible">
+    <g filter="url(#f2)">
+      <path d="M0.887136 16.156C-0.295712 13.0639 -0.295712 9.64407 0.887136 6.552L3.57514 0C9.67914 3.444 11.4431 12.992 8.89514 19.544L5.73114 28.224L0.915137 16.184L0.887136 16.156Z" fill="url(#gr2)"/>
+    </g>
+    <defs>
+      <filter id="f2" x="0" y="-2.8" width="12.8236" height="31.024" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="2.8" dy="-2.8"/><feGaussianBlur stdDeviation="2.8"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+      <radialGradient id="gr2" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(9.76314 28) rotate(-90) scale(42 44.6287)">
+        <stop stop-color="#A9572B"/><stop offset="0.42" stop-color="#F4C57F"/><stop offset="1" stop-color="white"/>
+      </radialGradient>
+    </defs>
+  </svg>
+  <!-- Crossed stems -->
+  <svg x="20.58" y="46.368" width="14.84" height="9.727" viewBox="0 0 14.84 9.72739" overflow="visible">
+    <g filter="url(#f1)">
+      <path d="M9.716 8.904C9.95715 9.14481 10.2446 9.3342 10.5611 9.46072C10.8775 9.58724 11.2163 9.64827 11.557 9.6401C11.8977 9.63194 12.2332 9.55475 12.5432 9.41322C12.8532 9.27169 13.1313 9.06874 13.3607 8.81666C13.59 8.56458 13.7658 8.2686 13.8775 7.94662C13.9892 7.62465 14.0344 7.28336 14.0104 6.94342C13.9864 6.60347 13.8937 6.27192 13.7379 5.96882C13.5821 5.66572 13.3665 5.39737 13.104 5.18L11.144 3.388L14.84 0H0L3.696 3.388L1.736 5.18C1.45301 5.38892 1.21689 5.65476 1.04283 5.96043C0.868777 6.2661 0.760642 6.60482 0.725384 6.9548C0.690126 7.30478 0.728527 7.65827 0.838117 7.99251C0.947706 8.32675 1.12606 8.63435 1.36169 8.89552C1.59733 9.15668 1.88503 9.36561 2.20628 9.50889C2.52753 9.65216 2.87521 9.72659 3.22696 9.72738C3.57872 9.72818 3.92674 9.65534 4.24864 9.51353C4.57053 9.37172 4.85918 9.16409 5.096 8.904L7.42 6.804L9.716 8.904Z" fill="white" fill-opacity="0.7"/>
+    </g>
+    <defs>
+      <filter id="f1" x="-3.108" y="-3.108" width="17.948" height="12.8354" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+        <feFlood flood-opacity="0" result="bg"/><feBlend in="SourceGraphic" in2="bg" result="shape"/>
+        <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="ha"/>
+        <feOffset dx="-3.108" dy="-3.108"/><feGaussianBlur stdDeviation="1.568"/>
+        <feComposite in2="ha" operator="arithmetic" k2="-1" k3="1"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.8 0"/>
+        <feBlend in2="shape"/>
+      </filter>
+    </defs>
+  </svg>
+</svg>

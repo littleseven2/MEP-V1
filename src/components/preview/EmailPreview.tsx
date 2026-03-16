@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
-import { Monitor, Smartphone, ArrowLeft, Sparkles, Info, Star, AlertTriangle } from 'lucide-react';
+import {
+  Monitor, Smartphone, ArrowLeft, Sparkles, Info, Star, AlertTriangle,
+  Play, Film, Tv, Music, Gamepad2, Clapperboard,
+  Heart, Bookmark, Award, Trophy, Gem,
+  Clock, Calendar, Bell, Zap, Flame,
+  User, Users, Globe, MapPin, Compass, Navigation,
+  Download, Share2, ExternalLink, Link as LinkIcon, Eye, Search,
+  CheckCircle, AlertCircle, Shield, Lock, Unlock,
+} from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey } from '../../types/message';
+import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey, CalloutVariant, ListThumbnailIcon } from '../../types/message';
 import { paddingToCss, addPadding, parsePadding } from '../../types/message';
 
 const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 import { defaultTextStyles } from '../../data/defaults';
+
+const PREVIEW_ICON_MAP: Record<ListThumbnailIcon, React.ComponentType<{ size?: number }>> = {
+  'play': Play, 'film': Film, 'tv': Tv, 'music': Music, 'gamepad-2': Gamepad2, 'clapperboard': Clapperboard,
+  'star': Star, 'heart': Heart, 'bookmark': Bookmark, 'award': Award, 'trophy': Trophy, 'gem': Gem,
+  'clock': Clock, 'calendar': Calendar, 'bell': Bell, 'zap': Zap, 'flame': Flame, 'sparkles': Sparkles,
+  'user': User, 'users': Users, 'globe': Globe, 'map-pin': MapPin, 'compass': Compass, 'navigation': Navigation,
+  'download': Download, 'share-2': Share2, 'external-link': ExternalLink, 'link': LinkIcon, 'eye': Eye, 'search': Search,
+  'check-circle': CheckCircle, 'info': Info, 'alert-circle': AlertCircle, 'shield': Shield, 'lock': Lock, 'unlock': Unlock,
+};
 
 function HornIcon({ size = 16 }: { size?: number }) {
   return (
@@ -31,18 +48,43 @@ interface EmailPreviewProps {
   onClose: () => void;
 }
 
+function PreviewLaurelWreath({ size = 14 }: { size?: number }) {
+  return <img src="/laurel-wreath.svg" width={size} height={size} alt="" style={{ display: 'block' }} />;
+}
+
 function PreviewCalloutBadge({ callout }: { callout: ComponentCallout }) {
-  const iconMap: Record<CalloutIcon, React.ReactNode> = {
-    horn: <HornIcon size={14} />, info: <Info size={14} />, star: <Star size={14} />, alert: <AlertTriangle size={14} />,
-  };
+  const variant = callout.variant ?? 'A';
+  const scale = 0.75;
+
+  if (variant === 'A') {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: 6, background: 'rgba(0,0,0,0.5)', borderRadius: 6, width: 'fit-content' }}>
+        <PreviewLaurelWreath size={14} />
+        <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{callout.text}</span>
+      </div>
+    );
+  }
+  if (variant === 'B') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: 6, background: 'rgba(0,0,0,0.5)', borderRadius: 6, width: Math.round(169 * scale), margin: '0 auto' }}>
+        <PreviewLaurelWreath size={14} />
+        <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', textAlign: 'center' }}>{callout.text}</span>
+      </div>
+    );
+  }
+  if (variant === 'C') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: 6, background: 'rgba(0,0,0,0.5)', borderRadius: 6, width: Math.round(169 * scale), margin: '0 auto' }}>
+        <PreviewLaurelWreath size={36} />
+        <span style={{ fontSize: 11, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap', textAlign: 'center' }}>{callout.text}</span>
+      </div>
+    );
+  }
+  // D
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 6,
-      padding: 6, background: 'rgba(0,0,0,0.5)',
-      borderRadius: 6, width: 'fit-content',
-    }}>
-      <span style={{ color: '#fff', display: 'flex', alignItems: 'center' }}>{iconMap[callout.icon]}</span>
-      <span style={{ fontSize: 12, fontWeight: 500, color: '#fff', whiteSpace: 'nowrap' }}>{callout.text}</span>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '0 6px', borderRadius: 6, width: Math.round(169 * scale), margin: '0 auto' }}>
+      <PreviewLaurelWreath size={42} />
+      <span style={{ fontSize: 15, fontWeight: 500, lineHeight: '17px', color: '#fff', textAlign: 'center', width: Math.round(169 * scale) }}>{callout.text}</span>
     </div>
   );
 }
@@ -134,6 +176,9 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
   }
   if (component.settings.type === 'list') {
     const s = component.settings.settings;
+    const isStacked = s.layout === 'schedules';
+    const align = s.textAlign ?? 'left';
+    const alignItems = isStacked ? (align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start') : 'center';
     return (
       <div style={{
         display: 'grid',
@@ -143,13 +188,26 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
         {s.items.slice(0, 5).map((item, i) => (
           <div key={i} style={{
             display: 'flex', gap: 12,
+            flexDirection: isStacked ? 'column' : 'row',
+            alignItems,
             paddingBottom: s.showDivider ? 12 : 0,
             borderBottom: s.showDivider && i < s.items.length - 1 ? '1px solid var(--color-border-default)' : 'none',
           }}>
-            {s.showThumbnail && (
-              <div style={{ width: 48, height: 48, background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0 }} />
-            )}
-            <div>
+            {s.showThumbnail && (() => {
+              const tType = s.thumbnailType ?? 'image';
+              if (tType === 'icon') {
+                const IC = PREVIEW_ICON_MAP[item.thumbnailIcon ?? s.thumbnailIcon ?? 'play'] ?? Play;
+                const circleBg = s.iconCircleBackground;
+                const circleCol = s.iconCircleColor ?? '#E50914';
+                return (
+                  <div style={{ width: isStacked ? '100%' : 48, height: isStacked ? undefined : 48, aspectRatio: isStacked ? '16/9' : undefined, borderRadius: circleBg ? '50%' : 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: circleBg ? '#fff' : 'var(--color-text-secondary)', background: circleBg ? circleCol : undefined }}>
+                    <IC size={20} />
+                  </div>
+                );
+              }
+              return <div style={{ width: isStacked ? '100%' : 48, height: isStacked ? undefined : 48, aspectRatio: isStacked ? '16/9' : undefined, background: 'var(--color-bg-tertiary)', borderRadius: 8, flexShrink: 0 }} />;
+            })()}
+            <div style={{ textAlign: isStacked ? align : undefined }}>
               {(s.showTitle ?? true) && <div style={{ fontWeight: 500, fontSize: 14 }}>{item.title}</div>}
               {(s.showSubtitle ?? true) && item.subtitle && <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{item.subtitle}</div>}
               {(s.showMetadata ?? true) && item.metadata && <div style={{ fontSize: 11, color: 'var(--color-text-tertiary)' }}>{item.metadata}</div>}
@@ -461,11 +519,10 @@ function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<T
     <div style={{ background: section.background.value }}>
       {section.type === 'header' && (
         <div style={{
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '14px 16px',
         }}>
-          <span style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600 }}>Netflix</span>
-          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>View in Browser</span>
+          <img src="/n-symbol.png" alt="N" style={{ width: 24, height: 44, objectFit: 'contain', display: 'block' }} />
         </div>
       )}
       {section.type === 'content' && (
@@ -481,8 +538,9 @@ function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<T
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {section.components.sort((a, b) => a.order - b.order).map((c) => {
                 const compOrder: AttachmentKey[] = c.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
+                const totalCompPadding = addPadding(componentPadding, c.settings.settings.padding);
                 return (
-                  <div key={c.id} style={parsePadding(componentPadding).some(v => v > 0) ? { padding: paddingToCss(componentPadding) } : undefined}>
+                  <div key={c.id} style={parsePadding(totalCompPadding).some(v => v > 0) ? { padding: paddingToCss(totalCompPadding) } : undefined}>
                     {compOrder.map((key) => renderPreviewCompAttachment(c, key, 'above'))}
                     <PreviewComponent component={c} ts={ts} />
                     {compOrder.map((key) => renderPreviewCompAttachment(c, key, 'below'))}
@@ -497,8 +555,25 @@ function PreviewSection({ section, ts, theme }: { section: Section; ts: Record<T
         </div>
       )}
       {section.type === 'footer' && (
-        <div style={{ padding: '12px 16px', fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px`, color: 'var(--color-text-tertiary)' }}>
-          Unsubscribe · Privacy · Help Center
+        <div style={{ padding: '12px 16px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <img src="/n-symbol.png" alt="N" style={{ width: 14, height: 24, objectFit: 'contain', display: 'block', flexShrink: 0 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px` }}>
+            <div>
+              <p style={{ margin: 0, color: 'var(--color-text-primary, #fff)' }}>Call 1-866-579-7172</p>
+              <p style={{ margin: 0, color: 'var(--color-text-tertiary, rgba(255,255,255,0.5))' }}>100 Winchester Circle</p>
+              <p style={{ margin: 0, color: 'var(--color-text-tertiary, rgba(255,255,255,0.5))' }}>Los Gatos, California</p>
+              <p style={{ margin: 0, color: 'var(--color-text-tertiary, rgba(255,255,255,0.5))' }}>95032, U.S.A.</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px` }}>Unsubscribe</a>
+              <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px` }}>Terms of Use</a>
+              <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px` }}>Privacy</a>
+              <a href="#" style={{ color: '#fff', textDecoration: 'underline', fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px` }}>Help Center</a>
+            </div>
+            <p style={{ margin: 0, color: 'var(--color-text-tertiary, rgba(255,255,255,0.5))', fontSize: ts.legal.fontSize, lineHeight: `${ts.legal.lineHeight}px` }}>
+              This message was mailed to you by Netflix as part of your Netflix membership.
+            </p>
+          </div>
         </div>
       )}
     </div>

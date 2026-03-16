@@ -1,4 +1,4 @@
-import { Plus, Copy, Clock, ArrowRight, Sparkles } from 'lucide-react';
+import { Plus, Copy, Clock, ArrowRight } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 
 const cardStyle: React.CSSProperties = {
@@ -60,20 +60,11 @@ export function HomeScreen() {
         }}
       >
         {/* Logo */}
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 16,
-            background: 'linear-gradient(135deg, var(--color-brand) 0%, #FF6B6B 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 16,
-          }}
-        >
-          <Sparkles size={32} color="white" />
-        </div>
+        <img
+          src="/n-symbol.png"
+          alt="N"
+          style={{ width: 40, height: 72, objectFit: 'contain', display: 'block', marginBottom: 16 }}
+        />
         <p
           style={{
             fontFamily: 'var(--font-display)',

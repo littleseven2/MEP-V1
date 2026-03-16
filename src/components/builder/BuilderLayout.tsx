@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Eye, Settings, Layers, Palette,
-  Sparkles, Send, Undo2, Redo2, Component, Paperclip,
+  Send, Undo2, Redo2, Component, Paperclip,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { Canvas } from '../canvas/Canvas';
@@ -15,7 +16,7 @@ import { EmailPreview } from '../preview/EmailPreview';
 type LeftNav = 'theme' | 'section' | 'component' | 'attachment';
 
 export const BuilderLayout: React.FC = () => {
-  const { message, setView, selectSection, selectedSectionId, selectedComponentId } = useMessageStore();
+  const { message, setView, selectSection, selectedSectionId, selectedComponentId, goBack, goForward, viewHistory, viewFuture } = useMessageStore();
   const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
   const [rightPanelFocus, setRightPanelFocus] = useState<'theme' | 'canvas'>('canvas');
@@ -108,14 +109,11 @@ export const BuilderLayout: React.FC = () => {
         boxShadow: 'var(--shadow-md)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            width: 32, height: 32,
-            background: 'linear-gradient(135deg, var(--color-brand) 0%, #FF6B6B 100%)',
-            borderRadius: 'var(--radius-md)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Sparkles size={16} color="#fff" />
-          </div>
+          <img
+            src="/n-symbol.png"
+            alt="N"
+            style={{ width: 20, height: 36, objectFit: 'contain', display: 'block' }}
+          />
           <span style={{
             fontFamily: 'var(--font-display)',
             fontWeight: 600,
@@ -124,6 +122,9 @@ export const BuilderLayout: React.FC = () => {
           }}>
             MEP
           </span>
+          <div style={{ width: 1, height: 24, background: 'var(--color-border-default)', margin: '0 4px' }} />
+          <HistoryNavButton icon={<ChevronLeft size={16} />} tooltip="Back" onClick={goBack} disabled={viewHistory.length === 0} />
+          <HistoryNavButton icon={<ChevronRight size={16} />} tooltip="Forward" onClick={goForward} disabled={viewFuture.length === 0} />
           <div style={{ width: 1, height: 24, background: 'var(--color-border-default)', margin: '0 4px' }} />
           <span style={{ fontSize: 'var(--font-size-md)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
             {message.attributes.name || 'Untitled'}
@@ -304,6 +305,29 @@ const VerticalNavItem: React.FC<{
         }}>{label}</div>
       )}
     </div>
+  );
+};
+
+const HistoryNavButton: React.FC<{ icon: React.ReactNode; tooltip: string; onClick: () => void; disabled?: boolean }> = ({ icon, tooltip, onClick, disabled }) => {
+  const [h, setH] = React.useState(false);
+  return (
+    <button
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      onClick={onClick}
+      disabled={disabled}
+      title={tooltip}
+      style={{
+        width: 30, height: 30,
+        background: h && !disabled ? 'var(--color-bg-tertiary)' : 'transparent',
+        border: '1px solid transparent', borderRadius: 'var(--radius-md)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: disabled ? 'default' : 'pointer',
+        color: disabled ? 'var(--color-text-muted)' : h ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+        opacity: disabled ? 0.4 : 1,
+        transition: 'all var(--transition-fast)',
+      }}
+    >{icon}</button>
   );
 };
 

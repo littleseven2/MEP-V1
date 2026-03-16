@@ -24,6 +24,33 @@ export const defaultTextStyles: Record<TextStyleKey, TextStyle> = {
   legal:       { fontSize: 12, fontWeight: 400, lineHeight: 18 },
 };
 
+export interface GradientPreset {
+  id: string;
+  name: string;
+  color: string;
+  value: string;
+}
+
+const gradientFill = 'radial-gradient(ellipse at 100% 0%, rgba(44,66,156,0.15) 14%, transparent 100%)';
+function makeGradient(r: number, g: number, b: number): string {
+  return `${gradientFill}, radial-gradient(ellipse at 0% 0%, rgba(${r},${g},${b},0.4) 0%, transparent 60%), #000000`;
+}
+
+export const gradientPresets: GradientPreset[] = [
+  { id: 'pink',   name: 'Pink',   color: '#E75094', value: makeGradient(231, 80, 148) },
+  { id: 'red',    name: 'Red',    color: '#EB3942', value: makeGradient(235, 57, 66) },
+  { id: 'orange', name: 'Orange', color: '#C14D1C', value: makeGradient(193, 77, 28) },
+  { id: 'amber',  name: 'Amber',  color: '#E7903E', value: makeGradient(231, 144, 62) },
+  { id: 'yellow', name: 'Yellow', color: '#D89D31', value: makeGradient(216, 157, 49) },
+  { id: 'green',  name: 'Green',  color: '#0C8849', value: makeGradient(12, 136, 73) },
+  { id: 'cyan',   name: 'Cyan',   color: '#41B1BA', value: makeGradient(65, 177, 186) },
+  { id: 'blue',   name: 'Blue',   color: '#448EF4', value: makeGradient(68, 142, 244) },
+  { id: 'indigo', name: 'Indigo', color: '#5B79F1', value: makeGradient(91, 121, 241) },
+  { id: 'violet', name: 'Violet', color: '#885BF1', value: makeGradient(136, 91, 241) },
+  { id: 'purple', name: 'Purple', color: '#B038DC', value: makeGradient(176, 56, 220) },
+  { id: 'gray',   name: 'Gray',   color: '#808080', value: makeGradient(128, 128, 128) },
+];
+
 // Consent categories for message setup
 export const consentCategories: SelectOption[] = [
   { value: 'pre-promote', label: 'Pre-promote' },
@@ -287,13 +314,18 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         showMetadata: true,
         showThumbnail: true,
         showDivider: true,
+        thumbnailType: 'image',
+        thumbnailIcon: 'play',
         thumbnailRadius: 8,
+        iconCircleBackground: false,
+        iconCircleColor: '#E50914',
         itemCount: 'all',
         items: [
           { title: 'Stranger Things', subtitle: 'Season 5 Now Streaming', metadata: 'Watch Now' },
           { title: 'Squid Game', subtitle: 'New Season Available', metadata: 'Watch Now' },
           { title: 'Wednesday', subtitle: 'A Netflix Original Series', metadata: 'Watch Now' },
         ],
+        textAlign: 'left',
         itemStyleMode: 'whole',
         itemStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 },
         padding: 0,

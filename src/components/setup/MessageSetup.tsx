@@ -1,13 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mail, Bell, Smartphone, ArrowLeft, ArrowRight, Sparkles, ChevronDown, ChevronRight, ChevronLeft, Calendar, Clock } from 'lucide-react';
+import {
+  Mail, Bell, Smartphone, ArrowLeft, ArrowRight, Sparkles, ChevronDown, ChevronRight, ChevronLeft, Calendar, Clock,
+  Play, Film, Tv, Music, Gamepad2, Clapperboard,
+  Star, Heart, Bookmark, Award, Trophy, Gem,
+  Zap, Flame,
+  User, Users, Globe, MapPin, Compass, Navigation,
+  Download, Share2, ExternalLink, Link as LinkIcon, Eye, Search,
+  CheckCircle, Info, AlertCircle, Shield, Lock, Unlock,
+} from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { Message, MessageAttributes, MessageComponent, Channel } from '../../types/message';
+import type { Message, MessageAttributes, MessageComponent, Channel, ListThumbnailIcon } from '../../types/message';
 import {
   consentCategories,
   messagePrograms,
   messageTypes,
 } from '../../data/defaults';
 import { Button, Input, Select } from '../../ui';
+
+const SETUP_ICON_MAP: Record<ListThumbnailIcon, React.ComponentType<{ size?: number }>> = {
+  'play': Play, 'film': Film, 'tv': Tv, 'music': Music, 'gamepad-2': Gamepad2, 'clapperboard': Clapperboard,
+  'star': Star, 'heart': Heart, 'bookmark': Bookmark, 'award': Award, 'trophy': Trophy, 'gem': Gem,
+  'clock': Clock, 'calendar': Calendar, 'bell': Bell, 'zap': Zap, 'flame': Flame, 'sparkles': Sparkles,
+  'user': User, 'users': Users, 'globe': Globe, 'map-pin': MapPin, 'compass': Compass, 'navigation': Navigation,
+  'download': Download, 'share-2': Share2, 'external-link': ExternalLink, 'link': LinkIcon, 'eye': Eye, 'search': Search,
+  'check-circle': CheckCircle, 'info': Info, 'alert-circle': AlertCircle, 'shield': Shield, 'lock': Lock, 'unlock': Unlock,
+};
 
 const channelOptions: { value: Channel; icon: React.ReactNode; label: string }[] = [
   { value: 'email', icon: <Mail size={16} />, label: 'Email' },
@@ -20,6 +37,10 @@ export function MessageSetup() {
   const createMessage = useMessageStore((s) => s.createMessage);
   const updateAttributes = useMessageStore((s) => s.updateAttributes);
   const message = useMessageStore((s) => s.message);
+  const goBack = useMessageStore((s) => s.goBack);
+  const goForward = useMessageStore((s) => s.goForward);
+  const viewHistory = useMessageStore((s) => s.viewHistory);
+  const viewFuture = useMessageStore((s) => s.viewFuture);
 
   const existing = message?.attributes;
   const [channel, setChannel] = useState<Channel>(existing?.channel ?? 'email');
@@ -82,21 +103,19 @@ export function MessageSetup() {
         gap: 16,
         boxShadow: 'var(--shadow-md)',
       }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 'var(--radius-md)',
-          background: 'linear-gradient(135deg, var(--color-brand) 0%, #FF6B6B 100%)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <Sparkles size={16} color="#fff" />
-        </div>
+        <img
+          src="/n-symbol.png"
+          alt="N"
+          style={{ width: 20, height: 36, objectFit: 'contain', display: 'block' }}
+        />
         <span style={{ fontFamily: 'var(--font-display)', fontSize: 'var(--font-size-xl)', fontWeight: 600, color: 'var(--color-text-primary)' }}>
           Message Setup
         </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 4 }}>
+          <SetupNavButton icon={<ChevronLeft size={16} />} tooltip="Back" onClick={goBack} disabled={viewHistory.length === 0} />
+          <SetupNavButton icon={<ChevronRight size={16} />} tooltip="Forward" onClick={goForward} disabled={viewFuture.length === 0} />
+        </div>
         <div style={{ flex: 1 }} />
-        <Button variant="ghost" size="sm" onClick={() => setView('home')}>
-          <ArrowLeft size={16} style={{ marginRight: 6 }} />
-          Back
-        </Button>
         <Button size="sm" onClick={handleSubmit}>
           {message ? 'Back to Builder' : 'Continue to Builder'}
           <ArrowRight size={16} style={{ marginLeft: 6 }} />
@@ -248,6 +267,29 @@ export function MessageSetup() {
     </div>
   );
 }
+
+const SetupNavButton: React.FC<{ icon: React.ReactNode; tooltip: string; onClick: () => void; disabled?: boolean }> = ({ icon, tooltip, onClick, disabled }) => {
+  const [h, setH] = React.useState(false);
+  return (
+    <button
+      onMouseEnter={() => setH(true)}
+      onMouseLeave={() => setH(false)}
+      onClick={onClick}
+      disabled={disabled}
+      title={tooltip}
+      style={{
+        width: 30, height: 30,
+        background: h && !disabled ? 'var(--color-bg-tertiary)' : 'transparent',
+        border: '1px solid transparent', borderRadius: 'var(--radius-md)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: disabled ? 'default' : 'pointer',
+        color: disabled ? 'var(--color-text-muted)' : h ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+        opacity: disabled ? 0.4 : 1,
+        transition: 'all var(--transition-fast)',
+      }}
+    >{icon}</button>
+  );
+};
 
 const sectionLabel: React.CSSProperties = {
   display: 'block',
@@ -452,9 +494,20 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
             paddingBottom: s.showDivider && i < Math.min(s.items.length, 3) - 1 ? 6 : 0,
             borderBottom: s.showDivider && i < Math.min(s.items.length, 3) - 1 ? '1px solid rgba(255,255,255,0.08)' : 'none',
           }}>
-            {s.showThumbnail && (
-              <div style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.08)', borderRadius: 4, flexShrink: 0 }} />
-            )}
+            {s.showThumbnail && (() => {
+              const tType = s.thumbnailType ?? 'image';
+              if (tType === 'icon') {
+                const IC = SETUP_ICON_MAP[item.thumbnailIcon ?? s.thumbnailIcon ?? 'play'] ?? Play;
+                const circleBg = s.iconCircleBackground;
+                const circleCol = s.iconCircleColor ?? '#E50914';
+                return (
+                  <div style={{ width: 28, height: 28, borderRadius: circleBg ? '50%' : 4, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: circleBg ? '#fff' : 'rgba(255,255,255,0.5)', background: circleBg ? circleCol : undefined }}>
+                    <IC size={14} />
+                  </div>
+                );
+              }
+              return <div style={{ width: 28, height: 28, background: 'rgba(255,255,255,0.08)', borderRadius: 4, flexShrink: 0 }} />;
+            })()}
             <div>
               {(s.showTitle ?? true) && <div style={{ fontWeight: 500, fontSize: 10, color: '#fff' }}>{item.title}</div>}
               {(s.showSubtitle ?? true) && item.subtitle && <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.5)' }}>{item.subtitle}</div>}
@@ -511,11 +564,10 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
             <div key={section.id} style={{ background: section.background.value }}>
               {section.type === 'header' && (
                 <div style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '6px 12px',
                 }}>
-                  <span style={{ fontFamily: 'var(--font-display)', fontSize: 13, fontWeight: 600, color: '#fff' }}>Netflix</span>
-                  <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)' }}>View in Browser</span>
+                  <img src="/n-symbol.png" alt="N" style={{ width: 9, height: 16, objectFit: 'contain', display: 'block' }} />
                 </div>
               )}
               {section.type === 'content' && section.components.length > 0 && (
@@ -590,8 +642,20 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
                 </div>
               )}
               {section.type === 'footer' && (
-                <div style={{ padding: '8px 12px', fontSize: 8, color: 'rgba(255,255,255,0.3)' }}>
-                  Unsubscribe · Privacy · Help Center
+                <div style={{ padding: '6px 10px', display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                  <img src="/n-symbol.png" alt="N" style={{ width: 5, height: 9, objectFit: 'contain', display: 'block', flexShrink: 0, marginTop: 1 }} />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4, fontSize: 6, lineHeight: '8px', color: 'rgba(255,255,255,0.3)' }}>
+                    <div>
+                      <p style={{ margin: 0, color: 'rgba(255,255,255,0.5)' }}>Call 1-866-579-7172</p>
+                      <p style={{ margin: 0 }}>100 Winchester Circle, Los Gatos, CA 95032</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <span style={{ textDecoration: 'underline', color: 'rgba(255,255,255,0.5)' }}>Unsubscribe</span>
+                      <span style={{ textDecoration: 'underline', color: 'rgba(255,255,255,0.5)' }}>Terms of Use</span>
+                      <span style={{ textDecoration: 'underline', color: 'rgba(255,255,255,0.5)' }}>Privacy</span>
+                      <span style={{ textDecoration: 'underline', color: 'rgba(255,255,255,0.5)' }}>Help Center</span>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

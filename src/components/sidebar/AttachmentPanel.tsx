@@ -4,8 +4,8 @@ import type { ComponentCallout, ComponentMetadata, ComponentLiveBadge, Component
 
 const defaultCallout: ComponentCallout = {
   enabled: false,
-  text: 'Final Season Coming Nov 16',
-  icon: 'horn',
+  text: '2023 Oscar Winner',
+  variant: 'A',
   position: 'above',
 };
 

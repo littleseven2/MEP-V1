@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 
 export type SelectSize = 'sm' | 'md' | 'lg';
 
@@ -42,22 +43,40 @@ export function Select({
 }: SelectProps) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const selectId = id ?? `select-${Math.random().toString(36).slice(2)}`;
 
   const selected = options.find((o) => o.value === value);
   const dims = sizeMap[size];
 
+  const updatePosition = useCallback(() => {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }, []);
+
   useEffect(() => {
     if (!open) return;
+    updatePosition();
     const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setOpen(false);
     };
+    const handleScroll = () => updatePosition();
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, [open, updatePosition]);
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -78,6 +97,7 @@ export function Select({
         </label>
       )}
       <button
+        ref={buttonRef}
         id={selectId}
         type="button"
         className="mep-select"
@@ -116,18 +136,17 @@ export function Select({
         </svg>
       </button>
 
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          marginTop: 4,
+      {open && dropdownPos && createPortal(
+        <div ref={dropdownRef} style={{
+          position: 'fixed',
+          top: dropdownPos.top,
+          left: dropdownPos.left,
+          width: dropdownPos.width,
           background: 'var(--color-bg-tertiary)',
           border: '1px solid var(--color-border-default)',
           borderRadius: 'var(--radius-md)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-          zIndex: 1000,
+          zIndex: 10000,
           overflow: 'hidden',
           maxHeight: 200,
           overflowY: 'auto',
@@ -156,7 +175,8 @@ export function Select({
               {opt.label}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
 
       {error && (

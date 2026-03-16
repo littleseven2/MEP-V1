@@ -1,8 +1,17 @@
 import { useRef, useEffect } from 'react';
-import { Info, Star, AlertTriangle } from 'lucide-react';
+import {
+  Info, Star, AlertTriangle,
+  Play, Film, Tv, Music, Gamepad2, Clapperboard,
+  Heart, Bookmark, Award, Trophy, Gem,
+  Clock, Calendar, Bell, Zap, Flame, Sparkles,
+  User, Users, Globe, MapPin, Compass, Navigation,
+  Download, Share2, ExternalLink, Link as LinkIcon, Eye, Search,
+  CheckCircle, AlertCircle, Shield, Lock, Unlock,
+} from 'lucide-react';
+import type { ListThumbnailIcon } from '../../types/message';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding } from '../../types/message';
-import { paddingToCss, parsePadding, addPadding, uniformPaddingValue } from '../../types/message';
+import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding, CalloutVariant } from '../../types/message';
+import { paddingToCss, parsePadding, uniformPaddingValue } from '../../types/message';
 import { posters } from '../../data/posters';
 import { defaultTextStyles } from '../../data/defaults';
 
@@ -93,12 +102,11 @@ function WithMarquee({ marquee, children }: { marquee?: MarqueeConfig; children:
   );
 }
 
-function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius?: number; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius?: number; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const imgRadius = settings.mediaRadius ?? 8;
   return (
     <div style={{
-      padding: paddingToCss(settings.padding),
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -119,7 +127,7 @@ function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius
   );
 }
 
-function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; callout?: { enabled: boolean; text: string; icon?: CalloutIcon }; order: ('eyebrow' | 'headline' | 'body' | 'link' | 'callout')[]; alignment?: 'left' | 'center' | 'right'; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; ts: Record<string, TextStyle> }) {
+function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: boolean; text: string }; headline: { enabled: boolean; text: string }; body: { enabled: boolean; text: string }; link: { enabled: boolean; text: string; url: string }; callout?: { enabled: boolean; text: string; icon?: CalloutIcon }; order: ('eyebrow' | 'headline' | 'body' | 'link' | 'callout')[]; alignment?: 'left' | 'center' | 'right'; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; ts: Record<string, TextStyle> }) {
   const items = settings.order
     .filter((k) => {
       const el = settings[k as keyof typeof settings];
@@ -148,7 +156,6 @@ function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: bo
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 4,
       textAlign: align,
-      padding: paddingToCss(settings.padding),
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -199,7 +206,7 @@ function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: bo
   );
 }
 
-function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enabled?: boolean; text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enabled?: boolean; text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const visibleButtons = settings.buttons.filter((btn) => btn.enabled ?? true);
   const isSideBySide = settings.layout === '2-side-by-side';
@@ -208,7 +215,6 @@ function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enab
       display: 'flex',
       flexDirection: isSideBySide ? 'row' : 'column',
       gap: 8,
-      padding: paddingToCss(settings.padding),
       background: settings.backgroundColor || 'transparent',
       borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -235,7 +241,7 @@ function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enab
   );
 }
 
-function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number } }) {
+function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellStyle?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number } }) {
   const poster = posters[(n - 1) % posters.length];
   const cs = cellStyle;
   const csRadius = cs?.backgroundRadius ?? [0, 0, 0, 0];
@@ -274,7 +280,7 @@ function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellSty
   );
 }
 
-function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; cellStyleMode?: 'whole' | 'individual'; cellStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }; cellStyles?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }[]; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; cellStyleMode?: 'whole' | 'individual'; cellStyle?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }; cellStyles?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }[]; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const gapPx = settings.gap ?? 8;
   const radius = settings.itemRadius ?? 8;
@@ -288,7 +294,6 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
   };
 
   const containerStyle: React.CSSProperties = {
-    padding: paddingToCss(settings.padding),
     background: settings.backgroundColor || 'transparent',
     borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
     ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -357,9 +362,9 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
   );
 }
 
-function ListItemText({ item, showTitle = true, showSubtitle = true, showMetadata = true }: { item: { title: string; subtitle?: string; metadata?: string }; showTitle?: boolean; showSubtitle?: boolean; showMetadata?: boolean }) {
+function ListItemText({ item, showTitle = true, showSubtitle = true, showMetadata = true, textAlign }: { item: { title: string; subtitle?: string; metadata?: string }; showTitle?: boolean; showSubtitle?: boolean; showMetadata?: boolean; textAlign?: 'left' | 'center' | 'right' }) {
   return (
-    <div>
+    <div style={{ textAlign: textAlign ?? 'left' }}>
       {showTitle && (
         <div style={{ fontWeight: 500, fontSize: 14, color: '#fff' }}>{item.title}</div>
       )}
@@ -376,7 +381,30 @@ function ListItemText({ item, showTitle = true, showSubtitle = true, showMetadat
   );
 }
 
-function ListThumbnail({ size = 60, index = 0, radius = 8 }: { size?: number; index?: number; radius?: number }) {
+const THUMBNAIL_ICON_MAP: Record<ListThumbnailIcon, React.ComponentType<{ size?: number }>> = {
+  'play': Play, 'film': Film, 'tv': Tv, 'music': Music, 'gamepad-2': Gamepad2, 'clapperboard': Clapperboard,
+  'star': Star, 'heart': Heart, 'bookmark': Bookmark, 'award': Award, 'trophy': Trophy, 'gem': Gem,
+  'clock': Clock, 'calendar': Calendar, 'bell': Bell, 'zap': Zap, 'flame': Flame, 'sparkles': Sparkles,
+  'user': User, 'users': Users, 'globe': Globe, 'map-pin': MapPin, 'compass': Compass, 'navigation': Navigation,
+  'download': Download, 'share-2': Share2, 'external-link': ExternalLink, 'link': LinkIcon, 'eye': Eye, 'search': Search,
+  'check-circle': CheckCircle, 'info': Info, 'alert-circle': AlertCircle, 'shield': Shield, 'lock': Lock, 'unlock': Unlock,
+};
+
+function ListThumbnail({ size = 60, index = 0, radius = 8, thumbnailType = 'image', thumbnailIcon = 'play', iconCircleBg = false, iconCircleColor = '#E50914' }: { size?: number; index?: number; radius?: number; thumbnailType?: 'image' | 'icon'; thumbnailIcon?: ListThumbnailIcon; iconCircleBg?: boolean; iconCircleColor?: string }) {
+  if (thumbnailType === 'icon') {
+    const IconComp = THUMBNAIL_ICON_MAP[thumbnailIcon] ?? Play;
+    return (
+      <div style={{
+        width: size, height: size,
+        borderRadius: iconCircleBg ? '50%' : radius, flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: iconCircleBg ? iconCircleColor : undefined,
+        color: iconCircleBg ? '#fff' : undefined,
+      }}>
+        <IconComp size={Math.round(size * 0.45)} />
+      </div>
+    );
+  }
   const poster = posters[index % posters.length];
   return (
     <div style={{
@@ -389,7 +417,7 @@ function ListThumbnail({ size = 60, index = 0, radius = 8 }: { size?: number; in
   );
 }
 
-function ListPreview({ settings }: { settings: { layout: string; columns: number; showTitle?: boolean; showSubtitle?: boolean; showMetadata?: boolean; showThumbnail: boolean; showDivider: boolean; thumbnailRadius?: number; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; style?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: number; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: number; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
+function ListPreview({ settings }: { settings: { layout: string; columns: number; showTitle?: boolean; showSubtitle?: boolean; showMetadata?: boolean; showThumbnail: boolean; showDivider: boolean; thumbnailType?: 'image' | 'icon'; thumbnailIcon?: ListThumbnailIcon; thumbnailRadius?: number; iconCircleBackground?: boolean; iconCircleColor?: string; textAlign?: 'left' | 'center' | 'right'; itemCount: 'all' | number; items: { title: string; subtitle?: string; metadata?: string; thumbnailIcon?: ListThumbnailIcon; style?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }[]; itemStyleMode?: 'whole' | 'individual'; itemStyle?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor?: string; strokeWidth?: number }; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
   const limit = settings.itemCount === 'all' ? settings.items.length : settings.itemCount;
   const items = settings.items.slice(0, limit);
   const isStacked = settings.layout === 'schedules';
@@ -414,7 +442,6 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
       display: 'grid',
       gridTemplateColumns: settings.columns === 1 ? '1fr' : settings.columns === 2 ? '1fr 1fr' : '1fr 1fr 1fr',
       gap: isStacked ? 12 : 16,
-      padding: paddingToCss(settings.padding),
       background: bg,
       borderRadius: `${radii[0]}px ${radii[1]}px ${radii[2]}px ${radii[3]}px`,
       ...strokeStyle(settings.strokeColor, settings.strokeWidth),
@@ -431,14 +458,41 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
         };
 
         if (isStacked) {
+          const tType = settings.thumbnailType ?? 'image';
+          const tIcon = item.thumbnailIcon ?? settings.thumbnailIcon ?? 'play';
+          const align = settings.textAlign ?? 'left';
+          const alignItems = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start';
           return (
             <div key={i} style={{
               ...itemWrap,
               display: 'flex', flexDirection: 'column', gap: 8,
+              alignItems,
               paddingBottom: uniformPaddingValue(iStyle.padding) || (divider ? 12 : 0),
               borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
             }}>
-              {settings.showThumbnail && (
+              {settings.showThumbnail && tType === 'icon' && (() => {
+                const IconComp = THUMBNAIL_ICON_MAP[tIcon] ?? Play;
+                const circleBg = settings.iconCircleBackground;
+                const circleCol = settings.iconCircleColor ?? '#E50914';
+                const circleSize = 60;
+                return (
+                  <div style={{
+                    width: '100%', aspectRatio: '16/9',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <div style={{
+                      width: circleSize, height: circleSize,
+                      borderRadius: circleBg ? '50%' : thumbRadius,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: circleBg ? circleCol : undefined,
+                      color: circleBg ? '#fff' : undefined,
+                    }}>
+                      <IconComp size={Math.round(circleSize * 0.45)} />
+                    </div>
+                  </div>
+                );
+              })()}
+              {settings.showThumbnail && tType !== 'icon' && (
                 <div style={{
                   width: '100%', aspectRatio: '16/9',
                   borderRadius: thumbRadius, overflow: 'hidden',
@@ -447,7 +501,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
                   <img src={posters[i % posters.length].image} alt={posters[i % posters.length].title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
               )}
-              <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} />
+              <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} textAlign={align} />
             </div>
           );
         }
@@ -459,18 +513,18 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
             ...itemWrap,
             display: 'flex', gap: 12,
             justifyContent: isRightAligned ? 'space-between' : 'flex-start',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             paddingBottom: uniformPaddingValue(iStyle.padding) || (divider ? 16 : 0),
             borderBottom: divider ? `1px solid ${dividerColor}` : 'none',
           }}>
             {isRightAligned ? (
               <>
                 <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} />
-                {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} />}
+                {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} thumbnailType={settings.thumbnailType} thumbnailIcon={item.thumbnailIcon ?? settings.thumbnailIcon} iconCircleBg={settings.iconCircleBackground} iconCircleColor={settings.iconCircleColor} />}
               </>
             ) : (
               <>
-                {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} />}
+                {settings.showThumbnail && <ListThumbnail index={i} radius={thumbRadius} thumbnailType={settings.thumbnailType} thumbnailIcon={item.thumbnailIcon ?? settings.thumbnailIcon} iconCircleBg={settings.iconCircleBackground} iconCircleColor={settings.iconCircleColor} />}
                 <ListItemText item={item} showTitle={sTitle} showSubtitle={sSub} showMetadata={sMeta} />
               </>
             )}
@@ -543,7 +597,6 @@ function RichTextPreview({ settings, componentId, sectionId }: { settings: RichT
       onKeyDown={handleKeyDown}
       style={{
         minHeight: 40,
-        padding: paddingToCss(settings.padding),
         fontSize: settings.fontSize,
         lineHeight: settings.lineHeight,
         color: settings.color,
@@ -561,29 +614,68 @@ function RichTextPreview({ settings, componentId, sectionId }: { settings: RichT
   );
 }
 
-const calloutIcons: Record<CalloutIcon, React.ReactNode> = {
-  horn: <HornIcon size={20} />,
-  info: <Info size={20} />,
-  star: <Star size={20} />,
-  alert: <AlertTriangle size={20} />,
-};
+function LaurelWreath({ size = 20 }: { size?: number }) {
+  return <img src="/laurel-wreath.svg" width={size} height={size} alt="" style={{ display: 'block' }} />;
+}
 
 export function CalloutBadge({ callout }: { callout: ComponentCallout }) {
+  const variant = callout.variant ?? 'A';
+
+  if (variant === 'A') {
+    return (
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6, padding: 8,
+        background: 'rgba(0,0,0,0.5)', borderRadius: 8,
+        overflow: 'hidden', width: 'fit-content',
+      }}>
+        <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <LaurelWreath size={20} />
+        </span>
+        <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap' }}>
+          {callout.text}
+        </span>
+      </div>
+    );
+  }
+
+  if (variant === 'B') {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: 8,
+        background: 'rgba(0,0,0,0.5)', borderRadius: 8,
+        overflow: 'hidden', width: 169, margin: '0 auto',
+      }}>
+        <LaurelWreath size={20} />
+        <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap', textAlign: 'center' }}>
+          {callout.text}
+        </span>
+      </div>
+    );
+  }
+
+  if (variant === 'C') {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: 8,
+        background: 'rgba(0,0,0,0.5)', borderRadius: 8,
+        overflow: 'hidden', width: 169, margin: '0 auto',
+      }}>
+        <LaurelWreath size={48} />
+        <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap', textAlign: 'center' }}>
+          {callout.text}
+        </span>
+      </div>
+    );
+  }
+
+  // Variant D
   return (
     <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      padding: 8,
-      background: 'rgba(0,0,0,0.5)',
-      borderRadius: 8,
-      overflow: 'hidden',
-      width: 'fit-content',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+      padding: '0 8px', borderRadius: 8, overflow: 'hidden', width: 169, margin: '0 auto',
     }}>
-      <span style={{ color: '#fff', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-        {calloutIcons[callout.icon]}
-      </span>
-      <span style={{ fontSize: 14, fontWeight: 500, lineHeight: '19px', color: '#fff', whiteSpace: 'nowrap' }}>
+      <LaurelWreath size={56} />
+      <span style={{ fontSize: 20, fontWeight: 500, lineHeight: '22px', color: '#fff', textAlign: 'center', width: 169 }}>
         {callout.text}
       </span>
     </div>
@@ -1005,7 +1097,8 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
   }
 
   const cpSides = parsePadding(theme?.componentPadding);
-  const componentPadding = `${Math.max(2, cpSides[0] + 2)}px ${Math.max(2, cpSides[1] + 2)}px ${Math.max(2, cpSides[2] + 2)}px ${Math.max(2, cpSides[3] + 2)}px`;
+  const settingsPadding = parsePadding(component.settings.settings.padding);
+  const componentPadding = `${Math.max(2, cpSides[0] + settingsPadding[0] + 2)}px ${Math.max(2, cpSides[1] + settingsPadding[1] + 2)}px ${Math.max(2, cpSides[2] + settingsPadding[2] + 2)}px ${Math.max(2, cpSides[3] + settingsPadding[3] + 2)}px`;
   const order: AttachmentKey[] = component.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
 
   const renderAttachment = (key: AttachmentKey, position: 'above' | 'below') => {

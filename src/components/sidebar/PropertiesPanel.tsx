@@ -8,7 +8,13 @@ import {
   GripVertical, ChevronRight, Link2, Unlink2,
   Megaphone, Tags, Radio, Timer,
   Heading, PenLine, Database, Grid3X3,
-  Image, MousePointerClick, ToggleRight, Hash,
+  Image, MousePointerClick, Hash,
+  Play, Film, Tv, Music, Gamepad2, Clapperboard,
+  Star, Heart, Bookmark, Award, Trophy, Gem,
+  Clock, Calendar, Bell, Zap, Flame, Sparkles,
+  User, Users, Globe, MapPin, Compass, Navigation,
+  Download, Share2, ExternalLink, Eye, Search,
+  CheckCircle, Info, AlertCircle, Shield, Lock, Unlock,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import type {
@@ -27,6 +33,8 @@ import type {
   ListColumns,
   GridCellStyle,
   CalloutIcon,
+  CalloutVariant,
+  ListThumbnailIcon,
   LinkedValues,
   LinkedValue,
   MarqueeConfig,
@@ -38,14 +46,54 @@ import type {
   AttachmentKey,
   Padding,
 } from '../../types/message';
-import { parsePadding, paddingToCss, isUniformPadding, uniformPaddingValue } from '../../types/message';
+import { parsePadding, isUniformPadding, uniformPaddingValue } from '../../types/message';
 import {
   contentTypes,
   intentOptions,
   packageTypes,
+  gradientPresets,
 } from '../../data/defaults';
 import { entityVariables, themeVariables } from '../../data/variables';
 import { Select, Toggle, LinkedField, LinkedWrapper } from '../../ui';
+
+const THUMBNAIL_ICONS: { icon: ListThumbnailIcon; label: string; Component: React.ComponentType<{ size?: number }> }[] = [
+  { icon: 'play', label: 'Play', Component: Play },
+  { icon: 'film', label: 'Film', Component: Film },
+  { icon: 'tv', label: 'TV', Component: Tv },
+  { icon: 'music', label: 'Music', Component: Music },
+  { icon: 'gamepad-2', label: 'Gamepad', Component: Gamepad2 },
+  { icon: 'clapperboard', label: 'Clapperboard', Component: Clapperboard },
+  { icon: 'star', label: 'Star', Component: Star },
+  { icon: 'heart', label: 'Heart', Component: Heart },
+  { icon: 'bookmark', label: 'Bookmark', Component: Bookmark },
+  { icon: 'award', label: 'Award', Component: Award },
+  { icon: 'trophy', label: 'Trophy', Component: Trophy },
+  { icon: 'gem', label: 'Gem', Component: Gem },
+  { icon: 'clock', label: 'Clock', Component: Clock },
+  { icon: 'calendar', label: 'Calendar', Component: Calendar },
+  { icon: 'bell', label: 'Bell', Component: Bell },
+  { icon: 'zap', label: 'Zap', Component: Zap },
+  { icon: 'flame', label: 'Flame', Component: Flame },
+  { icon: 'sparkles', label: 'Sparkles', Component: Sparkles },
+  { icon: 'user', label: 'User', Component: User },
+  { icon: 'users', label: 'Users', Component: Users },
+  { icon: 'globe', label: 'Globe', Component: Globe },
+  { icon: 'map-pin', label: 'Map Pin', Component: MapPin },
+  { icon: 'compass', label: 'Compass', Component: Compass },
+  { icon: 'navigation', label: 'Navigation', Component: Navigation },
+  { icon: 'download', label: 'Download', Component: Download },
+  { icon: 'share-2', label: 'Share', Component: Share2 },
+  { icon: 'external-link', label: 'External', Component: ExternalLink },
+  { icon: 'link', label: 'Link', Component: Link },
+  { icon: 'eye', label: 'Eye', Component: Eye },
+  { icon: 'search', label: 'Search', Component: Search },
+  { icon: 'check-circle', label: 'Check', Component: CheckCircle },
+  { icon: 'info', label: 'Info', Component: Info },
+  { icon: 'alert-circle', label: 'Alert', Component: AlertCircle },
+  { icon: 'shield', label: 'Shield', Component: Shield },
+  { icon: 'lock', label: 'Lock', Component: Lock },
+  { icon: 'unlock', label: 'Unlock', Component: Unlock },
+];
 
 function PropertyGroup({
   title,
@@ -340,6 +388,108 @@ function PaddingControl({ label = 'Padding', value, onChange }: { label?: string
   );
 }
 
+
+function isGradientValue(value: string): boolean {
+  return value.startsWith('linear-gradient(') || value.startsWith('radial-gradient(');
+}
+
+const bgModeStyle = (active: boolean): CSSProperties => ({
+  flex: 1,
+  padding: '5px 0',
+  fontSize: 11,
+  fontWeight: 600,
+  fontFamily: 'var(--font-family)',
+  border: 'none',
+  borderRadius: 5,
+  cursor: 'pointer',
+  background: active ? 'var(--color-bg-hover)' : 'transparent',
+  color: active ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
+  transition: 'var(--transition-fast)',
+});
+
+function BackgroundControl({ value, onChange, label = 'Background' }: {
+  value: string;
+  onChange: (v: string) => void;
+  label?: string;
+}) {
+  const isGrad = isGradientValue(value);
+
+  const mode: 'solid' | 'gradient' = isGrad ? 'gradient' : 'solid';
+
+  const switchMode = (m: 'solid' | 'gradient') => {
+    if (m === mode) return;
+    if (m === 'gradient') {
+      onChange(gradientPresets[0].value);
+    } else {
+      onChange('#000000');
+    }
+  };
+
+  const activePreset = isGrad ? gradientPresets.find((p) => p.value === value) : null;
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>{label}</label>
+      <div style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--color-bg-tertiary)', borderRadius: 7, border: '1px solid var(--color-border-default)', marginBottom: 8 }}>
+        <button type="button" onClick={() => switchMode('solid')} style={bgModeStyle(mode === 'solid')}>Solid</button>
+        <button type="button" onClick={() => switchMode('gradient')} style={bgModeStyle(mode === 'gradient')}>Gradient</button>
+      </div>
+      {mode === 'solid' ? (
+        <LinkedField
+          value={value}
+          onChange={onChange}
+          onLink={() => {}}
+          variables={themeVariables.filter((v) => v.valueType === 'color')}
+          type="color"
+          placeholder="transparent"
+        />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{
+            height: 48, borderRadius: 6, border: '1px solid var(--color-border-default)',
+            background: value,
+          }} />
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(6, 1fr)',
+            gap: 6,
+          }}>
+            {gradientPresets.map((preset) => {
+              const isActive = preset.value === value;
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  title={preset.name}
+                  onClick={() => onChange(preset.value)}
+                  style={{
+                    width: '100%',
+                    aspectRatio: '1',
+                    borderRadius: 6,
+                    border: isActive ? '2px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                    background: preset.value,
+                    cursor: 'pointer',
+                    padding: 0,
+                    outline: isActive ? '1px solid var(--color-brand)' : 'none',
+                    outlineOffset: 1,
+                    transition: 'var(--transition-fast)',
+                  }}
+                />
+              );
+            })}
+          </div>
+          {activePreset && (
+            <div style={{ fontSize: 11, color: 'var(--color-text-muted)', fontFamily: 'var(--font-family)', textAlign: 'center' }}>
+              {activePreset.name}
+            </div>
+          )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style', linked, onLink, imageRadius, onImageRadiusUpdate }: {
   padding: Padding;
   backgroundColor: string;
@@ -358,7 +508,8 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
   const previewParts: string[] = [];
   const padVal = uniformPaddingValue(padding);
   if (padVal > 0) previewParts.push(isUniformPadding(padding) ? `pad ${padVal}` : `pad ${parsePadding(padding).join('/')}`);
-  if (backgroundColor !== 'transparent') previewParts.push(`bg ${backgroundColor}`);
+  if (backgroundColor !== 'transparent' && !isGradientValue(backgroundColor)) previewParts.push(`bg ${backgroundColor}`);
+  if (isGradientValue(backgroundColor)) previewParts.push('gradient');
   if (strokeWidth > 0) previewParts.push(`stroke ${strokeWidth}`);
   if (imageRadius !== undefined && imageRadius !== 8) previewParts.push(`radius ${imageRadius}`);
 
@@ -382,15 +533,9 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
           </LinkedWrapper>
         )}
         <PaddingControl value={padding} onChange={(v) => onUpdate({ padding: v })} />
-        <LinkedField
-          label="Background color"
+        <BackgroundControl
           value={backgroundColor}
-          linked={linked?.['backgroundColor']}
           onChange={(v) => onUpdate({ backgroundColor: v })}
-          onLink={(lv) => onLink?.('backgroundColor', lv)}
-          variables={colorVars}
-          type="color"
-          placeholder="transparent"
         />
         <RadiusControl
           radii={backgroundRadius}
@@ -514,19 +659,16 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
 
   const colorVars = themeVariables.filter((v) => v.valueType === 'color');
   const numberVars = themeVariables.filter((v) => v.valueType === 'number');
+  const bgVal = section.background.value;
+  const bgPreview = isGradientValue(bgVal) ? 'gradient' : bgVal !== 'transparent' ? bgVal : 'Default';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <PropertyGroup title="Visual" defaultOpen preview={section.background.value !== 'transparent' ? section.background.value : 'Default'}>
+      <PropertyGroup title="Visual" defaultOpen preview={bgPreview}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <LinkedField
-            label="Background color"
+          <BackgroundControl
             value={section.background.value}
-            onChange={(v) => updateBackground({ value: v })}
-            onLink={() => {}}
-            variables={colorVars}
-            type="color"
-            placeholder="transparent"
+            onChange={(v) => updateBackground({ value: v, type: isGradientValue(v) ? 'gradient' : 'solid' })}
           />
           <PaddingControl value={section.padding ?? 0} onChange={(v) => updateSection(section.id, { padding: v })} />
           <RadiusControl
@@ -1164,6 +1306,8 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
       <MarqueeControls
         marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
         onChange={(m) => update({ ...settings, marquee: m })}
+        linked={linked}
+        onLink={setLinked}
       />
     </div>
   );
@@ -1576,6 +1720,8 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
       <MarqueeControls
         marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
         onChange={(m) => update({ ...settings, marquee: m })}
+        linked={linked}
+        onLink={setLinked}
       />
     </div>
   );
@@ -1646,6 +1792,102 @@ function RadiusControl({ radii, onChange }: { radii: [number, number, number, nu
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function ListItemIconPicker({ settings, update }: { settings: ListSettings; update: (s: ListSettings) => void }) {
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const globalIcon = settings.thumbnailIcon ?? 'play';
+
+  const updateItemIcon = (idx: number, icon: ListThumbnailIcon | undefined) => {
+    const items = [...settings.items];
+    items[idx] = { ...items[idx], thumbnailIcon: icon };
+    update({ ...settings, items });
+  };
+
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 6 }}>Item icons</label>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {settings.items.map((item, idx) => {
+          const currentIcon = item.thumbnailIcon ?? globalIcon;
+          const isExpanded = expandedIdx === idx;
+          const IconComp = THUMBNAIL_ICONS.find((t) => t.icon === currentIcon)?.Component ?? Play;
+
+          return (
+            <div key={idx} style={{
+              borderRadius: 6,
+              border: isExpanded ? '1px solid var(--color-border-default)' : '1px solid transparent',
+              background: isExpanded ? 'var(--color-bg-tertiary)' : undefined,
+              transition: 'var(--transition-fast)',
+            }}>
+              <button
+                type="button"
+                onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  width: '100%', padding: '6px 8px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  borderRadius: 6, fontFamily: 'inherit',
+                }}
+              >
+                <div style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  background: 'var(--color-brand-subtle)',
+                  border: '1.5px solid var(--color-brand)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--color-brand)',
+                  flexShrink: 0, transition: 'var(--transition-fast)',
+                }}>
+                  <IconComp size={12} />
+                </div>
+                <span style={{
+                  flex: 1, textAlign: 'left',
+                  fontSize: 11, fontWeight: 500, fontFamily: 'var(--font-family)',
+                  color: 'var(--color-text-primary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {item.title}
+                </span>
+                <ChevronRight size={10} style={{
+                  flexShrink: 0, color: 'var(--color-text-muted)',
+                  transform: isExpanded ? 'rotate(90deg)' : 'none',
+                  transition: 'transform 0.15s ease',
+                }} />
+              </button>
+              {isExpanded && (
+                <div style={{ padding: '4px 8px 8px' }}>
+                  <div style={{
+                    display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 2,
+                    maxHeight: 140, overflowY: 'auto',
+                  }}>
+                    {THUMBNAIL_ICONS.map(({ icon, label, Component: IC }) => (
+                      <button
+                        key={icon}
+                        type="button"
+                        title={label}
+                        onClick={() => { updateItemIcon(idx, icon); setExpandedIdx(null); }}
+                        style={{
+                          width: '100%', aspectRatio: '1', borderRadius: 5,
+                          border: currentIcon === icon ? '1.5px solid var(--color-brand)' : '1px solid transparent',
+                          background: currentIcon === icon ? 'var(--color-brand-subtle)' : 'var(--color-bg-secondary)',
+                          color: currentIcon === icon ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'var(--transition-fast)',
+                        }}
+                      >
+                        <IC size={13} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1779,24 +2021,93 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
               onChange={(v) => update({ ...settings, showDivider: v })}
             />
           </LinkedWrapper>
+          {settings.layout === 'schedules' && (
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                Text alignment
+              </label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['left', 'center'] as const).map((a) => (
+                  <StepperBtn
+                    key={a}
+                    onClick={() => update({ ...settings, textAlign: a })}
+                    style={(settings.textAlign ?? 'left') === a ? {
+                      border: '2px solid var(--color-brand)',
+                      background: 'var(--color-brand-subtle)',
+                      color: 'var(--color-brand)',
+                      fontSize: 12,
+                      flex: 1,
+                    } : { fontSize: 12, flex: 1 }}
+                  >
+                    {a === 'left' ? <AlignLeft size={14} /> : <AlignCenter size={14} />}
+                  </StepperBtn>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </PropertyGroup>
       {settings.showThumbnail && (
-        <PropertyGroup title="Thumbnail" preview={`radius ${settings.thumbnailRadius ?? 8}px`}>
-          <LinkedWrapper
-            label="Thumbnail radius"
-            linked={linked['thumbnailRadius']}
-            onLink={(lv) => setLinked('thumbnailRadius', lv)}
-            variables={themeVariables.filter((v) => v.valueType === 'text')}
-            currentValue={String(settings.thumbnailRadius ?? 8)}
-            onValueFromVariable={(v) => update({ ...settings, thumbnailRadius: parseInt(v) || 8 })}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: Math.max(0, (settings.thumbnailRadius ?? 8) - 1) })} disabled={(settings.thumbnailRadius ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.thumbnailRadius ?? 8} onChange={(v) => update({ ...settings, thumbnailRadius: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
+        <PropertyGroup title="Thumbnail" preview={`${(settings.thumbnailType ?? 'image') === 'icon' ? settings.thumbnailIcon ?? 'play' : 'image'} · ${settings.thumbnailRadius ?? 8}px`}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 6 }}>Type</label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {(['image', 'icon'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => update({ ...settings, thumbnailType: t })}
+                    style={{
+                      flex: 1, height: 30, borderRadius: 6,
+                      border: (settings.thumbnailType ?? 'image') === t ? '1.5px solid var(--color-brand)' : '1px solid var(--border-default)',
+                      background: (settings.thumbnailType ?? 'image') === t ? 'var(--color-brand-subtle)' : 'var(--color-bg-secondary)',
+                      color: (settings.thumbnailType ?? 'image') === t ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                      fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
+                      cursor: 'pointer', textTransform: 'capitalize',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                    }}
+                  >
+                    {t === 'image' ? <Image size={13} /> : <Sparkles size={13} />}
+                    {t}
+                  </button>
+                ))}
+              </div>
             </div>
-          </LinkedWrapper>
+            {(settings.thumbnailType ?? 'image') === 'icon' && (
+              <ListItemIconPicker settings={settings} update={update} />
+            )}
+            {(settings.thumbnailType ?? 'image') === 'icon' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <Toggle
+                  label="Circle background"
+                  checked={settings.iconCircleBackground ?? false}
+                  onChange={(v) => update({ ...settings, iconCircleBackground: v })}
+                />
+                {(settings.iconCircleBackground ?? false) && (
+                  <BackgroundControl
+                    label="Circle color"
+                    value={settings.iconCircleColor ?? '#E50914'}
+                    onChange={(v) => update({ ...settings, iconCircleColor: v })}
+                  />
+                )}
+              </div>
+            )}
+            <LinkedWrapper
+              label="Thumbnail radius"
+              linked={linked['thumbnailRadius']}
+              onLink={(lv) => setLinked('thumbnailRadius', lv)}
+              variables={themeVariables.filter((v) => v.valueType === 'text')}
+              currentValue={String(settings.thumbnailRadius ?? 8)}
+              onValueFromVariable={(v) => update({ ...settings, thumbnailRadius: parseInt(v) || 8 })}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: Math.max(0, (settings.thumbnailRadius ?? 8) - 1) })} disabled={(settings.thumbnailRadius ?? 8) <= 0}>‹</StepperBtn>
+                <StepperInput value={settings.thumbnailRadius ?? 8} onChange={(v) => update({ ...settings, thumbnailRadius: Math.max(0, v || 0) })} />
+                <StepperBtn onClick={() => update({ ...settings, thumbnailRadius: (settings.thumbnailRadius ?? 8) + 1 })}>›</StepperBtn>
+              </div>
+            </LinkedWrapper>
+          </div>
         </PropertyGroup>
       )}
       <ComponentStyleControls
@@ -1981,7 +2292,7 @@ function ListItemStyleSection({ settings, update }: { settings: ListSettings; up
   );
 }
 
-function MarqueeControls({ marquee, onChange }: { marquee: MarqueeConfig; onChange: (m: MarqueeConfig) => void }) {
+function MarqueeControls({ marquee, onChange, linked, onLink }: { marquee: MarqueeConfig; onChange: (m: MarqueeConfig) => void; linked?: Record<string, LinkedValue>; onLink?: (key: string, value: LinkedValue) => void }) {
   return (
     <PropertyGroup title="Marquee" preview={marquee.enabled ? `"${marquee.text}" · ${marquee.position ?? 'below'}` : 'Off'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -2014,25 +2325,15 @@ function MarqueeControls({ marquee, onChange }: { marquee: MarqueeConfig; onChan
                 ))}
               </div>
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
-                Text
-              </label>
-              <input
-                type="text"
-                value={marquee.text}
-                onChange={(e) => onChange({ ...marquee, text: e.target.value })}
-                placeholder="Marquee"
-                className="mep-input"
-                style={{
-                  width: '100%', height: 36, borderRadius: 8,
-                  border: '1px solid var(--color-border-default)', background: 'var(--color-bg-tertiary)',
-                  color: 'var(--color-text-primary)', fontSize: 13, padding: '0 10px',
-                  outline: 'none', fontFamily: 'var(--font-family)',
-                  transition: 'var(--transition-fast)',
-                }}
-              />
-            </div>
+            <LinkedField
+              label="Text"
+              value={marquee.text}
+              linked={linked?.['marqueeText']}
+              onChange={(v) => onChange({ ...marquee, text: v })}
+              onLink={(lv) => onLink?.('marqueeText', lv)}
+              variables={entityVariables.filter((v) => v.valueType === 'text')}
+              placeholder="Marquee text"
+            />
           </>
         )}
       </div>
@@ -2045,7 +2346,7 @@ function MarqueeControls({ marquee, onChange }: { marquee: MarqueeConfig; onChan
 const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 
 const defaultCallout: ComponentCallout = {
-  enabled: false, text: 'Final Season Coming Nov 16', icon: 'horn', position: 'above',
+  enabled: false, text: '2023 Oscar Winner', variant: 'A', position: 'above',
 };
 const defaultMetadata: ComponentMetadata = {
   enabled: false, items: ['Category', 'Genre', 'Year', 'Episodes', 'Rating'], position: 'below',
@@ -2064,12 +2365,12 @@ const attachmentMeta: Record<AttachmentKey, { icon: React.ReactNode; label: stri
   countdown: { icon: <Timer size={16} />, label: 'Countdown' },
 };
 
-const calloutIconOptions: { value: CalloutIcon; label: string }[] = [
-  { value: 'horn', label: 'Horn' },
-  { value: 'info', label: 'Info' },
-  { value: 'star', label: 'Star' },
-  { value: 'alert', label: 'Alert' },
-];
+const calloutVariantDescriptions: Record<string, string> = {
+  A: 'Inline',
+  B: 'Stacked sm',
+  C: 'Stacked md',
+  D: 'Stacked lg',
+};
 
 function AttachmentsSection({ target, targetType, sectionId }: {
   target: MessageComponent | Section;
@@ -2185,13 +2486,29 @@ function AttachmentsSection({ target, targetType, sectionId }: {
     if (key === 'callout') {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div>
+            <label style={{ display: 'block', fontSize: 11, fontFamily: 'var(--font-family)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>Variant</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+              {(['A', 'B', 'C', 'D'] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => applyUpdate({ callout: { ...callout, variant: v } })}
+                  style={{
+                    height: 28, borderRadius: 6,
+                    border: callout.variant === v ? '1.5px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                    background: callout.variant === v ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                    color: callout.variant === v ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                    fontSize: 11, fontFamily: 'var(--font-family)', fontWeight: 500,
+                    cursor: 'pointer', transition: 'all var(--transition-fast)',
+                  }}
+                >
+                  {v} · {calloutVariantDescriptions[v]}
+                </button>
+              ))}
+            </div>
+          </div>
           {fieldInput('Text', callout.text, (v) => applyUpdate({ callout: { ...callout, text: v } }), 'Callout text')}
-          <Select
-            label="Icon"
-            options={calloutIconOptions}
-            value={callout.icon}
-            onChange={(v) => applyUpdate({ callout: { ...callout, icon: v as CalloutIcon } })}
-          />
           {positionButtons(callout.position, (p) => applyUpdate({ callout: { ...callout, position: p } }))}
         </div>
       );
