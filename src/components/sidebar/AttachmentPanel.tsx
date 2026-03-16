@@ -84,26 +84,6 @@ export function AttachmentPanel() {
   const targetMode: 'component' | 'section' | 'none' = component ? 'component' : section ? 'section' : 'none';
   const hasTarget = targetMode !== 'none';
 
-  const callout: ComponentCallout =
-    targetMode === 'component' ? (component?.callout ?? defaultCallout)
-    : targetMode === 'section' ? (section?.callout ?? defaultCallout)
-    : defaultCallout;
-
-  const metadata: ComponentMetadata =
-    targetMode === 'component' ? (component?.metadata ?? defaultMetadata)
-    : targetMode === 'section' ? (section?.metadata ?? defaultMetadata)
-    : defaultMetadata;
-
-  const liveBadge: ComponentLiveBadge =
-    targetMode === 'component' ? (component?.liveBadge ?? defaultLiveBadge)
-    : targetMode === 'section' ? (section?.liveBadge ?? defaultLiveBadge)
-    : defaultLiveBadge;
-
-  const countdown: ComponentCountdown =
-    targetMode === 'component' ? (component?.countdown ?? defaultCountdown)
-    : targetMode === 'section' ? (section?.countdown ?? defaultCountdown)
-    : defaultCountdown;
-
   const targetLabel =
     targetMode === 'component' ? (componentLabels[component!.type] || component!.type)
     : targetMode === 'section' ? (sectionLabels[section!.type] || 'Section')
@@ -199,13 +179,6 @@ export function AttachmentPanel() {
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {attachmentItems.map((item) => {
-          const isActive = hasTarget && (
-            (item.id === 'callout' && callout.enabled) ||
-            (item.id === 'metadata' && metadata.enabled) ||
-            (item.id === 'liveBadge' && liveBadge.enabled) ||
-            (item.id === 'countdown' && countdown.enabled)
-          );
-
           return (
             <div
               key={item.id}
@@ -213,7 +186,6 @@ export function AttachmentPanel() {
               role="button"
               tabIndex={0}
               data-disabled={!hasTarget || undefined}
-              data-active={isActive || undefined}
               onClick={() => handleClick(item.id)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleClick(item.id);
@@ -224,8 +196,7 @@ export function AttachmentPanel() {
                 gap: 12,
                 padding: 12,
                 borderRadius: 12,
-                border: isActive ? '1px solid var(--color-brand)' : '1px solid transparent',
-                background: isActive ? 'var(--color-brand-subtle)' : 'transparent',
+                border: '1px solid transparent',
                 cursor: !hasTarget ? 'not-allowed' : 'pointer',
                 opacity: !hasTarget ? 0.25 : 1,
               }}
@@ -236,17 +207,17 @@ export function AttachmentPanel() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  background: isActive ? 'var(--color-brand)' : 'var(--color-bg-tertiary)',
+                  background: 'var(--color-bg-tertiary)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: isActive ? 'white' : 'var(--color-text-secondary)',
+                  color: 'var(--color-text-secondary)',
                   transition: 'var(--transition-fast)',
                 }}
               >
                 {item.icon}
               </div>
-              <div style={{ flex: 1 }}>
+              <div>
                 <div style={{
                   fontFamily: 'var(--font-family)',
                   fontSize: 14,
@@ -263,17 +234,6 @@ export function AttachmentPanel() {
                   {item.description}
                 </div>
               </div>
-              {isActive && (
-                <div style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  color: 'var(--color-brand)',
-                  fontFamily: 'var(--font-family)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  Added
-                </div>
-              )}
             </div>
           );
         })}
