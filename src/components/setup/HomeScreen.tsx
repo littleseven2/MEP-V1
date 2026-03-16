@@ -1,4 +1,4 @@
-import { Plus, Copy, Clock, ArrowRight } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 
 const cardStyle: React.CSSProperties = {
@@ -101,187 +101,60 @@ export function HomeScreen() {
           Build and customize email, push, and in-app messages with our visual builder.
         </p>
 
-        {/* Cards grid */}
+        {/* New Message card */}
         <div
+          role="button"
+          tabIndex={0}
+          onClick={() => setView('setup')}
+          onKeyDown={(e) => e.key === 'Enter' && setView('setup')}
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: 24,
-            maxWidth: 720,
-          }}
-        >
-          {/* New Message - active */}
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setView('setup')}
-            onKeyDown={(e) => e.key === 'Enter' && setView('setup')}
-            style={{
-              ...cardStyle,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-deep)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'var(--shadow-card)';
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: 'var(--color-brand-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <Plus size={20} color="var(--color-brand)" />
-            </div>
-            <h3
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 18,
-                fontWeight: 600,
-                color: 'var(--color-text-primary)',
-                marginBottom: 4,
-              }}
-            >
-              New Message
-            </h3>
-            <p
-              style={{
-                fontFamily: 'var(--font-family)',
-                fontSize: 14,
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              Create a new message from scratch
-            </p>
-          </div>
-
-          {/* Duplicate - disabled */}
-          <div
-            style={{
-              ...cardStyle,
-              opacity: 0.35,
-              cursor: 'not-allowed',
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: 'var(--color-bg-tertiary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <Copy size={20} color="var(--color-text-secondary)" />
-            </div>
-            <h3
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 18,
-                fontWeight: 600,
-                color: 'var(--color-text-primary)',
-                marginBottom: 4,
-              }}
-            >
-              Duplicate
-            </h3>
-            <p
-              style={{
-                fontFamily: 'var(--font-family)',
-                fontSize: 14,
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              Duplicate an existing message
-            </p>
-          </div>
-
-          {/* Previous Version - disabled */}
-          <div
-            style={{
-              ...cardStyle,
-              opacity: 0.35,
-              cursor: 'not-allowed',
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: 'var(--color-bg-tertiary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}
-            >
-              <Clock size={20} color="var(--color-text-secondary)" />
-            </div>
-            <h3
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: 18,
-                fontWeight: 600,
-                color: 'var(--color-text-primary)',
-                marginBottom: 4,
-              }}
-            >
-              Previous Version
-            </h3>
-            <p
-              style={{
-                fontFamily: 'var(--font-family)',
-                fontSize: 14,
-                color: 'var(--color-text-secondary)',
-              }}
-            >
-              Restore from a previous version
-            </p>
-          </div>
-        </div>
-
-        {/* Get started link */}
-        <a
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            setView('setup');
-          }}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            marginTop: 48,
-            fontFamily: 'var(--font-family)',
-            fontSize: 16,
-            fontWeight: 500,
-            color: 'var(--color-brand)',
-            textDecoration: 'none',
-            transition: 'var(--transition-fast)',
+            ...cardStyle,
+            maxWidth: 240,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.gap = '12px';
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-deep)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.gap = '8px';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'var(--shadow-card)';
           }}
         >
-          Get started
-          <ArrowRight size={18} />
-        </a>
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              background: 'var(--color-brand-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+            }}
+          >
+            <Plus size={20} color="var(--color-brand)" />
+          </div>
+          <h3
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: 18,
+              fontWeight: 600,
+              color: 'var(--color-text-primary)',
+              marginBottom: 4,
+            }}
+          >
+            New Message
+          </h3>
+          <p
+            style={{
+              fontFamily: 'var(--font-family)',
+              fontSize: 14,
+              color: 'var(--color-text-secondary)',
+            }}
+          >
+            Create a new message from scratch
+          </p>
+        </div>
       </div>
     </div>
   );
