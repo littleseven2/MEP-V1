@@ -483,7 +483,6 @@ function BackgroundControl({ value, onChange, label = 'Background' }: {
               {activePreset.name}
             </div>
           )}
-          </div>
         </div>
       )}
     </div>
