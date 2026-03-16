@@ -6,7 +6,6 @@ import type {
   ComponentType,
   ComponentSettings,
   TextBlockSettings,
-  RichTextSettings,
   MediaSettings,
   CTASettings,
   GridSettings,
@@ -226,12 +225,17 @@ export function getDefaultComponentSettings(type: ComponentType, theme?: ThemeCo
   switch (type) {
     case 'text-block': {
       const textBlockSettings: TextBlockSettings = {
+        format: 'structured',
         eyebrow: { enabled: true, text: 'Eyebrow' },
         headline: { enabled: true, text: 'Headline' },
         body: { enabled: true, text: 'Body text goes here.' },
         link: { enabled: true, text: 'Learn more', url: '#' },
         callout: { enabled: false, text: 'Final Season Coming Nov 16', icon: 'horn' },
         order: ['eyebrow', 'headline', 'body', 'callout', 'link'],
+        content: '<p>Start typing your content here...</p>',
+        fontSize: 16,
+        lineHeight: 1.6,
+        color: textColor,
         alignment: 'left',
         padding: 0,
         backgroundColor: 'transparent',
@@ -240,21 +244,6 @@ export function getDefaultComponentSettings(type: ComponentType, theme?: ThemeCo
         strokeWidth: 0,
       };
       return { type: 'text-block', settings: textBlockSettings };
-    }
-    case 'rich-text': {
-      const richTextSettings: RichTextSettings = {
-        content: '<p>Start typing your content here...</p>',
-        alignment: 'left',
-        fontSize: 16,
-        lineHeight: 1.6,
-        color: textColor,
-        padding: 0,
-        backgroundColor: 'transparent',
-        backgroundRadius: radius,
-        strokeColor: 'transparent',
-        strokeWidth: 0,
-      };
-      return { type: 'rich-text', settings: richTextSettings };
     }
     case 'media': {
       const mediaSettings: MediaSettings = {

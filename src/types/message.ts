@@ -43,7 +43,7 @@ export type Cadence = 'temporal' | 'evergreen';
 export type SectionType = 'header' | 'content' | 'footer';
 
 // Component types
-export type ComponentType = 'media' | 'text-block' | 'rich-text' | 'cta' | 'grid' | 'list';
+export type ComponentType = 'media' | 'text-block' | 'cta' | 'grid' | 'list';
 
 // Netflix artwork formats + video
 export type MediaFormat =
@@ -214,17 +214,28 @@ export function computeComponentItemOrder(component: MessageComponent): string[]
   return [CONTENT_ITEM_KEY, ...attOrder];
 }
 
+// Text block format discriminator
+export type TextBlockFormat = 'structured' | 'freeform';
+
 // Text block element keys
 export type TextBlockElement = 'eyebrow' | 'headline' | 'body' | 'link' | 'callout';
 
-// Text block settings
+// Text block settings (unified: structured or freeform)
 export interface TextBlockSettings {
+  format: TextBlockFormat;
+  // Structured fields
   eyebrow: { enabled: boolean; text: string };
   headline: { enabled: boolean; text: string };
   body: { enabled: boolean; text: string };
   link: { enabled: boolean; text: string; url: string };
   callout: { enabled: boolean; text: string; icon: CalloutIcon };
   order: TextBlockElement[];
+  // Freeform fields
+  content: string;
+  fontSize: number;
+  lineHeight: number;
+  color: string;
+  // Shared fields
   alignment: 'left' | 'center' | 'right';
   padding: Padding;
   backgroundColor: string;
@@ -369,24 +380,9 @@ export type CalloutIcon = 'horn' | 'info' | 'star' | 'alert';
 // Callout attachment variant
 export type CalloutVariant = 'A' | 'B' | 'C' | 'D';
 
-// Rich text settings
-export interface RichTextSettings {
-  content: string;
-  alignment: 'left' | 'center' | 'right';
-  fontSize: number;
-  lineHeight: number;
-  color: string;
-  padding: Padding;
-  backgroundColor: string;
-  backgroundRadius: [number, number, number, number];
-  strokeColor: string;
-  strokeWidth: number;
-}
-
 // Component settings discriminated union
 export type ComponentSettings =
   | { type: 'text-block'; settings: TextBlockSettings }
-  | { type: 'rich-text'; settings: RichTextSettings }
   | { type: 'media'; settings: MediaSettings }
   | { type: 'cta'; settings: CTASettings }
   | { type: 'grid'; settings: GridSettings }

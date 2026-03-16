@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { ListThumbnailIcon } from '../../types/message';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding } from '../../types/message';
+import type { MessageComponent, TextBlockSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding } from '../../types/message';
 import { paddingToCss, parsePadding, uniformPaddingValue, computeComponentItemOrder, CONTENT_ITEM_KEY } from '../../types/message';
 import { posters } from '../../data/posters';
 import { defaultTextStyles } from '../../data/defaults';
@@ -540,7 +540,7 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
   );
 }
 
-function RichTextPreview({ settings, componentId, sectionId }: { settings: RichTextSettings; componentId: string; sectionId: string }) {
+function FreeformTextPreview({ settings, componentId, sectionId }: { settings: TextBlockSettings; componentId: string; sectionId: string }) {
   const editorRef = useRef<HTMLDivElement>(null);
   const internalContent = useRef(settings.content);
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
@@ -569,7 +569,7 @@ function RichTextPreview({ settings, componentId, sectionId }: { settings: RichT
     internalContent.current = html;
     if (html !== settings.content) {
       updateComponentSettings(sectionId, componentId, {
-        type: 'rich-text',
+        type: 'text-block',
         settings: { ...settings, content: html },
       });
     }
@@ -1086,9 +1086,12 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
       </WithMarquee>
     );
   } else if (component.settings.type === 'text-block') {
-    content = <TextBlockPreview settings={component.settings.settings} ts={ts} />;
-  } else if (component.settings.type === 'rich-text') {
-    content = <RichTextPreview settings={component.settings.settings} componentId={component.id} sectionId={sectionId} />;
+    const tbSettings = component.settings.settings;
+    if (tbSettings.format === 'freeform') {
+      content = <FreeformTextPreview settings={tbSettings} componentId={component.id} sectionId={sectionId} />;
+    } else {
+      content = <TextBlockPreview settings={tbSettings} ts={ts} />;
+    }
   } else if (component.settings.type === 'cta') {
     content = <CTAPreview settings={component.settings.settings} />;
   } else if (component.settings.type === 'grid') {

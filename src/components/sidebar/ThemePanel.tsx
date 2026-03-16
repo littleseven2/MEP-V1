@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Check, Plus, MoreVertical, Trash2, Copy, ChevronRight, Link2, Unlink2 } from 'lucide-react';
+import { Check, Plus, MoreVertical, Trash2, Copy, ChevronRight, Scan } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { defaultThemes, defaultTextStyles, gradientPresets } from '../../data/defaults';
 import type { ThemeConfig, TextStyleKey, TextStyle, Padding } from '../../types/message';
@@ -1075,7 +1075,7 @@ function PaddingControl({ label, value, onChange }: { label: string; value: Padd
             transition: 'color var(--transition-fast)',
           }}
         >
-          {expanded ? <Unlink2 size={13} /> : <Link2 size={13} />}
+          <Scan size={13} />
         </button>
       </div>
       {!expanded ? (

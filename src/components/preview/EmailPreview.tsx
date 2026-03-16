@@ -102,6 +102,20 @@ function PreviewComponent({ component, ts }: { component: MessageComponent; ts: 
   }
   if (component.settings.type === 'text-block') {
     const s = component.settings.settings;
+    if (s.format === 'freeform') {
+      return (
+        <div
+          dangerouslySetInnerHTML={{ __html: s.content }}
+          style={{
+            fontSize: s.fontSize,
+            lineHeight: s.lineHeight,
+            color: s.color,
+            textAlign: s.alignment,
+            wordBreak: 'break-word',
+          }}
+        />
+      );
+    }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {s.order.map((k) => {

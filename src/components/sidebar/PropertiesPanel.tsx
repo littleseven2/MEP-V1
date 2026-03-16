@@ -5,7 +5,7 @@ import {
   Link, Quote, List, ListOrdered,
   IndentDecrease, IndentIncrease, RemoveFormatting,
   Type, Highlighter, Baseline, ChevronDown,
-  GripVertical, ChevronRight, Link2, Unlink2,
+  GripVertical, ChevronRight, Link2, Scan,
   Megaphone, Tags, Radio, Timer,
   Heading, PenLine, Database, Grid3X3,
   Image, MousePointerClick, Hash,
@@ -24,7 +24,6 @@ import type {
   SectionHydration,
   BackgroundConfig,
   TextBlockSettings,
-  RichTextSettings,
   MediaSettings,
   CTASettings,
   GridSettings,
@@ -115,7 +114,7 @@ function PropertyGroup({
         background: 'var(--color-bg-tertiary)',
         border: '1px solid var(--color-border-default)',
         borderRadius: 6,
-        overflow: 'hidden',
+        overflow: open ? 'visible' : 'hidden',
       }}
     >
       <button
@@ -199,7 +198,7 @@ function ContentCard({
       background: 'var(--color-bg-tertiary)',
       border: '1px solid var(--color-border-default)',
       borderRadius: 6,
-      overflow: 'hidden',
+      overflow: open ? 'visible' : 'hidden',
     }}>
       <div
         style={{
@@ -361,7 +360,7 @@ function PaddingControl({ label = 'Padding', value, onChange }: { label?: string
             transition: 'color var(--transition-fast)',
           }}
         >
-          {expanded ? <Unlink2 size={13} /> : <Link2 size={13} />}
+          <Scan size={13} />
         </button>
       </div>
       {!expanded ? (
@@ -705,11 +704,48 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
   );
 }
 
+function FormatToggle({ format, onChange }: { format: 'structured' | 'freeform'; onChange: (f: 'structured' | 'freeform') => void }) {
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 6 }}>
+        Format
+      </label>
+      <div style={{
+        display: 'flex', borderRadius: 8, overflow: 'hidden',
+        border: '1px solid var(--color-border-default)',
+        background: 'var(--color-bg-tertiary)',
+      }}>
+        {([{ key: 'structured' as const, label: 'Structured' }, { key: 'freeform' as const, label: 'Freeform' }]).map((opt) => (
+          <button
+            key={opt.key}
+            type="button"
+            onClick={() => onChange(opt.key)}
+            style={{
+              flex: 1, padding: '7px 0', border: 'none', cursor: 'pointer',
+              fontFamily: 'var(--font-family)', fontSize: 12, fontWeight: 500,
+              background: format === opt.key ? 'var(--color-brand)' : 'transparent',
+              color: format === opt.key ? '#fff' : 'var(--color-text-secondary)',
+              transition: 'var(--transition-fast)',
+            }}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function TextBlockProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
   const updateComponent = useMessageStore((s) => s.updateComponent);
   const settings = component.settings.type === 'text-block' ? component.settings.settings : null;
+  const [headingOpen, setHeadingOpen] = useState(false);
+  const [textColorOpen, setTextColorOpen] = useState(false);
+  const [highlightOpen, setHighlightOpen] = useState(false);
   if (!settings) return null;
+
+  const format = settings.format ?? 'structured';
 
   const linked = component.linkedValues ?? {};
   const setLinked = (fieldKey: string, lv: LinkedValue) => {
@@ -760,10 +796,39 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
 
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
 
+  const execCommand = (cmd: string, value?: string) => {
+    document.execCommand(cmd, false, value);
+  };
+
+  const toolbarBtnStyle = (active?: boolean): React.CSSProperties => ({
+    width: 32, height: 32, borderRadius: 6,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    background: active ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+    border: active ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+    color: active ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+    cursor: 'pointer', padding: 0,
+    transition: 'var(--transition-fast)',
+  });
+
+  const headingOptions = [
+    { label: 'Paragraph', tag: 'p' },
+    { label: 'Heading 1', tag: 'h1' },
+    { label: 'Heading 2', tag: 'h2' },
+    { label: 'Heading 3', tag: 'h3' },
+    { label: 'Heading 4', tag: 'h4' },
+    { label: 'Heading 5', tag: 'h5' },
+    { label: 'Heading 6', tag: 'h6' },
+  ];
+
+  const presetColors = ['#ffffff', '#e50914', '#ff6b6b', '#ffa726', '#ffee58', '#66bb6a', '#42a5f5', '#ab47bc', '#999999', '#000000'];
+  const highlightColors = ['transparent', '#e50914', '#ff6b6b', '#ffa726', '#ffee58', '#66bb6a', '#42a5f5', '#ab47bc', '#333333', '#666666'];
+
   if (tab === 'content') {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {settings.order.filter(k => k !== 'callout').map((key, idx) => {
+        <FormatToggle format={format} onChange={(f) => update({ ...settings, format: f })} />
+
+        {format === 'structured' && settings.order.filter(k => k !== 'callout').map((key, idx) => {
           const fieldKey = fieldVarMap[key] ?? key;
           const isEnabled = (settings[key] as { enabled: boolean }).enabled;
           const isDragging = dragIdx === idx;
@@ -781,7 +846,7 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
                   background: 'var(--color-bg-tertiary)',
                   border: '1px solid var(--color-border-default)',
                   borderRadius: 6,
-                  overflow: 'hidden',
+                  overflow: isExpanded ? 'visible' : 'hidden',
                   opacity: isDragging ? 0.4 : 1,
                   transition: 'var(--transition-fast)',
                 }}
@@ -892,12 +957,253 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
             </div>
           );
         })}
+
+        {format === 'freeform' && (
+          <>
+            <ContentCard title="Text Structure" icon={<Heading size={14} />} defaultOpen>
+              <div style={{ position: 'relative', marginBottom: 8 }}>
+                <button
+                  type="button"
+                  className="mep-select"
+                  onClick={() => setHeadingOpen(!headingOpen)}
+                  style={{
+                    width: '100%', height: 36, borderRadius: 6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0 10px',
+                    background: 'var(--color-bg-tertiary)',
+                    border: '1px solid var(--color-border-default)',
+                    color: 'var(--color-text-primary)',
+                    fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
+                  }}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Type size={14} style={{ opacity: 0.5 }} />
+                    Heading / Paragraph
+                  </span>
+                  <ChevronDown size={14} style={{ opacity: 0.5 }} />
+                </button>
+                {headingOpen && (
+                  <div style={{
+                    position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
+                    background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                    borderRadius: 8, overflow: 'hidden', zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                  }}>
+                    {headingOptions.map((opt) => (
+                      <button
+                        key={opt.tag}
+                        type="button"
+                        onClick={() => {
+                          execCommand('formatBlock', `<${opt.tag}>`);
+                          setHeadingOpen(false);
+                        }}
+                        style={{
+                          width: '100%', padding: '8px 12px', border: 'none',
+                          background: 'transparent', color: 'var(--color-text-primary)',
+                          fontFamily: 'var(--font-family)', fontSize: opt.tag === 'p' ? 13 : opt.tag === 'h1' ? 18 : opt.tag === 'h2' ? 16 : 14,
+                          fontWeight: opt.tag === 'p' ? 400 : 600,
+                          cursor: 'pointer', textAlign: 'left',
+                        }}
+                        className="mep-toolbar-btn"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </ContentCard>
+
+            <ContentCard title="Content Editing" icon={<PenLine size={14} />} defaultOpen>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
+                  <Bold size={14} />
+                </button>
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('italic')} title="Italic (⌘I)">
+                  <Italic size={14} />
+                </button>
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('underline')} title="Underline (⌘U)">
+                  <Underline size={14} />
+                </button>
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('strikeThrough')} title="Strikethrough">
+                  <Strikethrough size={14} />
+                </button>
+
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
+                  const url = prompt('Enter link URL:');
+                  if (url) execCommand('createLink', url);
+                }} title="Insert link">
+                  <Link size={14} />
+                </button>
+
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('formatBlock', '<blockquote>')} title="Blockquote">
+                  <Quote size={14} />
+                </button>
+
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertUnorderedList')} title="Bulleted list">
+                  <List size={14} />
+                </button>
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertOrderedList')} title="Numbered list">
+                  <ListOrdered size={14} />
+                </button>
+
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('outdent')} title="Decrease indent">
+                  <IndentDecrease size={14} />
+                </button>
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('indent')} title="Increase indent">
+                  <IndentIncrease size={14} />
+                </button>
+
+                <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('removeFormat')} title="Clear formatting">
+                  <RemoveFormatting size={14} />
+                </button>
+              </div>
+            </ContentCard>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (format === 'freeform') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <FormatToggle format={format} onChange={(f) => update({ ...settings, format: f })} />
+        <PropertyGroup title="Text Appearance" preview={`${settings.alignment ?? 'left'} · ${settings.color}`}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
+            <div style={{ position: 'relative' }}>
+              <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <Baseline size={14} />
+                  <div style={{ width: 12, height: 3, borderRadius: 1, background: settings.color }} />
+                </div>
+              </button>
+              {textColorOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
+                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                  borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
+                }}>
+                  {presetColors.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { execCommand('foreColor', c); setTextColorOpen(false); }}
+                      style={{
+                        width: 26, height: 26, borderRadius: 4, border: c === '#ffffff' ? '1px solid var(--color-border-default)' : '1px solid transparent',
+                        background: c, cursor: 'pointer',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setHighlightOpen(!highlightOpen); setTextColorOpen(false); }} title="Highlight color">
+                <Highlighter size={14} />
+              </button>
+              {highlightOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
+                  background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
+                  borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
+                  display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
+                }}>
+                  {highlightColors.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => { execCommand('hiliteColor', c); setHighlightOpen(false); }}
+                      style={{
+                        width: 26, height: 26, borderRadius: 4,
+                        border: c === 'transparent' ? '2px dashed var(--color-border-default)' : '1px solid transparent',
+                        background: c === 'transparent' ? 'var(--color-bg-secondary)' : c, cursor: 'pointer',
+                      }}
+                      title={c === 'transparent' ? 'Remove highlight' : c}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
+              const size = prompt('Font size (1-7):', '3');
+              if (size) execCommand('fontSize', size);
+            }} title="Font size">
+              <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)' }}>Aa</span>
+            </button>
+
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => { update({ ...settings, alignment: 'left' }); execCommand('justifyLeft'); }} title="Align left">
+              <AlignLeft size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => { update({ ...settings, alignment: 'center' }); execCommand('justifyCenter'); }} title="Align center">
+              <AlignCenter size={14} />
+            </button>
+            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => { update({ ...settings, alignment: 'right' }); execCommand('justifyRight'); }} title="Align right">
+              <AlignRight size={14} />
+            </button>
+          </div>
+        </PropertyGroup>
+        <PropertyGroup title="Typography" preview={`${settings.fontSize}px · ${settings.lineHeight} lh`}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <LinkedWrapper
+              label="Font size"
+              linked={linked['fontSize']}
+              onLink={(lv) => setLinked('fontSize', lv)}
+              variables={themeVariables}
+              currentValue={String(settings.fontSize)}
+              onValueFromVariable={(v) => update({ ...settings, fontSize: parseInt(v) || 16 })}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <StepperBtn onClick={() => update({ ...settings, fontSize: Math.max(10, settings.fontSize - 1) })} disabled={settings.fontSize <= 10}>‹</StepperBtn>
+                <StepperInput value={settings.fontSize} onChange={(v) => update({ ...settings, fontSize: Math.max(10, v || 16) })} />
+                <StepperBtn onClick={() => update({ ...settings, fontSize: settings.fontSize + 1 })}>›</StepperBtn>
+              </div>
+            </LinkedWrapper>
+            <LinkedWrapper
+              label="Line height"
+              linked={linked['lineHeight']}
+              onLink={(lv) => setLinked('lineHeight', lv)}
+              variables={themeVariables}
+              currentValue={String(settings.lineHeight)}
+              onValueFromVariable={(v) => update({ ...settings, lineHeight: parseFloat(v) || 1.6 })}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <StepperBtn onClick={() => update({ ...settings, lineHeight: Math.max(1, +(settings.lineHeight - 0.1).toFixed(1)) })} disabled={settings.lineHeight <= 1}>‹</StepperBtn>
+                <StepperInput value={settings.lineHeight} onChange={(v) => update({ ...settings, lineHeight: Math.max(1, v || 1.6) })} style={{ width: 48 }} />
+                <StepperBtn onClick={() => update({ ...settings, lineHeight: +(settings.lineHeight + 0.1).toFixed(1) })}>›</StepperBtn>
+              </div>
+            </LinkedWrapper>
+            <LinkedField
+              label="Text color"
+              value={settings.color}
+              linked={linked['color']}
+              onChange={(v) => update({ ...settings, color: v })}
+              onLink={(lv) => setLinked('color', lv)}
+              variables={themeVariables.filter((v) => v.valueType === 'color')}
+              type="color"
+              placeholder="#ffffff"
+            />
+          </div>
+        </PropertyGroup>
+        <ComponentStyleControls
+          padding={settings.padding}
+          backgroundColor={settings.backgroundColor}
+          backgroundRadius={settings.backgroundRadius}
+          strokeColor={settings.strokeColor ?? 'transparent'}
+          strokeWidth={settings.strokeWidth ?? 0}
+          onUpdate={(v) => update({ ...settings, ...v })}
+          linked={linked}
+          onLink={setLinked}
+        />
       </div>
     );
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <FormatToggle format={format} onChange={(f) => update({ ...settings, format: f })} />
       <PropertyGroup title="Layout" preview={`Align: ${settings.alignment ?? 'left'}`}>
         <div>
           <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 4 }}>
@@ -926,291 +1232,6 @@ function TextBlockProperties({ component, sectionId, tab }: { component: Message
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
         backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
-        strokeColor={settings.strokeColor ?? 'transparent'}
-        strokeWidth={settings.strokeWidth ?? 0}
-        onUpdate={(v) => update({ ...settings, ...v })}
-        linked={linked}
-        onLink={setLinked}
-      />
-    </div>
-  );
-}
-
-function RichTextProperties({ component, sectionId, tab }: { component: MessageComponent; sectionId: string; tab: PropsTab }) {
-  const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);
-  const updateComponent = useMessageStore((s) => s.updateComponent);
-  const settings = component.settings.type === 'rich-text' ? component.settings.settings : null;
-  const [headingOpen, setHeadingOpen] = useState(false);
-  const [textColorOpen, setTextColorOpen] = useState(false);
-  const [highlightOpen, setHighlightOpen] = useState(false);
-  if (!settings) return null;
-
-  const linked = component.linkedValues ?? {};
-  const setLinked = (fieldKey: string, lv: LinkedValue) => {
-    updateComponent(sectionId, component.id, { linkedValues: { ...linked, [fieldKey]: lv } });
-  };
-
-  const update = (s: RichTextSettings) =>
-    updateComponentSettings(sectionId, component.id, { type: 'rich-text', settings: s });
-
-  const execCommand = (cmd: string, value?: string) => {
-    document.execCommand(cmd, false, value);
-  };
-
-  const toolbarBtnStyle = (active?: boolean): React.CSSProperties => ({
-    width: 32, height: 32, borderRadius: 6,
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    background: active ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-    border: active ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
-    color: active ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-    cursor: 'pointer', padding: 0,
-    transition: 'var(--transition-fast)',
-  });
-
-
-  const headingOptions = [
-    { label: 'Paragraph', tag: 'p' },
-    { label: 'Heading 1', tag: 'h1' },
-    { label: 'Heading 2', tag: 'h2' },
-    { label: 'Heading 3', tag: 'h3' },
-    { label: 'Heading 4', tag: 'h4' },
-    { label: 'Heading 5', tag: 'h5' },
-    { label: 'Heading 6', tag: 'h6' },
-  ];
-
-  const presetColors = ['#ffffff', '#e50914', '#ff6b6b', '#ffa726', '#ffee58', '#66bb6a', '#42a5f5', '#ab47bc', '#999999', '#000000'];
-  const highlightColors = ['transparent', '#e50914', '#ff6b6b', '#ffa726', '#ffee58', '#66bb6a', '#42a5f5', '#ab47bc', '#333333', '#666666'];
-
-  if (tab === 'content') {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <ContentCard title="Text Structure" icon={<Heading size={14} />} defaultOpen>
-          <div style={{ position: 'relative', marginBottom: 8 }}>
-            <button
-              type="button"
-              className="mep-select"
-              onClick={() => setHeadingOpen(!headingOpen)}
-              style={{
-                width: '100%', height: 36, borderRadius: 6,
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '0 10px',
-                background: 'var(--color-bg-tertiary)',
-                border: '1px solid var(--color-border-default)',
-                color: 'var(--color-text-primary)',
-                fontFamily: 'var(--font-family)', fontSize: 13, cursor: 'pointer',
-              }}
-            >
-              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Type size={14} style={{ opacity: 0.5 }} />
-                Heading / Paragraph
-              </span>
-              <ChevronDown size={14} style={{ opacity: 0.5 }} />
-            </button>
-            {headingOpen && (
-              <div style={{
-                position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                borderRadius: 8, overflow: 'hidden', zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-              }}>
-                {headingOptions.map((opt) => (
-                  <button
-                    key={opt.tag}
-                    type="button"
-                    onClick={() => {
-                      execCommand('formatBlock', `<${opt.tag}>`);
-                      setHeadingOpen(false);
-                    }}
-                    style={{
-                      width: '100%', padding: '8px 12px', border: 'none',
-                      background: 'transparent', color: 'var(--color-text-primary)',
-                      fontFamily: 'var(--font-family)', fontSize: opt.tag === 'p' ? 13 : opt.tag === 'h1' ? 18 : opt.tag === 'h2' ? 16 : 14,
-                      fontWeight: opt.tag === 'p' ? 400 : 600,
-                      cursor: 'pointer', textAlign: 'left',
-                    }}
-                    className="mep-toolbar-btn"
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </ContentCard>
-
-        <ContentCard title="Content Editing" icon={<PenLine size={14} />} defaultOpen>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('bold')} title="Bold (⌘B)">
-              <Bold size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('italic')} title="Italic (⌘I)">
-              <Italic size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('underline')} title="Underline (⌘U)">
-              <Underline size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('strikeThrough')} title="Strikethrough">
-              <Strikethrough size={14} />
-            </button>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
-              const url = prompt('Enter link URL:');
-              if (url) execCommand('createLink', url);
-            }} title="Insert link">
-              <Link size={14} />
-            </button>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('formatBlock', '<blockquote>')} title="Blockquote">
-              <Quote size={14} />
-            </button>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertUnorderedList')} title="Bulleted list">
-              <List size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('insertOrderedList')} title="Numbered list">
-              <ListOrdered size={14} />
-            </button>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('outdent')} title="Decrease indent">
-              <IndentDecrease size={14} />
-            </button>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('indent')} title="Increase indent">
-              <IndentIncrease size={14} />
-            </button>
-
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => execCommand('removeFormat')} title="Clear formatting">
-              <RemoveFormatting size={14} />
-            </button>
-          </div>
-        </ContentCard>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <PropertyGroup title="Text Appearance" preview={`${settings.alignment ?? 'left'} · ${settings.color}`}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-          <div style={{ position: 'relative' }}>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setTextColorOpen(!textColorOpen); setHighlightOpen(false); }} title="Text color">
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <Baseline size={14} />
-                <div style={{ width: 12, height: 3, borderRadius: 1, background: settings.color }} />
-              </div>
-            </button>
-            {textColorOpen && (
-              <div style={{
-                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
-                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
-              }}>
-                {presetColors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => { execCommand('foreColor', c); setTextColorOpen(false); }}
-                    style={{
-                      width: 26, height: 26, borderRadius: 4, border: c === '#ffffff' ? '1px solid var(--color-border-default)' : '1px solid transparent',
-                      background: c, cursor: 'pointer',
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => { setHighlightOpen(!highlightOpen); setTextColorOpen(false); }} title="Highlight color">
-              <Highlighter size={14} />
-            </button>
-            {highlightOpen && (
-              <div style={{
-                position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', marginTop: 6,
-                background: 'var(--color-bg-tertiary)', border: '1px solid var(--color-border-default)',
-                borderRadius: 8, padding: 8, zIndex: 1000, boxShadow: 'var(--shadow-lg)',
-                display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4, width: 160,
-              }}>
-                {highlightColors.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => { execCommand('hiliteColor', c); setHighlightOpen(false); }}
-                    style={{
-                      width: 26, height: 26, borderRadius: 4,
-                      border: c === 'transparent' ? '2px dashed var(--color-border-default)' : '1px solid transparent',
-                      background: c === 'transparent' ? 'var(--color-bg-secondary)' : c, cursor: 'pointer',
-                    }}
-                    title={c === 'transparent' ? 'Remove highlight' : c}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle()} onClick={() => {
-            const size = prompt('Font size (1-7):', '3');
-            if (size) execCommand('fontSize', size);
-          }} title="Font size">
-            <span style={{ fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-family)' }}>Aa</span>
-          </button>
-
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'left')} onClick={() => { update({ ...settings, alignment: 'left' }); execCommand('justifyLeft'); }} title="Align left">
-            <AlignLeft size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'center')} onClick={() => { update({ ...settings, alignment: 'center' }); execCommand('justifyCenter'); }} title="Align center">
-            <AlignCenter size={14} />
-          </button>
-          <button type="button" className="mep-toolbar-btn" style={toolbarBtnStyle(settings.alignment === 'right')} onClick={() => { update({ ...settings, alignment: 'right' }); execCommand('justifyRight'); }} title="Align right">
-            <AlignRight size={14} />
-          </button>
-        </div>
-      </PropertyGroup>
-      <PropertyGroup title="Typography" preview={`${settings.fontSize}px · ${settings.lineHeight} lh`}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <LinkedWrapper
-            label="Font size"
-            linked={linked['fontSize']}
-            onLink={(lv) => setLinked('fontSize', lv)}
-            variables={themeVariables}
-            currentValue={String(settings.fontSize)}
-            onValueFromVariable={(v) => update({ ...settings, fontSize: parseInt(v) || 16 })}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, fontSize: Math.max(10, settings.fontSize - 1) })} disabled={settings.fontSize <= 10}>‹</StepperBtn>
-              <StepperInput value={settings.fontSize} onChange={(v) => update({ ...settings, fontSize: Math.max(10, v || 16) })} />
-              <StepperBtn onClick={() => update({ ...settings, fontSize: settings.fontSize + 1 })}>›</StepperBtn>
-            </div>
-          </LinkedWrapper>
-          <LinkedWrapper
-            label="Line height"
-            linked={linked['lineHeight']}
-            onLink={(lv) => setLinked('lineHeight', lv)}
-            variables={themeVariables}
-            currentValue={String(settings.lineHeight)}
-            onValueFromVariable={(v) => update({ ...settings, lineHeight: parseFloat(v) || 1.6 })}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, lineHeight: Math.max(1, +(settings.lineHeight - 0.1).toFixed(1)) })} disabled={settings.lineHeight <= 1}>‹</StepperBtn>
-              <StepperInput value={settings.lineHeight} onChange={(v) => update({ ...settings, lineHeight: Math.max(1, v || 1.6) })} style={{ width: 48 }} />
-              <StepperBtn onClick={() => update({ ...settings, lineHeight: +(settings.lineHeight + 0.1).toFixed(1) })}>›</StepperBtn>
-            </div>
-          </LinkedWrapper>
-          <LinkedField
-            label="Text color"
-            value={settings.color}
-            linked={linked['color']}
-            onChange={(v) => update({ ...settings, color: v })}
-            onLink={(lv) => setLinked('color', lv)}
-            variables={themeVariables.filter((v) => v.valueType === 'color')}
-            type="color"
-            placeholder="#ffffff"
-          />
-        </div>
-      </PropertyGroup>
-      <ComponentStyleControls
-        padding={settings.padding}
-        backgroundColor={settings.backgroundColor}
-        backgroundRadius={settings.backgroundRadius}
         strokeColor={settings.strokeColor ?? 'transparent'}
         strokeWidth={settings.strokeWidth ?? 0}
         onUpdate={(v) => update({ ...settings, ...v })}
@@ -1372,7 +1393,7 @@ function CTAProperties({ component, sectionId, tab }: { component: MessageCompon
                 background: 'var(--color-bg-tertiary)',
                 border: '1px solid var(--color-border-default)',
                 borderRadius: 6,
-                overflow: 'hidden',
+                overflow: isExpanded ? 'visible' : 'hidden',
               }}
             >
               <div style={{
@@ -2372,8 +2393,7 @@ const calloutVariantDescriptions: Record<string, string> = {
 
 const componentTypeMeta: Record<ComponentType, { icon: React.ReactNode; label: string }> = {
   'media': { icon: <Image size={14} />, label: 'Media' },
-  'text-block': { icon: <Type size={14} />, label: 'Text Block' },
-  'rich-text': { icon: <PenLine size={14} />, label: 'Rich Text' },
+  'text-block': { icon: <Type size={14} />, label: 'Text' },
   'cta': { icon: <MousePointerClick size={14} />, label: 'CTA' },
   'grid': { icon: <Grid3X3 size={14} />, label: 'Grid' },
   'list': { icon: <List size={14} />, label: 'List' },
@@ -2464,7 +2484,7 @@ function SectionItemsList({ section }: { section: Section }) {
                   background: 'var(--color-bg-tertiary)',
                   border: '1px solid var(--color-border-default)',
                   borderRadius: 6,
-                  overflow: 'hidden',
+                  overflow: isExpanded ? 'visible' : 'hidden',
                   opacity: isDragging ? 0.4 : 1,
                   transition: 'var(--transition-fast)',
                   borderLeft: '3px solid var(--color-text-muted)',
@@ -2987,7 +3007,7 @@ function ComponentContentList({ component, sectionId, typeSpecificContent, listD
                   background: 'var(--color-bg-tertiary)',
                   border: '1px solid var(--color-border-default)',
                   borderRadius: 6,
-                  overflow: 'hidden',
+                  overflow: isExpanded ? 'visible' : 'hidden',
                   opacity: isDragging ? 0.4 : 1,
                   transition: 'var(--transition-fast)',
                 }}
@@ -3073,7 +3093,7 @@ function ComponentContentList({ component, sectionId, typeSpecificContent, listD
                 background: 'var(--color-bg-tertiary)',
                 border: '1px solid var(--color-border-default)',
                 borderRadius: 6,
-                overflow: 'hidden',
+                overflow: isExpanded ? 'visible' : 'hidden',
                 opacity: isDragging ? 0.4 : 1,
                 transition: 'var(--transition-fast)',
                 borderLeft: '3px solid var(--color-text-muted)',
@@ -3394,7 +3414,7 @@ function AttachmentsSection({ target, targetType, sectionId }: {
                 background: 'var(--color-bg-tertiary)',
                 border: '1px solid var(--color-border-default)',
                 borderRadius: 6,
-                overflow: 'hidden',
+                overflow: isExpanded ? 'visible' : 'hidden',
                 opacity: isDragging ? 0.4 : 1,
                 transition: 'var(--transition-fast)',
                 borderLeft: '3px solid var(--color-text-muted)',
@@ -3499,7 +3519,7 @@ function ListDataSection({ component, sectionId }: { component: MessageComponent
           background: 'var(--color-bg-tertiary)',
           border: '1px solid var(--color-border-default)',
           borderRadius: 6,
-          overflow: 'hidden',
+          overflow: dataExpanded ? 'visible' : 'hidden',
         }}
       >
         <button
@@ -3613,8 +3633,6 @@ function ComponentProperties({ component, sectionId, tab }: { component: Message
   let typeSpecificContent: React.ReactNode = null;
   if (component.settings.type === 'text-block') {
     typeSpecificContent = <TextBlockProperties component={component} sectionId={sectionId} tab={tab} />;
-  } else if (component.settings.type === 'rich-text') {
-    typeSpecificContent = <RichTextProperties component={component} sectionId={sectionId} tab={tab} />;
   } else if (component.settings.type === 'media') {
     typeSpecificContent = <MediaProperties component={component} sectionId={sectionId} tab={tab} />;
   } else if (component.settings.type === 'cta') {

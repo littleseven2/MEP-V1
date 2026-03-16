@@ -35,8 +35,7 @@ const defaultCountdown: ComponentCountdown = {
 };
 
 const componentLabels: Record<string, string> = {
-  'text-block': 'Text Block',
-  'rich-text': 'Rich Text',
+  'text-block': 'Text',
   'media': 'Media',
   'cta': 'CTA',
   'grid': 'Grid',

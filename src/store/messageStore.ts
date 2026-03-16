@@ -384,11 +384,8 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
               sectionItemOrder: [...currentOrder, newComponent.id],
             };
           });
-          const section = sections.find((s) => s.id === sectionId);
-          const newComp = section?.components[section.components.length - 1];
           return {
             message: { ...state.message, sections },
-            selectedComponentId: newComp?.id ?? null,
           };
         }),
 

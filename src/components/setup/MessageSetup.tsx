@@ -417,6 +417,9 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
   }
   if (component.settings.type === 'text-block') {
     const s = component.settings.settings;
+    if (s.format === 'freeform') {
+      return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>Freeform text content</div>;
+    }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {s.order.map((k) => {
@@ -516,9 +519,6 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
         ))}
       </div>
     );
-  }
-  if (component.settings.type === 'rich-text') {
-    return <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>Rich text content</div>;
   }
   return null;
 }

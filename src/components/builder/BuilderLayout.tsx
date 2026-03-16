@@ -77,7 +77,8 @@ export const BuilderLayout: React.FC = () => {
 
   const selectedSection = message.sections.find((s) => s.id === selectedSectionId);
   const hasComponentSelected = !!selectedComponentId && !!selectedSection?.components.find((c) => c.id === selectedComponentId);
-  const hasCanvasSelection = hasComponentSelected || (!!selectedSectionId && selectedSection?.type === 'content');
+  const hasSectionSelected = !!selectedSectionId && !!selectedSection;
+  const hasCanvasSelection = hasComponentSelected || hasSectionSelected;
   const showThemeProps = rightPanelFocus === 'theme' || !hasCanvasSelection;
 
   const getRightPanelTitle = () => {
@@ -86,8 +87,7 @@ export const BuilderLayout: React.FC = () => {
       const comp = selectedSection?.components.find((c) => c.id === selectedComponentId);
       if (comp) {
         const labels: Record<string, string> = {
-          'text-block': 'Text Block',
-          'rich-text': 'Rich Text',
+          'text-block': 'Text',
           'media': 'Media',
           'cta': 'CTA',
           'grid': 'Grid',
@@ -97,7 +97,10 @@ export const BuilderLayout: React.FC = () => {
       }
       return 'Component Properties';
     }
-    if (selectedSectionId && selectedSection?.type === 'content') return 'Section Properties';
+    if (hasSectionSelected) {
+      const sectionLabels: Record<string, string> = { header: 'Header', content: 'Section', footer: 'Footer' };
+      return `${sectionLabels[selectedSection!.type] || 'Section'} Properties`;
+    }
     return 'Theme Properties';
   };
 
@@ -268,7 +271,7 @@ export const BuilderLayout: React.FC = () => {
               />
             ) : hasComponentSelected ? (
               <PropertiesPanel mode="component" />
-            ) : selectedSectionId && selectedSection?.type === 'content' ? (
+            ) : hasSectionSelected ? (
               <PropertiesPanel mode="section" />
             ) : (
               <ThemePropertiesPanel

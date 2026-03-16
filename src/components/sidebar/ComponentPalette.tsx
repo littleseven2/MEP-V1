@@ -1,7 +1,6 @@
 import {
   Image,
   Type,
-  FileText,
   MousePointerClick,
   Grid3X3,
   List,
@@ -12,8 +11,7 @@ import type { ComponentType } from '../../types/message';
 const componentItems: { type: ComponentType; icon: React.ReactNode; label: string; description: string }[] = [
   { type: 'media', icon: <Image size={18} />, label: 'Media', description: 'Image or video' },
   { type: 'grid', icon: <Grid3X3 size={18} />, label: 'Grid', description: 'Grid of items' },
-  { type: 'text-block', icon: <Type size={18} />, label: 'Text Block', description: 'Eyebrow, headline, body' },
-  { type: 'rich-text', icon: <FileText size={18} />, label: 'Rich Text', description: 'Formatted text editor' },
+  { type: 'text-block', icon: <Type size={18} />, label: 'Text', description: 'Structured or freeform text' },
   { type: 'cta', icon: <MousePointerClick size={18} />, label: 'CTA', description: 'Buttons and links' },
   { type: 'list', icon: <List size={18} />, label: 'List', description: 'List with thumbnails' },
 ];

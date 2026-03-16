@@ -177,30 +177,6 @@ function LinkedChip({
   );
 }
 
-function LinkButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title="Link to variable"
-      style={{
-        width: 28, height: 28, borderRadius: 6,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'transparent',
-        border: '1px solid var(--color-border-default)',
-        color: 'var(--color-text-muted)',
-        cursor: 'pointer', flexShrink: 0,
-        transition: 'var(--transition-fast)',
-        padding: 0,
-      }}
-      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-text-primary)'; e.currentTarget.style.borderColor = 'var(--color-border-strong)'; }}
-      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.borderColor = 'var(--color-border-default)'; }}
-    >
-      <Link2 size={12} />
-    </button>
-  );
-}
-
 const labelStyle: React.CSSProperties = {
   display: 'block',
   fontSize: '0.75rem',
@@ -387,14 +363,7 @@ export function LinkedWrapper({
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       {label && <label style={labelStyle}>{label}</label>}
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {children}
-        </div>
-        <div style={{ height: 36, display: 'flex', alignItems: 'center' }}>
-          <LinkButton onClick={() => setPickerOpen(true)} />
-        </div>
-      </div>
+      {children}
       {pickerOpen && <VariablePicker groups={groups} onSelect={handleSelect} activeKey={linked?.variableKey} />}
     </div>
   );
