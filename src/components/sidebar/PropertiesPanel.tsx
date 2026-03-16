@@ -53,7 +53,7 @@ import {
   gradientPresets,
 } from '../../data/defaults';
 import { entityVariables, themeVariables } from '../../data/variables';
-import { Select, Toggle, Input, LinkedField, LinkedWrapper } from '../../ui';
+import { Select, Toggle, LinkedField, LinkedWrapper } from '../../ui';
 
 const THUMBNAIL_ICONS: { icon: ListThumbnailIcon; label: string; Component: React.ComponentType<{ size?: number }> }[] = [
   { icon: 'play', label: 'Play', Component: Play },
