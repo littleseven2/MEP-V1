@@ -208,10 +208,21 @@ export const defaultThemes: ThemeConfig[] = [
   },
 ];
 
+function parseThemeRadius(theme?: ThemeConfig): number {
+  if (!theme) return 0;
+  return parseInt(theme.radius, 10) || 0;
+}
+
 /**
  * Returns default settings for a given component type.
+ * When a theme is provided, style values (radius, colors) are derived from the theme.
  */
-export function getDefaultComponentSettings(type: ComponentType): ComponentSettings {
+export function getDefaultComponentSettings(type: ComponentType, theme?: ThemeConfig): ComponentSettings {
+  const r = parseThemeRadius(theme);
+  const radius: [number, number, number, number] = [r, r, r, r];
+  const primary = theme?.colors.primary ?? '#E50914';
+  const textColor = theme?.colors.text ?? '#ffffff';
+
   switch (type) {
     case 'text-block': {
       const textBlockSettings: TextBlockSettings = {
@@ -224,7 +235,7 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         alignment: 'left',
         padding: 0,
         backgroundColor: 'transparent',
-        backgroundRadius: [0, 0, 0, 0],
+        backgroundRadius: radius,
         strokeColor: 'transparent',
         strokeWidth: 0,
       };
@@ -236,10 +247,10 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         alignment: 'left',
         fontSize: 16,
         lineHeight: 1.6,
-        color: '#ffffff',
+        color: textColor,
         padding: 0,
         backgroundColor: 'transparent',
-        backgroundRadius: [0, 0, 0, 0],
+        backgroundRadius: radius,
         strokeColor: 'transparent',
         strokeWidth: 0,
       };
@@ -251,10 +262,10 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         url: '',
         alignment: 'center',
         isInteractive: false,
-        mediaRadius: 8,
+        mediaRadius: r,
         padding: 0,
         backgroundColor: 'transparent',
-        backgroundRadius: [0, 0, 0, 0],
+        backgroundRadius: radius,
         strokeColor: 'transparent',
         strokeWidth: 0,
         marquee: { enabled: false, text: 'Marquee', position: 'below' },
@@ -270,14 +281,14 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
             text: 'Watch Now',
             url: '',
             style: 'primary',
-            fillColor: '#E50914',
-            borderColor: '#E50914',
-            textColor: '#ffffff',
+            fillColor: primary,
+            borderColor: primary,
+            textColor: textColor,
           },
         ],
         padding: 0,
         backgroundColor: 'transparent',
-        backgroundRadius: [0, 0, 0, 0],
+        backgroundRadius: radius,
         strokeColor: 'transparent',
         strokeWidth: 0,
       };
@@ -292,13 +303,13 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         rows: [3, 3],
         cols: [2, 2, 2],
         gap: 8,
-        itemRadius: 8,
+        itemRadius: r,
         cellStyleMode: 'whole',
-        cellStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0, imageRadius: 8 },
+        cellStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: radius, strokeColor: 'transparent', strokeWidth: 0, imageRadius: r },
         cellStyles: [],
         padding: 0,
         backgroundColor: 'transparent',
-        backgroundRadius: [0, 0, 0, 0],
+        backgroundRadius: radius,
         strokeColor: 'transparent',
         strokeWidth: 0,
         marquee: { enabled: false, text: 'Marquee', position: 'below' },
@@ -316,9 +327,9 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         showDivider: true,
         thumbnailType: 'image',
         thumbnailIcon: 'play',
-        thumbnailRadius: 8,
+        thumbnailRadius: r,
         iconCircleBackground: false,
-        iconCircleColor: '#E50914',
+        iconCircleColor: primary,
         itemCount: 'all',
         items: [
           { title: 'Stranger Things', subtitle: 'Season 5 Now Streaming', metadata: 'Watch Now' },
@@ -327,10 +338,10 @@ export function getDefaultComponentSettings(type: ComponentType): ComponentSetti
         ],
         textAlign: 'left',
         itemStyleMode: 'whole',
-        itemStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 },
+        itemStyle: { padding: 0, backgroundColor: 'transparent', backgroundRadius: radius, strokeColor: 'transparent', strokeWidth: 0 },
         padding: 0,
         backgroundColor: 'transparent',
-        backgroundRadius: [0, 0, 0, 0],
+        backgroundRadius: radius,
         strokeColor: 'transparent',
         strokeWidth: 0,
       };

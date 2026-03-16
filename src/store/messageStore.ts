@@ -368,7 +368,7 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
           if (!state.message) return {};
           const sections = state.message.sections.map((s) => {
             if (s.id !== sectionId) return s;
-            const settings = getDefaultComponentSettings(type);
+            const settings = getDefaultComponentSettings(type, state.message!.theme);
             const newComponent: MessageComponent = {
               id: uuid(),
               type,
