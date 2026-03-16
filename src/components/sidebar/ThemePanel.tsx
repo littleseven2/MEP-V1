@@ -9,18 +9,49 @@ import { Select, Input } from '../../ui';
 
 let themeIdCounter = 100;
 
-const defaultThemeState = [...defaultThemes];
+const STORAGE_KEY = 'mep-saved-themes';
+
+function loadSavedThemes(): ThemeConfig[] | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as ThemeConfig[];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+  } catch { /* ignore corrupt data */ }
+  return null;
+}
+
+function saveThemesToStorage(themes: ThemeConfig[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(themes));
+  } catch { /* storage full or unavailable */ }
+}
 
 export function useThemeManager() {
   const message = useMessageStore((s) => s.message);
   const setTheme = useMessageStore((s) => s.setTheme);
 
-  const [themes, setThemes] = useState<ThemeConfig[]>(() => [...defaultThemeState]);
+  const [themes, setThemes] = useState<ThemeConfig[]>(() => {
+    const saved = loadSavedThemes();
+    if (saved) {
+      const maxId = saved.reduce((max, t) => {
+        const match = t.id.match(/^custom-(\d+)$/);
+        return match ? Math.max(max, Number(match[1])) : max;
+      }, themeIdCounter);
+      themeIdCounter = maxId + 1;
+      return saved;
+    }
+    return [...defaultThemes];
+  });
   const [activeThemeId, setActiveThemeId] = useState<string>(() => {
     const msgId = message?.theme.id;
-    if (msgId && defaultThemeState.some((t) => t.id === msgId)) return msgId;
-    return defaultThemeState[0].id;
+    if (msgId && themes.some((t) => t.id === msgId)) return msgId;
+    return themes[0].id;
   });
+
+  useEffect(() => {
+    saveThemesToStorage(themes);
+  }, [themes]);
 
   const applyTheme = (theme: ThemeConfig) => {
     setActiveThemeId(theme.id);

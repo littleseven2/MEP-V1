@@ -9,35 +9,87 @@ import type {
   ComponentType,
   ThemeConfig,
   ComponentSettings,
+  CTASettings,
+  TextBlockSettings,
+  MediaSettings,
+  GridSettings,
+  ListSettings,
 } from '../types/message';
 import { computeSectionItemOrder, isAttachmentKey } from '../types/message';
-import { getDefaultComponentSettings, defaultTextStyles } from '../data/defaults';
+import { getDefaultComponentSettings, defaultThemes } from '../data/defaults';
 
-const DEFAULT_THEME: ThemeConfig = {
-  id: 'default',
-  name: 'Default',
-  radius: '8px',
-  colors: {
-    primary: '#e50914',
-    secondary: '#333',
-    background: '#000',
-    text: '#fff',
-  },
-  typography: {
-    headlineFont: 'Netflix Sans',
-    bodyFont: 'Netflix Sans',
-    textStyles: { ...defaultTextStyles },
-  },
-  spacing: 'normal',
-  emailPadding: 0,
-  sectionPadding: 16,
-  componentPadding: 0,
-  background: {
-    type: 'solid',
-    value: '#000000',
-    opacity: 1,
-  },
-};
+function applyThemeToComponent(comp: MessageComponent, theme: ThemeConfig): MessageComponent {
+  const r = parseInt(theme.radius, 10) || 0;
+  const radius: [number, number, number, number] = [r, r, r, r];
+  const primary = theme.colors.primary;
+  const textColor = theme.colors.text;
+  const settings = comp.settings;
+
+  let updatedSettings: ComponentSettings;
+  switch (settings.type) {
+    case 'text-block': {
+      const s = settings.settings as TextBlockSettings;
+      updatedSettings = { type: 'text-block', settings: { ...s, color: textColor, backgroundRadius: s.backgroundRadius?.some(v => v > 0) ? s.backgroundRadius : radius } };
+      break;
+    }
+    case 'cta': {
+      const s = settings.settings as CTASettings;
+      updatedSettings = {
+        type: 'cta',
+        settings: {
+          ...s,
+          buttons: s.buttons.map((btn) => ({
+            ...btn,
+            fillColor: primary,
+            borderColor: primary,
+            textColor: textColor,
+          })),
+          backgroundRadius: s.backgroundRadius?.some(v => v > 0) ? s.backgroundRadius : radius,
+        },
+      };
+      break;
+    }
+    case 'media': {
+      const s = settings.settings as MediaSettings;
+      updatedSettings = { type: 'media', settings: { ...s, mediaRadius: r, backgroundRadius: s.backgroundRadius?.some(v => v > 0) ? s.backgroundRadius : radius } };
+      break;
+    }
+    case 'grid': {
+      const s = settings.settings as GridSettings;
+      updatedSettings = {
+        type: 'grid',
+        settings: {
+          ...s,
+          itemRadius: r,
+          cellStyle: { ...s.cellStyle, imageRadius: r },
+          backgroundRadius: s.backgroundRadius?.some(v => v > 0) ? s.backgroundRadius : radius,
+        },
+      };
+      break;
+    }
+    case 'list': {
+      const s = settings.settings as ListSettings;
+      updatedSettings = {
+        type: 'list',
+        settings: { ...s, thumbnailRadius: r, iconCircleColor: primary, backgroundRadius: s.backgroundRadius?.some(v => v > 0) ? s.backgroundRadius : radius },
+      };
+      break;
+    }
+    default:
+      updatedSettings = settings;
+  }
+
+  return { ...comp, settings: updatedSettings };
+}
+
+function applyThemeToSections(sections: Section[], theme: ThemeConfig): Section[] {
+  return sections.map((section) => ({
+    ...section,
+    components: section.components.map((comp) => applyThemeToComponent(comp, theme)),
+  }));
+}
+
+const DEFAULT_THEME: ThemeConfig = { ...defaultThemes[0] };
 
 function createEmptySection(type: SectionType, order: number): Section {
   return {
@@ -232,6 +284,7 @@ export const useMessageStore = create<MessageStore>((rawSet, get) => {
             message: {
               ...state.message,
               theme: { ...theme },
+              sections: applyThemeToSections(state.message.sections, theme),
               updatedAt: new Date().toISOString(),
             },
           };
