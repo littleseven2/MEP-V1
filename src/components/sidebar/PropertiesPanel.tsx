@@ -45,7 +45,7 @@ import type {
   ComponentType,
   Padding,
 } from '../../types/message';
-import { parsePadding, isUniformPadding, uniformPaddingValue, computeSectionItemOrder, computeComponentItemOrder, isAttachmentKey, ATTACHMENT_KEYS, CONTENT_ITEM_KEY } from '../../types/message';
+import { parsePadding, isUniformPadding, uniformPaddingValue, computeSectionItemOrder, computeComponentItemOrder, isAttachmentKey, CONTENT_ITEM_KEY } from '../../types/message';
 import {
   contentTypes,
   intentOptions,
@@ -2362,7 +2362,7 @@ function MarqueeControls({ marquee, onChange, linked, onLink }: { marquee: Marqu
 
 // --------------- Inline Attachments Section ---------------
 
-const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
+// const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];
 
 const defaultCallout: ComponentCallout = {
   enabled: false, text: '2023 Oscar Winner', variant: 'A', position: 'above',
@@ -2658,8 +2658,8 @@ function SectionItemsList({ section }: { section: Section }) {
   );
 }
 
-function SectionAttachmentConfig({ section, attachmentKey, callout, metadata, liveBadge, countdown, applyUpdate }: {
-  section: Section;
+function SectionAttachmentConfig({ attachmentKey, callout, metadata, liveBadge, countdown, applyUpdate }: {
+  section?: Section;
   attachmentKey: AttachmentKey;
   callout: ComponentCallout;
   metadata: ComponentMetadata;
@@ -3173,69 +3173,7 @@ function ComponentContentList({ component, sectionId, typeSpecificContent, listD
   );
 }
 
-function AttachmentsSection({ target, targetType, sectionId }: {
-  target: MessageComponent | Section;
-  targetType: 'component' | 'section';
-  sectionId?: string;
-}) {
-  const updateComponent = useMessageStore((s) => s.updateComponent);
-  const updateSection = useMessageStore((s) => s.updateSection);
-
-  const order: AttachmentKey[] = target.attachmentOrder ?? DEFAULT_ATTACHMENT_ORDER;
-  const callout: ComponentCallout = target.callout ?? defaultCallout;
-  const metadata: ComponentMetadata = target.metadata ?? defaultMetadata;
-  const liveBadge: ComponentLiveBadge = target.liveBadge ?? defaultLiveBadge;
-  const countdown: ComponentCountdown = target.countdown ?? defaultCountdown;
-
-  const [expandedAttachments, setExpandedAttachments] = useState<Set<AttachmentKey>>(new Set());
-
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
-
-  const applyUpdate = (updates: Partial<MessageComponent> | Partial<Section>) => {
-    if (targetType === 'component' && sectionId) {
-      updateComponent(sectionId, target.id, updates as Partial<MessageComponent>);
-    } else {
-      updateSection(target.id, updates as Partial<Section>);
-    }
-  };
-
-  const isEnabled = (key: AttachmentKey) => {
-    if (key === 'callout') return callout.enabled;
-    if (key === 'metadata') return metadata.enabled;
-    if (key === 'liveBadge') return liveBadge.enabled;
-    if (key === 'countdown') return countdown.enabled;
-    return false;
-  };
-
-  const toggleAttachment = (key: AttachmentKey) => {
-    if (key === 'callout') applyUpdate({ callout: { ...callout, enabled: !callout.enabled } });
-    else if (key === 'metadata') applyUpdate({ metadata: { ...metadata, enabled: !metadata.enabled } });
-    else if (key === 'liveBadge') applyUpdate({ liveBadge: { ...liveBadge, enabled: !liveBadge.enabled } });
-    else if (key === 'countdown') applyUpdate({ countdown: { ...countdown, enabled: !countdown.enabled } });
-  };
-
-  const handleDragStart = (idx: number) => { dragItem.current = idx; setDragIdx(idx); };
-  const handleDragEnter = (idx: number) => { dragOverItem.current = idx; setDragOverIdx(idx); };
-  const handleDragEnd = () => {
-    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
-      const newOrder = [...order];
-      const [removed] = newOrder.splice(dragItem.current, 1);
-      newOrder.splice(dragOverItem.current, 0, removed);
-      applyUpdate({ attachmentOrder: newOrder });
-    }
-    dragItem.current = null; dragOverItem.current = null;
-    setDragIdx(null); setDragOverIdx(null);
-  };
-
-  const getDropLine = (idx: number): 'above' | 'below' | null => {
-    if (dragIdx === null || dragOverIdx === null || dragIdx === dragOverIdx) return null;
-    if (idx === dragOverIdx) return dragIdx < dragOverIdx ? 'below' : 'above';
-    return null;
-  };
-
+/* removed unused AttachmentsSection - start
   const renderConfig = (key: AttachmentKey) => {
     const positionButtons = (
       currentPos: 'above' | 'below',
@@ -3493,6 +3431,7 @@ function AttachmentsSection({ target, targetType, sectionId }: {
     </div>
   );
 }
+removed unused AttachmentsSection - end */
 
 function ListDataSection({ component, sectionId }: { component: MessageComponent; sectionId: string }) {
   const updateComponentSettings = useMessageStore((s) => s.updateComponentSettings);

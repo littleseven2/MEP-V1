@@ -15,7 +15,7 @@ import { EmailPreview } from '../preview/EmailPreview';
 type LeftNav = 'theme' | 'section' | 'component' | 'attachment';
 
 export const BuilderLayout: React.FC = () => {
-  const { message, setView, selectSection, selectedSectionId, selectedComponentId, undo, redo, _undoStack, _redoStack } = useMessageStore();
+  const { message, selectSection, selectedSectionId, selectedComponentId, undo, redo, _undoStack, _redoStack } = useMessageStore();
   const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
   const [rightPanelFocus, setRightPanelFocus] = useState<'theme' | 'canvas'>('canvas');

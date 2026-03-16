@@ -9,7 +9,6 @@ import type {
   ComponentType,
   ThemeConfig,
   ComponentSettings,
-  AttachmentKey,
 } from '../types/message';
 import { computeSectionItemOrder, isAttachmentKey } from '../types/message';
 import { getDefaultComponentSettings, defaultTextStyles } from '../data/defaults';
