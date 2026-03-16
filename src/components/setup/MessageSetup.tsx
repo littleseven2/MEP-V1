@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Mail, Bell, Smartphone, ArrowLeft, ArrowRight, Sparkles, ChevronDown, ChevronRight, ChevronLeft, Calendar, Clock,
+  Mail, Bell, Smartphone, ArrowRight, Sparkles, ChevronDown, ChevronRight, ChevronLeft, Calendar, Clock,
   Play, Film, Tv, Music, Gamepad2, Clapperboard,
   Star, Heart, Bookmark, Award, Trophy, Gem,
   Zap, Flame,

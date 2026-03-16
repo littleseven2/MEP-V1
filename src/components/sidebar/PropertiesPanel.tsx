@@ -32,8 +32,6 @@ import type {
   ListItemStyle,
   ListColumns,
   GridCellStyle,
-  CalloutIcon,
-  CalloutVariant,
   ListThumbnailIcon,
   LinkedValues,
   LinkedValue,
@@ -2051,20 +2049,16 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', marginBottom: 6 }}>Type</label>
-              <div style={{ display: 'flex', gap: 4 }}>
+              <div style={{ display: 'flex', gap: 2, padding: 2, background: 'var(--color-bg-tertiary)', borderRadius: 7, border: '1px solid var(--color-border-default)', marginBottom: 8 }}>
                 {(['image', 'icon'] as const).map((t) => (
                   <button
                     key={t}
                     type="button"
                     onClick={() => update({ ...settings, thumbnailType: t })}
                     style={{
-                      flex: 1, height: 30, borderRadius: 6,
-                      border: (settings.thumbnailType ?? 'image') === t ? '1.5px solid var(--color-brand)' : '1px solid var(--border-default)',
-                      background: (settings.thumbnailType ?? 'image') === t ? 'var(--color-brand-subtle)' : 'var(--color-bg-secondary)',
-                      color: (settings.thumbnailType ?? 'image') === t ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-                      fontSize: 12, fontWeight: 500, fontFamily: 'var(--font-family)',
-                      cursor: 'pointer', textTransform: 'capitalize',
+                      ...bgModeStyle((settings.thumbnailType ?? 'image') === t),
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      textTransform: 'capitalize',
                     }}
                   >
                     {t === 'image' ? <Image size={13} /> : <Sparkles size={13} />}

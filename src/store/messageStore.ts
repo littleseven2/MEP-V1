@@ -97,6 +97,11 @@ interface MessageStore {
   selectedSectionId: string | null;
   selectedComponentId: string | null;
 
+  _undoStack: Message[];
+  _redoStack: Message[];
+  undo: () => void;
+  redo: () => void;
+
   createMessage: (attributes?: Partial<MessageAttributes>) => void;
   updateAttributes: (attrs: Partial<MessageAttributes>) => void;
   setTheme: (theme: ThemeConfig) => void;
@@ -125,11 +130,32 @@ interface MessageStore {
 
 import { create } from 'zustand';
 
-export const useMessageStore = create<MessageStore>((set) =>
-    ({
+const MAX_UNDO = 50;
+let _skipUndo = false;
+
+export const useMessageStore = create<MessageStore>((rawSet, get) => {
+  const set: typeof rawSet = (partial) => {
+    if (typeof partial === 'function') {
+      rawSet((state) => {
+        const result = (partial as (s: MessageStore) => Partial<MessageStore>)(state);
+        if (!_skipUndo && result.message && state.message && result.message !== state.message) {
+          const stack = [...state._undoStack, state.message];
+          if (stack.length > MAX_UNDO) stack.shift();
+          return { ...result, _undoStack: stack, _redoStack: [] };
+        }
+        return result;
+      });
+    } else {
+      rawSet(partial);
+    }
+  };
+
+  return {
       view: 'home' as AppView,
       viewHistory: [] as AppView[],
       viewFuture: [] as AppView[],
+      _undoStack: [] as Message[],
+      _redoStack: [] as Message[],
       setView: (view) => set((state) => ({
         viewHistory: [...state.viewHistory, state.view],
         viewFuture: [],
@@ -147,6 +173,25 @@ export const useMessageStore = create<MessageStore>((set) =>
         const next = future.shift()!;
         return { view: next, viewHistory: [...state.viewHistory, state.view], viewFuture: future };
       }),
+
+      undo: () => {
+        const state = get();
+        if (state._undoStack.length === 0 || !state.message) return;
+        const stack = [...state._undoStack];
+        const prev = stack.pop()!;
+        _skipUndo = true;
+        rawSet({ message: prev, _undoStack: stack, _redoStack: [state.message, ...state._redoStack] });
+        _skipUndo = false;
+      },
+      redo: () => {
+        const state = get();
+        if (state._redoStack.length === 0 || !state.message) return;
+        const future = [...state._redoStack];
+        const next = future.shift()!;
+        _skipUndo = true;
+        rawSet({ message: next, _undoStack: [...state._undoStack, state.message], _redoStack: future });
+        _skipUndo = false;
+      },
 
       message: null,
       selectedSectionId: null,
@@ -479,5 +524,5 @@ export const useMessageStore = create<MessageStore>((set) =>
             selectedComponentId: null,
           };
         }),
-    } satisfies MessageStore
-));
+    } satisfies MessageStore;
+});

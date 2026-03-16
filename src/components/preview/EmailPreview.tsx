@@ -9,7 +9,7 @@ import {
   CheckCircle, AlertCircle, Shield, Lock, Unlock,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
-import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey, CalloutVariant, ListThumbnailIcon } from '../../types/message';
+import type { Section, MessageComponent, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, TextStyleKey, ThemeConfig, AttachmentKey, ListThumbnailIcon } from '../../types/message';
 import { paddingToCss, addPadding, parsePadding } from '../../types/message';
 
 const DEFAULT_ATTACHMENT_ORDER: AttachmentKey[] = ['callout', 'metadata', 'liveBadge', 'countdown'];

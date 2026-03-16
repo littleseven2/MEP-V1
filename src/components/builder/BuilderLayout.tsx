@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Eye, Settings, Layers, Palette,
   Send, Undo2, Redo2, Component, Paperclip,
-  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useMessageStore } from '../../store/messageStore';
 import { Canvas } from '../canvas/Canvas';
@@ -16,7 +15,7 @@ import { EmailPreview } from '../preview/EmailPreview';
 type LeftNav = 'theme' | 'section' | 'component' | 'attachment';
 
 export const BuilderLayout: React.FC = () => {
-  const { message, setView, selectSection, selectedSectionId, selectedComponentId, goBack, goForward, viewHistory, viewFuture } = useMessageStore();
+  const { message, setView, selectSection, selectedSectionId, selectedComponentId, undo, redo, _undoStack, _redoStack } = useMessageStore();
   const [leftNav, setLeftNav] = useState<LeftNav>('component');
   const [showPreview, setShowPreview] = useState(false);
   const [rightPanelFocus, setRightPanelFocus] = useState<'theme' | 'canvas'>('canvas');
@@ -35,6 +34,21 @@ export const BuilderLayout: React.FC = () => {
       setRightPanelFocus('canvas');
     }
   }, [selectedComponentId, selectedSectionId]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          redo();
+        } else {
+          undo();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [undo, redo]);
 
   const handleThemeSelect = useCallback((themeId: string) => {
     themeManager.selectTheme(themeId);
@@ -123,17 +137,14 @@ export const BuilderLayout: React.FC = () => {
             MEP
           </span>
           <div style={{ width: 1, height: 24, background: 'var(--color-border-default)', margin: '0 4px' }} />
-          <HistoryNavButton icon={<ChevronLeft size={16} />} tooltip="Back" onClick={goBack} disabled={viewHistory.length === 0} />
-          <HistoryNavButton icon={<ChevronRight size={16} />} tooltip="Forward" onClick={goForward} disabled={viewFuture.length === 0} />
-          <div style={{ width: 1, height: 24, background: 'var(--color-border-default)', margin: '0 4px' }} />
           <span style={{ fontSize: 'var(--font-size-md)', color: 'var(--color-text-secondary)', fontWeight: 500 }}>
             {message.attributes.name || 'Untitled'}
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <NavButton icon={<Undo2 size={16} />} tooltip="Undo" />
-          <NavButton icon={<Redo2 size={16} />} tooltip="Redo" />
+          <NavButton icon={<Undo2 size={16} />} tooltip="Undo (⌘Z)" onClick={undo} disabled={_undoStack.length === 0} />
+          <NavButton icon={<Redo2 size={16} />} tooltip="Redo (⌘⇧Z)" onClick={redo} disabled={_redoStack.length === 0} />
         </div>
 
         <div style={{ display: 'flex', gap: 8, justifySelf: 'end' }}>
@@ -308,38 +319,18 @@ const VerticalNavItem: React.FC<{
   );
 };
 
-const HistoryNavButton: React.FC<{ icon: React.ReactNode; tooltip: string; onClick: () => void; disabled?: boolean }> = ({ icon, tooltip, onClick, disabled }) => {
-  const [h, setH] = React.useState(false);
-  return (
-    <button
-      onMouseEnter={() => setH(true)}
-      onMouseLeave={() => setH(false)}
-      onClick={onClick}
-      disabled={disabled}
-      title={tooltip}
-      style={{
-        width: 30, height: 30,
-        background: h && !disabled ? 'var(--color-bg-tertiary)' : 'transparent',
-        border: '1px solid transparent', borderRadius: 'var(--radius-md)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: disabled ? 'default' : 'pointer',
-        color: disabled ? 'var(--color-text-muted)' : h ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
-        opacity: disabled ? 0.4 : 1,
-        transition: 'all var(--transition-fast)',
-      }}
-    >{icon}</button>
-  );
-};
 
-const NavButton: React.FC<{ icon: React.ReactNode; tooltip: string }> = ({ icon, tooltip }) => {
+const NavButton: React.FC<{ icon: React.ReactNode; tooltip: string; onClick?: () => void; disabled?: boolean }> = ({ icon, tooltip, onClick, disabled }) => {
   const [h, setH] = React.useState(false);
   return (
-    <button onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)} title={tooltip} style={{
+    <button onClick={onClick} disabled={disabled} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)} title={tooltip} style={{
       width: 36, height: 36,
-      background: h ? 'var(--color-bg-tertiary)' : 'transparent',
+      background: h && !disabled ? 'var(--color-bg-tertiary)' : 'transparent',
       border: '1px solid transparent', borderRadius: 'var(--radius-md)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      cursor: 'pointer', color: h ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+      cursor: disabled ? 'default' : 'pointer',
+      color: disabled ? 'var(--color-text-muted)' : h ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)',
+      opacity: disabled ? 0.4 : 1,
       transition: 'all var(--transition-fast)',
     }}>{icon}</button>
   );

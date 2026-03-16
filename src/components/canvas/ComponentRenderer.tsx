@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { ListThumbnailIcon } from '../../types/message';
 import { useMessageStore } from '../../store/messageStore';
-import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding, CalloutVariant } from '../../types/message';
+import type { MessageComponent, RichTextSettings, CalloutIcon, ComponentCallout, ComponentMetadata, ComponentLiveBadge, ComponentCountdown, TextStyle, MarqueeConfig, AttachmentKey, Padding } from '../../types/message';
 import { paddingToCss, parsePadding, uniformPaddingValue } from '../../types/message';
 import { posters } from '../../data/posters';
 import { defaultTextStyles } from '../../data/defaults';
@@ -36,6 +36,13 @@ function HornIcon({ size = 20 }: { size?: number }) {
     </svg>
   );
 }
+
+const calloutIcons: Record<CalloutIcon, React.ReactNode> = {
+  horn: <HornIcon size={16} />,
+  info: <Info size={16} />,
+  star: <Star size={16} />,
+  alert: <AlertTriangle size={16} />,
+};
 
 interface ComponentRendererProps {
   component: MessageComponent;
