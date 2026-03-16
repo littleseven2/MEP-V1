@@ -2987,10 +2987,12 @@ function ComponentContentList({ component, sectionId, typeSpecificContent, listD
   };
 
   const compMeta = componentTypeMeta[component.type];
+  const isCta = component.settings.type === 'cta';
+  const displayOrder = isCta ? itemOrder.filter((id) => id === CONTENT_ITEM_KEY) : itemOrder;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      {itemOrder.map((id, idx) => {
+      {displayOrder.map((id, idx) => {
         const isDragging = dragIdx === idx;
         const dropLine = getDropLine(idx);
 

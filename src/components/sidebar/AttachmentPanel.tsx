@@ -83,6 +83,8 @@ export function AttachmentPanel() {
   const targetMode: 'component' | 'section' | 'none' = component ? 'component' : section ? 'section' : 'none';
   const hasTarget = targetMode !== 'none';
 
+  const isCta = targetMode === 'component' && component?.type === 'cta';
+
   const targetLabel =
     targetMode === 'component' ? (componentLabels[component!.type] || component!.type)
     : targetMode === 'section' ? (sectionLabels[section!.type] || 'Section')
@@ -176,7 +178,12 @@ export function AttachmentPanel() {
           </span>
         </p>
       )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {isCta && (
+        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+          Attachments are not available for CTA components.
+        </p>
+      )}
+      {!isCta && <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {attachmentItems.map((item) => {
           return (
             <div
@@ -236,7 +243,7 @@ export function AttachmentPanel() {
             </div>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 }
