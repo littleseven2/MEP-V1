@@ -181,7 +181,7 @@ function parseThemeRadius(theme?: ThemeConfig): number {
  */
 export function getDefaultComponentSettings(type: ComponentType, theme?: ThemeConfig): ComponentSettings {
   const r = parseThemeRadius(theme);
-  const radius: [number, number, number, number] = [r, r, r, r];
+  const radius: [number, number, number, number] = [0, 0, 0, 0];
   const primary = theme?.colors.primary ?? '#E50914';
   const textColor = theme?.colors.text ?? '#ffffff';
 
