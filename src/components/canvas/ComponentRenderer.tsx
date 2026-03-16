@@ -108,14 +108,9 @@ function WithMarquee({ marquee, children }: { marquee?: MarqueeConfig; children:
 }
 
 function MediaPreview({ settings }: { settings: { alignment: string; mediaRadius?: number; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
-  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const imgRadius = settings.mediaRadius ?? 8;
   return (
-    <div style={{
-      background: settings.backgroundColor || 'transparent',
-      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
-      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
-    }}>
+    <div>
       <div
         style={{
           width: '100%',
@@ -153,17 +148,12 @@ function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: bo
   const bodyColor = 'rgba(255,255,255,0.65)';
   const linkColor = 'rgba(255,255,255,0.65)';
 
-  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
-
   const align = settings.alignment ?? 'left';
 
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 4,
       textAlign: align,
-      background: settings.backgroundColor || 'transparent',
-      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
-      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
     }}>
       {items?.map((item, i) => (
         <div key={i}>
@@ -212,7 +202,6 @@ function TextBlockPreview({ settings, ts }: { settings: { eyebrow: { enabled: bo
 }
 
 function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enabled?: boolean; text: string; fillColor: string; borderColor: string; textColor: string }[]; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
-  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const visibleButtons = settings.buttons.filter((btn) => btn.enabled ?? true);
   const isSideBySide = settings.layout === '2-side-by-side';
   return (
@@ -220,9 +209,6 @@ function CTAPreview({ settings }: { settings: { layout?: string; buttons: { enab
       display: 'flex',
       flexDirection: isSideBySide ? 'row' : 'column',
       gap: 8,
-      background: settings.backgroundColor || 'transparent',
-      borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
-      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
     }}>
       {visibleButtons.map((btn, i) => (
         <button
@@ -286,7 +272,6 @@ function GridCell({ n, radius, cellStyle }: { n: number; radius: number; cellSty
 }
 
 function GridPreview({ settings }: { settings: { layout: string; items: { url?: string }[]; splitMode?: 'row' | 'column'; rows?: number[]; cols?: number[]; gap?: number; itemRadius?: number; cellStyleMode?: 'whole' | 'individual'; cellStyle?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }; cellStyles?: { padding: Padding; backgroundColor: string; backgroundRadius: [number, number, number, number]; strokeColor: string; strokeWidth: number; imageRadius?: number }[]; padding?: Padding; backgroundColor?: string; backgroundRadius?: [number, number, number, number]; strokeColor?: string; strokeWidth?: number } }) {
-  const r = settings.backgroundRadius ?? [0, 0, 0, 0];
   const gapPx = settings.gap ?? 8;
   const radius = settings.itemRadius ?? 8;
   const mode = settings.splitMode ?? 'row';
@@ -298,17 +283,11 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
     return wholeCs;
   };
 
-  const containerStyle: React.CSSProperties = {
-    background: settings.backgroundColor || 'transparent',
-    borderRadius: `${r[0]}px ${r[1]}px ${r[2]}px ${r[3]}px`,
-    ...strokeStyle(settings.strokeColor, settings.strokeWidth),
-  };
-
   if (mode === 'column') {
     const cols = settings.cols ?? [2, 2, 2];
     let cellIdx = 0;
     return (
-      <div style={{ ...containerStyle, display: 'flex', gap: gapPx, alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', gap: gapPx, alignItems: 'stretch' }}>
         {cols.map((rowCount, colIdx) => (
           <div key={colIdx} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: gapPx }}>
             {Array.from({ length: rowCount }, () => ++cellIdx).map((n) => {
@@ -351,7 +330,7 @@ function GridPreview({ settings }: { settings: { layout: string; items: { url?: 
   const rows = settings.rows ?? [3, 3];
   let cellIdx = 0;
   return (
-    <div style={{ ...containerStyle, display: 'flex', flexDirection: 'column', gap: gapPx }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: gapPx }}>
       {rows.map((colCount, rowIdx) => (
         <div key={rowIdx} style={{
           display: 'grid',
@@ -429,10 +408,8 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
   const sTitle = settings.showTitle ?? true;
   const sSub = settings.showSubtitle ?? true;
   const sMeta = settings.showMetadata ?? true;
-  const bg = settings.backgroundColor ?? 'transparent';
   const dividerColor = 'rgba(255,255,255,0.15)';
   const thumbRadius = settings.thumbnailRadius ?? 8;
-  const radii = settings.backgroundRadius ?? [0, 0, 0, 0];
   const styleMode = settings.itemStyleMode ?? 'whole';
   const wholeStyle = settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0] as [number, number, number, number], strokeColor: 'transparent', strokeWidth: 0 };
   const noStyle = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0] as [number, number, number, number], strokeColor: 'transparent', strokeWidth: 0 };
@@ -447,9 +424,6 @@ function ListPreview({ settings }: { settings: { layout: string; columns: number
       display: 'grid',
       gridTemplateColumns: settings.columns === 1 ? '1fr' : settings.columns === 2 ? '1fr 1fr' : '1fr 1fr 1fr',
       gap: isStacked ? 12 : 16,
-      background: bg,
-      borderRadius: `${radii[0]}px ${radii[1]}px ${radii[2]}px ${radii[3]}px`,
-      ...strokeStyle(settings.strokeColor, settings.strokeWidth),
     }}>
       {items.map((item, i) => {
         const divider = settings.showDivider;
@@ -606,11 +580,6 @@ function FreeformTextPreview({ settings, componentId, sectionId }: { settings: T
         lineHeight: settings.lineHeight,
         color: settings.color,
         textAlign: settings.alignment,
-        background: settings.backgroundColor || 'transparent',
-        borderRadius: settings.backgroundRadius
-          ? `${settings.backgroundRadius[0]}px ${settings.backgroundRadius[1]}px ${settings.backgroundRadius[2]}px ${settings.backgroundRadius[3]}px`
-          : 0,
-        ...strokeStyle(settings.strokeColor, settings.strokeWidth),
         outline: 'none',
         cursor: isSelected ? 'text' : 'pointer',
         wordBreak: 'break-word',
@@ -1109,6 +1078,10 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
   const componentPadding = `${Math.max(2, cpSides[0] + settingsPadding[0] + 2)}px ${Math.max(2, cpSides[1] + settingsPadding[1] + 2)}px ${Math.max(2, cpSides[2] + settingsPadding[2] + 2)}px ${Math.max(2, cpSides[3] + settingsPadding[3] + 2)}px`;
   const contentOrder = computeComponentItemOrder(component);
 
+  const s = component.settings.settings;
+  const bgColor = s.backgroundColor ?? 'transparent';
+  const bgRadius = s.backgroundRadius ?? [0, 0, 0, 0];
+
   const renderAttachment = (key: AttachmentKey) => {
     if (key === 'callout' && component.callout?.enabled) {
       return <div key={key} style={{ marginTop: 8, marginBottom: 8 }}><CalloutBadge callout={component.callout} /></div>;
@@ -1132,7 +1105,9 @@ export function ComponentRenderer({ component, sectionId }: ComponentRendererPro
       style={{
         marginBottom: 16,
         padding: componentPadding,
-        borderRadius: 8,
+        borderRadius: `${bgRadius[0]}px ${bgRadius[1]}px ${bgRadius[2]}px ${bgRadius[3]}px`,
+        background: bgColor,
+        ...strokeStyle(s.strokeColor, s.strokeWidth),
         fontFamily: 'var(--font-family)',
         outline: isSelected ? '2px solid rgba(229,77,77,0.4)' : '2px solid transparent',
         boxShadow: isSelected ? '0 0 0 4px rgba(229,77,77,0.2)' : 'none',

@@ -159,6 +159,7 @@ export interface SectionHydration {
   packageType?: string;
   entityId?: string;
   collectionId?: string;
+  variant?: string;
 }
 
 // Section

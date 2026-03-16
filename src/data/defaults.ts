@@ -142,31 +142,6 @@ export const defaultThemes: ThemeConfig[] = [
     },
   },
   {
-    id: 'midnight-gradient',
-    name: 'Midnight Gradient',
-    radius: '12px',
-    colors: {
-      primary: '#E50914',
-      secondary: '#2d2d2d',
-      background: '#0d0d0d',
-      text: '#ffffff',
-    },
-    typography: {
-      headlineFont: 'Netflix Sans',
-      bodyFont: 'Netflix Sans',
-      textStyles: { ...defaultTextStyles },
-    },
-    spacing: 'relaxed',
-    emailPadding: 4,
-    sectionPadding: 24,
-    componentPadding: 4,
-    background: {
-      type: 'gradient',
-      value: 'linear-gradient(180deg, #1a1a2e 0%, #0d0d0d 100%)',
-      opacity: 1,
-    },
-  },
-  {
     id: 'netflix-red',
     name: 'Netflix Red',
     radius: '4px',
@@ -188,31 +163,6 @@ export const defaultThemes: ThemeConfig[] = [
     background: {
       type: 'solid',
       value: '#1a1a1a',
-      opacity: 1,
-    },
-  },
-  {
-    id: 'deep-ocean',
-    name: 'Deep Ocean',
-    radius: '16px',
-    colors: {
-      primary: '#00d4ff',
-      secondary: '#0a4d68',
-      background: '#05161a',
-      text: '#e8f4f8',
-    },
-    typography: {
-      headlineFont: 'Netflix Sans',
-      bodyFont: 'Netflix Sans',
-      textStyles: { ...defaultTextStyles },
-    },
-    spacing: 'relaxed',
-    emailPadding: 8,
-    sectionPadding: 28,
-    componentPadding: 8,
-    background: {
-      type: 'gradient',
-      value: 'linear-gradient(180deg, #0a4d68 0%, #05161a 100%)',
       opacity: 1,
     },
   },

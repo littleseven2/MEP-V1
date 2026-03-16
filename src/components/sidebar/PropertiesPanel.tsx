@@ -53,7 +53,7 @@ import {
   gradientPresets,
 } from '../../data/defaults';
 import { entityVariables, themeVariables } from '../../data/variables';
-import { Select, Toggle, LinkedField, LinkedWrapper } from '../../ui';
+import { Select, Toggle, Input, LinkedField, LinkedWrapper } from '../../ui';
 
 const THUMBNAIL_ICONS: { icon: ListThumbnailIcon; label: string; Component: React.ComponentType<{ size?: number }> }[] = [
   { icon: 'play', label: 'Play', Component: Play },
@@ -488,7 +488,7 @@ function BackgroundControl({ value, onChange, label = 'Background' }: {
   );
 }
 
-function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Style', linked, onLink, imageRadius, onImageRadiusUpdate }: {
+function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, strokeColor, strokeWidth, onUpdate, title = 'Background', linked, onLink, hidePadding }: {
   padding: Padding;
   backgroundColor: string;
   backgroundRadius: [number, number, number, number];
@@ -498,8 +498,7 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
   title?: string;
   linked?: LinkedValues;
   onLink?: (fieldKey: string, lv: LinkedValue) => void;
-  imageRadius?: number;
-  onImageRadiusUpdate?: (v: number) => void;
+  hidePadding?: boolean;
 }) {
   const colorVars = themeVariables.filter((v) => v.valueType === 'color');
   const numberVars = [...themeVariables.filter((v) => v.valueType === 'text')];
@@ -509,28 +508,11 @@ function ComponentStyleControls({ padding, backgroundColor, backgroundRadius, st
   if (backgroundColor !== 'transparent' && !isGradientValue(backgroundColor)) previewParts.push(`bg ${backgroundColor}`);
   if (isGradientValue(backgroundColor)) previewParts.push('gradient');
   if (strokeWidth > 0) previewParts.push(`stroke ${strokeWidth}`);
-  if (imageRadius !== undefined && imageRadius !== 8) previewParts.push(`radius ${imageRadius}`);
 
   return (
     <PropertyGroup title={title} preview={previewParts.length ? previewParts.join(' · ') : 'Default'}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {imageRadius !== undefined && onImageRadiusUpdate && (
-          <LinkedWrapper
-            label="Image radius"
-            linked={linked?.['mediaRadius']}
-            onLink={(lv) => onLink?.('mediaRadius', lv)}
-            variables={numberVars}
-            currentValue={String(imageRadius)}
-            onValueFromVariable={(v) => onImageRadiusUpdate(parseInt(v) || 0)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => onImageRadiusUpdate(Math.max(0, imageRadius - 1))} disabled={imageRadius <= 0}>‹</StepperBtn>
-              <StepperInput value={imageRadius} onChange={(v) => onImageRadiusUpdate(Math.max(0, v || 0))} />
-              <StepperBtn onClick={() => onImageRadiusUpdate(imageRadius + 1)}>›</StepperBtn>
-            </div>
-          </LinkedWrapper>
-        )}
-        <PaddingControl value={padding} onChange={(v) => onUpdate({ padding: v })} />
+        {!hidePadding && <PaddingControl value={padding} onChange={(v) => onUpdate({ padding: v })} />}
         <BackgroundControl
           value={backgroundColor}
           onChange={(v) => onUpdate({ backgroundColor: v })}
@@ -615,10 +597,6 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <SectionHeader title="Section Items" />
-          <SectionItemsList section={section} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <SectionHeader title="Data" />
           <PropertyGroup title="Data Hydration" defaultOpen preview={`${section.hydration.source} · ${section.hydration.contentType || 'Any'}`}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -651,8 +629,25 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
                 value={section.hydration.packageType || ''}
                 onChange={(v) => updateHydration({ packageType: v })}
               />
+              <Select
+                label="Variant"
+                options={[
+                  { value: 'A', label: 'A' },
+                  { value: 'B', label: 'B' },
+                  { value: 'C', label: 'C' },
+                  { value: 'D', label: 'D' },
+                  { value: 'E', label: 'E' },
+                  { value: 'F', label: 'F' },
+                ]}
+                value={section.hydration.variant || ''}
+                onChange={(v) => updateHydration({ variant: v })}
+              />
             </div>
           </PropertyGroup>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <SectionHeader title="Section Items" />
+          <SectionItemsList section={section} />
         </div>
       </div>
     );
@@ -665,13 +660,15 @@ function SectionProperties({ section, tab }: { section: Section; tab: PropsTab }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <PropertyGroup title="Visual" defaultOpen preview={bgPreview}>
+      <PropertyGroup title="Padding" defaultOpen preview={`${section.padding ?? 0}px`}>
+        <PaddingControl value={section.padding ?? 0} onChange={(v) => updateSection(section.id, { padding: v })} />
+      </PropertyGroup>
+      <PropertyGroup title="Background" defaultOpen preview={bgPreview}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <BackgroundControl
             value={section.background.value}
             onChange={(v) => updateBackground({ value: v, type: isGradientValue(v) ? 'gradient' : 'solid' })}
           />
-          <PaddingControl value={section.padding ?? 0} onChange={(v) => updateSection(section.id, { padding: v })} />
           <RadiusControl
             radii={section.backgroundRadius ?? [0, 0, 0, 0]}
             onChange={(r) => updateSection(section.id, { backgroundRadius: r })}
@@ -1285,6 +1282,9 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
     );
   }
 
+  const padVal = uniformPaddingValue(settings.padding ?? 0);
+  const padPreview = isUniformPadding(settings.padding ?? 0) ? `${padVal}px` : `${parsePadding(settings.padding ?? 0).join('/')}`;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <PropertyGroup title="Layout" preview={settings.format}>
@@ -1314,6 +1314,25 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
           </LinkedWrapper>
         </div>
       </PropertyGroup>
+      <PropertyGroup title="Image" defaultOpen preview={`radius ${settings.mediaRadius ?? 8}`}>
+        <LinkedWrapper
+          label="Image radius"
+          linked={linked['mediaRadius']}
+          onLink={(lv) => setLinked('mediaRadius', lv)}
+          variables={entityVariables}
+          currentValue={String(settings.mediaRadius ?? 8)}
+          onValueFromVariable={(v) => update({ ...settings, mediaRadius: parseInt(v) || 0 })}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <StepperBtn onClick={() => update({ ...settings, mediaRadius: Math.max(0, (settings.mediaRadius ?? 8) - 1) })} disabled={(settings.mediaRadius ?? 8) <= 0}>‹</StepperBtn>
+            <StepperInput value={settings.mediaRadius ?? 8} onChange={(v) => update({ ...settings, mediaRadius: Math.max(0, v || 0) })} />
+            <StepperBtn onClick={() => update({ ...settings, mediaRadius: (settings.mediaRadius ?? 8) + 1 })}>›</StepperBtn>
+          </div>
+        </LinkedWrapper>
+      </PropertyGroup>
+      <PropertyGroup title="Padding" defaultOpen preview={padPreview}>
+        <PaddingControl value={settings.padding ?? 0} onChange={(v) => update({ ...settings, padding: v })} />
+      </PropertyGroup>
       <ComponentStyleControls
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
@@ -1323,8 +1342,7 @@ function MediaProperties({ component, sectionId, tab }: { component: MessageComp
         onUpdate={(v) => update({ ...settings, ...v })}
         linked={linked}
         onLink={setLinked}
-        imageRadius={settings.mediaRadius ?? 8}
-        onImageRadiusUpdate={(v) => update({ ...settings, mediaRadius: v })}
+        hidePadding
       />
       <MarqueeControls
         marquee={settings.marquee ?? { enabled: false, text: 'Marquee', position: 'below' }}
@@ -1716,21 +1734,9 @@ function GridProperties({ component, sectionId, tab }: { component: MessageCompo
           )}
         </div>
       </PropertyGroup>
-      <PropertyGroup title="Spacing" preview={`Gap: ${settings.gap ?? 8}px`}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div>
-            <label style={labelStyle}>Gap</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <StepperBtn onClick={() => update({ ...settings, gap: Math.max(0, (settings.gap ?? 8) - 1) })} disabled={(settings.gap ?? 8) <= 0}>‹</StepperBtn>
-              <StepperInput value={settings.gap ?? 8} onChange={(v) => update({ ...settings, gap: Math.max(0, v || 0) })} />
-              <StepperBtn onClick={() => update({ ...settings, gap: (settings.gap ?? 8) + 1 })}>›</StepperBtn>
-            </div>
-          </div>
-        </div>
-      </PropertyGroup>
       <GridCellStyleSection settings={settings} update={update} />
       <ComponentStyleControls
-        title="Grid Style"
+        title="Grid Background"
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
         backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
@@ -1755,7 +1761,7 @@ function GridCellStyleSection({ settings, update }: { settings: GridSettings; up
   const wholeStyle: GridCellStyle = settings.cellStyle ?? defaultCellStyle;
 
   return (
-    <PropertyGroup title="Cell style" preview={`radius ${wholeStyle.imageRadius ?? 8}px`}>
+    <PropertyGroup title="Image Style" preview={`radius ${wholeStyle.imageRadius ?? 8}px`}>
       <ItemStyleControls
         style={wholeStyle}
         onChange={(s) => update({ ...settings, cellStyle: s as GridCellStyle })}
@@ -2130,7 +2136,7 @@ function ListProperties({ component, sectionId, tab }: { component: MessageCompo
         </PropertyGroup>
       )}
       <ComponentStyleControls
-        title="List style"
+        title="List Background"
         padding={settings.padding ?? 0}
         backgroundColor={settings.backgroundColor ?? 'transparent'}
         backgroundRadius={settings.backgroundRadius ?? [0, 0, 0, 0]}
@@ -2244,69 +2250,14 @@ function ItemStyleControls({ style, onChange, label }: {
 }
 
 function ListItemStyleSection({ settings, update }: { settings: ListSettings; update: (s: ListSettings) => void }) {
-  const mode = settings.itemStyleMode ?? 'whole';
   const wholeStyle: ListItemStyle = settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 };
-  const defaultItemStyle: ListItemStyle = { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 };
-
-  const setMode = (m: 'whole' | 'individual') => {
-    if (m === 'individual' && mode === 'whole') {
-      const items = settings.items.map((it) => ({
-        ...it,
-        style: it.style ?? { ...wholeStyle },
-      }));
-      update({ ...settings, itemStyleMode: 'individual', items });
-    } else {
-      update({ ...settings, itemStyleMode: m });
-    }
-  };
-
-  const updateItemStyle = (idx: number, style: ListItemStyle) => {
-    const items = [...settings.items];
-    items[idx] = { ...items[idx], style };
-    update({ ...settings, items });
-  };
 
   return (
-    <PropertyGroup title="Item style" preview={mode === 'individual' ? `${settings.items.length} items` : 'Uniform'}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {(['whole', 'individual'] as const).map((m) => (
-            <StepperBtn
-              key={m}
-              onClick={() => setMode(m)}
-              style={mode === m ? {
-                border: '2px solid var(--color-brand)',
-                background: 'var(--color-brand-subtle)',
-                color: 'var(--color-brand)',
-                fontSize: 12,
-                flex: 1,
-              } : { fontSize: 12, flex: 1 }}
-            >
-              {m}
-            </StepperBtn>
-          ))}
-        </div>
-
-        {mode === 'whole' ? (
-          <ItemStyleControls
-            style={wholeStyle}
-            onChange={(s) => update({ ...settings, itemStyle: s })}
-          />
-        ) : (
-          settings.items.map((item, idx) => (
-            <div key={idx} style={{
-              borderTop: idx > 0 ? '1px solid var(--color-border-default)' : 'none',
-              paddingTop: idx > 0 ? 12 : 0,
-            }}>
-              <ItemStyleControls
-                label={`Item ${idx + 1}`}
-                style={item.style ?? defaultItemStyle}
-                onChange={(s) => updateItemStyle(idx, s)}
-              />
-            </div>
-          ))
-        )}
-      </div>
+    <PropertyGroup title="Item style" preview="Uniform">
+      <ItemStyleControls
+        style={wholeStyle}
+        onChange={(s) => update({ ...settings, itemStyle: s })}
+      />
     </PropertyGroup>
   );
 }
@@ -3528,9 +3479,6 @@ function ListDataSection({ component, sectionId }: { component: MessageComponent
                       const last = settings.items[settings.items.length - 1];
                       for (let j = settings.items.length; j < target; j++) {
                         const ni: ListItem = { title: `Episode ${j + 1}`, subtitle: last?.subtitle || 'Subtitle', metadata: last?.metadata || 'CTA' };
-                        if (settings.itemStyleMode === 'individual') {
-                          ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-                        }
                         newItems.push(ni);
                       }
                       update({ ...settings, items: newItems, itemCount: target });
@@ -3549,9 +3497,6 @@ function ListDataSection({ component, sectionId }: { component: MessageComponent
                       subtitle: last?.subtitle || 'Subtitle',
                       metadata: last?.metadata || 'CTA',
                     };
-                    if (settings.itemStyleMode === 'individual') {
-                      ni.style = last?.style ?? { ...settings.itemStyle ?? { padding: 0, backgroundColor: 'transparent', backgroundRadius: [0, 0, 0, 0], strokeColor: 'transparent', strokeWidth: 0 } };
-                    }
                     update({
                       ...settings,
                       items: [...settings.items, ni],
