@@ -180,7 +180,7 @@ export const BuilderLayout: React.FC = () => {
           <VerticalNavItem icon={<Component size={18} />} label="Component" active={leftNav === 'component'} onClick={() => handleLeftNavChange('component')} />
           <VerticalNavItem icon={<Paperclip size={18} />} label="Attach" active={leftNav === 'attachment'} onClick={() => handleLeftNavChange('attachment')} />
           <div style={{ flex: 1 }} />
-          <VerticalNavItem icon={<Settings size={18} />} label="Setup" active={false} onClick={() => setView('setup')} />
+          <VerticalNavItem icon={<Settings size={18} />} label="Settings" active={false} onClick={() => {}} />
         </div>
 
         {/* Left Panel — Library */}

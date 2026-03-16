@@ -43,7 +43,7 @@ export function MessageSetup() {
   const viewFuture = useMessageStore((s) => s.viewFuture);
 
   const existing = message?.attributes;
-  const [channel, setChannel] = useState<Channel>(existing?.channel ?? 'email');
+  const [channels, setChannels] = useState<Channel[]>(existing?.channels ?? ['email']);
   const [name, setName] = useState(existing?.name ?? '');
   const [cadence, setCadence] = useState(existing?.cadence ?? 'temporal');
   const [consentCategory, setConsentCategory] = useState(existing?.consentCategory ?? '');
@@ -52,13 +52,23 @@ export function MessageSetup() {
   const [sendDate, setSendDate] = useState(existing?.sendDate ?? '');
   const [sendTime, setSendTime] = useState(existing?.sendTime ?? '');
   const [endDate, setEndDate] = useState(existing?.endDate ?? '');
+  const [endTime, setEndTime] = useState(existing?.endTime ?? '');
   const [campaign, setCampaign] = useState(existing?.campaign ?? '');
   const [eligibility, setEligibility] = useState(existing?.eligibility ?? '');
+  const [briefUrl, setBriefUrl] = useState(existing?.briefUrl ?? '');
+
+  const toggleChannel = (ch: Channel) => {
+    setChannels((prev) =>
+      prev.includes(ch) ? (prev.length > 1 ? prev.filter((c) => c !== ch) : prev) : [...prev, ch],
+    );
+  };
+
+  const sendDateRequired = cadence === 'temporal';
 
   const handleSubmit = () => {
     const attrs: MessageAttributes = {
       name,
-      channel,
+      channels,
       cadence: cadence as MessageAttributes['cadence'],
       consentCategory,
       messageProgram,
@@ -66,8 +76,10 @@ export function MessageSetup() {
       sendDate,
       sendTime: sendTime || undefined,
       endDate: endDate || undefined,
+      endTime: endTime || undefined,
       campaign: campaign || undefined,
       eligibility: eligibility || undefined,
+      briefUrl: briefUrl || undefined,
     };
     if (message) {
       updateAttributes(attrs);
@@ -77,9 +89,9 @@ export function MessageSetup() {
     }
   };
 
-  const setupProgress = [name].filter(Boolean).length;
+  const setupProgress = [name, channels.length > 0].filter(Boolean).length;
   const configProgress = [consentCategory, messageProgram, messageType].filter(Boolean).length;
-  const scheduleProgress = [sendDate, sendTime, endDate].filter(Boolean).length;
+  const scheduleProgress = [sendDate, sendTime, endDate, endTime].filter(Boolean).length;
   const targetProgress = [campaign, eligibility].filter(Boolean).length;
 
   return (
@@ -137,69 +149,78 @@ export function MessageSetup() {
           flexDirection: 'column',
           gap: 10,
         }}>
-          <SetupSection title="Set up your message" defaultOpen progress={`${setupProgress}/1`}>
+          <SetupSection title="Set up your message" defaultOpen progress={`${setupProgress}/2`}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
               <div>
-                <label style={sectionLabel}>Channel</label>
+                <label style={sectionLabel}>Channels <RequiredMark /></label>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {channelOptions.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setChannel(opt.value)}
-                      style={{
-                        flex: 1,
-                        padding: '10px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        borderRadius: 'var(--radius-md)',
-                        border: channel === opt.value ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
-                        background: channel === opt.value ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
-                        color: channel === opt.value ? 'var(--color-brand)' : 'var(--color-text-secondary)',
-                        fontFamily: 'var(--font-family)',
-                        fontSize: 13,
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        transition: 'var(--transition-fast)',
-                      }}
-                    >
-                      {opt.icon}
-                      {opt.label}
-                    </button>
-                  ))}
+                  {channelOptions.map((opt) => {
+                    const active = channels.includes(opt.value);
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => toggleChannel(opt.value)}
+                        style={{
+                          flex: 1,
+                          padding: '10px 12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          borderRadius: 'var(--radius-md)',
+                          border: active ? '1px solid var(--color-brand)' : '1px solid var(--color-border-default)',
+                          background: active ? 'var(--color-brand-subtle)' : 'var(--color-bg-tertiary)',
+                          color: active ? 'var(--color-brand)' : 'var(--color-text-secondary)',
+                          fontFamily: 'var(--font-family)',
+                          fontSize: 13,
+                          fontWeight: 500,
+                          cursor: 'pointer',
+                          transition: 'var(--transition-fast)',
+                        }}
+                      >
+                        {opt.icon}
+                        {opt.label}
+                        {active && (
+                          <CheckCircle size={14} style={{ marginLeft: 2 }} />
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4, display: 'block' }}>
+                  Select one or more channels for this message
+                </span>
               </div>
-              <Input label="Message name" fullWidth value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter message name" />
+              <Input label={<>Message name <RequiredMark /></>} fullWidth value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter message name" />
             </div>
           </SetupSection>
 
           <SetupSection title="Configure message" defaultOpen progress={`${configProgress}/3`}>
             <div style={{ display: 'grid', gridTemplateColumns: 'calc(50% - 36px) calc(50% + 24px)', columnGap: 12, rowGap: 22 }}>
               <Select
-                label="Cadence"
+                label={<>Cadence <RequiredMark /></>}
                 options={[
-                  { value: 'temporal', label: 'Temporal' },
-                  { value: 'evergreen', label: 'Evergreen' },
+                  { value: 'temporal', label: 'Temporal (one-off)' },
+                  { value: 'evergreen', label: 'Evergreen (always-on)' },
                 ]}
                 value={cadence}
                 onChange={(v) => setCadence(v as 'temporal' | 'evergreen')}
               />
               <Select
-                label="Consent category"
+                label={<>Consent category <RequiredMark /></>}
                 options={consentCategories}
                 value={consentCategory}
                 onChange={setConsentCategory}
               />
               <Select
-                label="Message program"
+                label={<>Message program <RequiredMark /></>}
                 options={messagePrograms}
                 value={messageProgram}
                 onChange={setMessageProgram}
               />
               <Select
-                label="Message type"
+                label={<>Message type <RequiredMark /></>}
                 options={messageTypes}
                 value={messageType}
                 onChange={setMessageType}
@@ -207,23 +228,29 @@ export function MessageSetup() {
             </div>
           </SetupSection>
 
-          <SetupSection title="Set schedule" progress={`${scheduleProgress}/3`}>
+          <SetupSection title="Set schedule" progress={`${scheduleProgress}/4`}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'calc(50% - 36px) calc(50% + 24px)', columnGap: 12, rowGap: 22 }}>
-                <DatePicker label="Send date" value={sendDate} onChange={setSendDate} />
+                <DatePicker label={<>Send date {sendDateRequired && <RequiredMark />}</>} value={sendDate} onChange={setSendDate} />
                 <TimePicker label="Send time" value={sendTime} onChange={setSendTime} />
               </div>
-              <div style={{ width: 'calc(50% - 36px)' }}>
+              {!sendDateRequired && (
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: -14 }}>
+                  Optional for evergreen — if blank, uses earliest available send date
+                </span>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'calc(50% - 36px) calc(50% + 24px)', columnGap: 12, rowGap: 22 }}>
                 <DatePicker label="End date" value={endDate} onChange={setEndDate} />
+                <TimePicker label="End time" value={endTime} onChange={setEndTime} />
               </div>
             </div>
           </SetupSection>
 
           <SetupSection title="Define targeting" progress={`${targetProgress}/2`}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-              <Input label="Campaign" fullWidth value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="Campaign name" />
+              <Input label="Campaign" fullWidth value={campaign} onChange={(e) => setCampaign(e.target.value)} placeholder="Campaign name (optional)" />
               <div>
-                <label style={sectionLabel}>Eligibility SQL</label>
+                <label style={sectionLabel}>Eligibility SQL <RequiredMark /></label>
                 <textarea
                   value={eligibility}
                   onChange={(e) => setEligibility(e.target.value)}
@@ -246,6 +273,39 @@ export function MessageSetup() {
               </div>
             </div>
           </SetupSection>
+
+          <SetupSection title="Additional details" progress={`${briefUrl ? 1 : 0}/1`}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+              <div>
+                <label style={sectionLabel}>Message brief URL</label>
+                <div style={{ position: 'relative' }}>
+                  <LinkIcon size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', pointerEvents: 'none' }} />
+                  <input
+                    type="url"
+                    value={briefUrl}
+                    onChange={(e) => setBriefUrl(e.target.value)}
+                    placeholder="https://..."
+                    style={{
+                      width: '100%',
+                      height: 36,
+                      padding: '0 12px 0 34px',
+                      borderRadius: 'var(--radius-md)',
+                      background: 'var(--color-bg-tertiary)',
+                      border: '1px solid var(--color-border-default)',
+                      color: 'var(--color-text-primary)',
+                      fontFamily: 'var(--font-family)',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      transition: 'var(--transition-fast)',
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: 11, color: 'var(--color-text-muted)', marginTop: 4, display: 'block' }}>
+                  Link to the message brief document (optional)
+                </span>
+              </div>
+            </div>
+          </SetupSection>
         </div>
 
         {/* Right: Email Preview */}
@@ -261,7 +321,7 @@ export function MessageSetup() {
           backgroundImage: `radial-gradient(circle at 1px 1px, var(--color-border-default) 1px, transparent 0)`,
           backgroundSize: '24px 24px',
         }}>
-          <SetupPreview name={name} channel={channel} message={message} />
+          <SetupPreview name={name} channels={channels} message={message} />
         </div>
       </div>
     </div>
@@ -290,6 +350,10 @@ const SetupNavButton: React.FC<{ icon: React.ReactNode; tooltip: string; onClick
     >{icon}</button>
   );
 };
+
+const RequiredMark = () => (
+  <span style={{ color: 'var(--color-brand)', fontWeight: 600, marginLeft: 2 }}>*</span>
+);
 
 const sectionLabel: React.CSSProperties = {
   display: 'block',
@@ -523,8 +587,9 @@ function MiniPreviewComponent({ component }: { component: MessageComponent }) {
   return null;
 }
 
-function SetupPreview({ name, channel, message }: { name: string; channel: Channel; message: Message | null }) {
-  const channelLabel = channel.charAt(0).toUpperCase() + channel.slice(1);
+function SetupPreview({ name, channels, message }: { name: string; channels: Channel[]; message: Message | null }) {
+  const channelLabel = channels.map((c) => c.charAt(0).toUpperCase() + c.slice(1)).join(', ');
+  const primaryChannel = channels[0] ?? 'email';
   const hasContent = message?.sections.some((s) => s.type === 'content' && s.components.length > 0);
 
   if (hasContent && message) {
@@ -688,8 +753,8 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
           background: 'linear-gradient(135deg, var(--color-brand) 0%, #FF6B6B 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          {channel === 'email' ? <Mail size={24} color="#fff" /> :
-           channel === 'push' ? <Bell size={24} color="#fff" /> :
+          {primaryChannel === 'email' ? <Mail size={24} color="#fff" /> :
+           primaryChannel === 'push' ? <Bell size={24} color="#fff" /> :
            <Smartphone size={24} color="#fff" />}
         </div>
         <div style={{ textAlign: 'center' }}>
@@ -727,7 +792,7 @@ function SetupPreview({ name, channel, message }: { name: string; channel: Chann
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-function DatePicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function DatePicker({ label, value, onChange }: { label: React.ReactNode; value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

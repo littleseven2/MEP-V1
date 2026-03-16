@@ -12,7 +12,7 @@ const cardStyle: React.CSSProperties = {
 };
 
 export function HomeScreen() {
-  const setView = useMessageStore((s) => s.setView);
+  const createMessage = useMessageStore((s) => s.createMessage);
 
   return (
     <div
@@ -105,8 +105,8 @@ export function HomeScreen() {
         <div
           role="button"
           tabIndex={0}
-          onClick={() => setView('setup')}
-          onKeyDown={(e) => e.key === 'Enter' && setView('setup')}
+          onClick={() => createMessage()}
+          onKeyDown={(e) => e.key === 'Enter' && createMessage()}
           style={{
             ...cardStyle,
             maxWidth: 240,

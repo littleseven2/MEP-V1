@@ -57,15 +57,21 @@ export const consentCategories: SelectOption[] = [
   { value: 'account', label: 'Account' },
   { value: 'transactional', label: 'Transactional' },
   { value: 'lifecycle', label: 'Lifecycle' },
+  { value: 'service', label: 'Service' },
+  { value: 'marketing', label: 'Marketing' },
 ];
 
 // Message programs
 export const messagePrograms: SelectOption[] = [
+  { value: 'title-promotion', label: 'Title Promotion' },
   { value: 'title-launch', label: 'Title Launch' },
   { value: 'engagement', label: 'Engagement' },
   { value: 'reactivation', label: 'Reactivation' },
   { value: 'account-health', label: 'Account Health' },
   { value: 'onboarding', label: 'Onboarding' },
+  { value: 'retention', label: 'Retention' },
+  { value: 'win-back', label: 'Win-back' },
+  { value: 'lifecycle', label: 'Lifecycle' },
 ];
 
 // Message types
@@ -76,6 +82,11 @@ export const messageTypes: SelectOption[] = [
   { value: 'you-might-like', label: 'You Might Like' },
   { value: 'continue-watching', label: 'Continue Watching' },
   { value: 'top-10', label: 'Top 10' },
+  { value: 'what-to-watch', label: 'What to Watch' },
+  { value: 'trending-now', label: 'Trending Now' },
+  { value: 'because-you-watched', label: 'Because You Watched' },
+  { value: 'new-arrival', label: 'New Arrival' },
+  { value: 'account-update', label: 'Account Update' },
 ];
 
 // Content types for data hydration

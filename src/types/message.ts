@@ -31,7 +31,7 @@ export function uniformPaddingValue(p: Padding | undefined): number {
 }
 
 // App view states
-export type AppView = 'home' | 'setup' | 'builder';
+export type AppView = 'home' | 'builder';
 
 // Channel types
 export type Channel = 'email' | 'push' | 'in-app';
@@ -111,9 +111,11 @@ export interface MessageAttributes {
   sendDate: string;
   sendTime?: string;
   endDate?: string;
-  channel: Channel;
+  endTime?: string;
+  channels: Channel[];
   campaign?: string;
   eligibility?: string;
+  briefUrl?: string;
 }
 
 // Individual text style definition

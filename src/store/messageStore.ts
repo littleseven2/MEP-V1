@@ -77,7 +77,7 @@ function createMessageWithDefaults(attributes: Partial<MessageAttributes>): Mess
       cadence: 'temporal',
       messageType: '',
       sendDate: '',
-      channel: 'email',
+      channels: ['email'],
       ...attributes,
     },
     theme: { ...DEFAULT_THEME },
